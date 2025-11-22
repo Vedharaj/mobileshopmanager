@@ -83,8 +83,8 @@ export default function BottomNavbar({
   }, []);
 
   const openScanner = useCallback(() => {
-    console.log('Home re-clicked');
-    console.log(navigationRef.current.navigate("Scanner"));
+    // console.log('Home re-clicked');
+    // console.log(navigationRef.current.navigate("Scanner"));
     if (navigationRef?.current) {
       navigationRef.current.navigate('Scanner');
     }
@@ -94,7 +94,7 @@ export default function BottomNavbar({
   const handlePressIndex = (index) => {
     const currentActive = typeof activeIndex === "number" ? activeIndex : active;
 
-    console.log(`Tab pressed: index=${index}, currentActive=${currentActive}`);
+    // console.log(`Tab pressed: index=${index}, currentActive=${currentActive}`);
 
     // If already on Home and center button re-clicked, open Scanner and stop
     if (index === 3 && currentActive === 3) {

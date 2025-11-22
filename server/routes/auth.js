@@ -8,7 +8,7 @@ const auth = require('../middleware/auth');
 router.post('/register', async (req, res) => {
 try {
 const { username, email, password } = req.body;
-console.log(req.body);
+// console.log(req.body);
 if (!username || !email || !password) return res.status(400).json({ msg: 'Please enter all fields ' });
 
 

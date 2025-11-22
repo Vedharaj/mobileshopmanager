@@ -134,6 +134,7 @@ export const global = StyleSheet.create({
     backgroundColor: '#020617',
     padding: 24,
     justifyContent: 'center',
+    alignItems: 'center'
   },
   permissionTitle: {
     color: 'white',

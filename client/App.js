@@ -18,6 +18,8 @@ import StatsScreen from "./screens/StatsScreen.jsx";
 import ScannerScreen from "./screens/ScannerScreen.jsx";
 
 import AuthContext from "./context/AuthContext.js";
+import { store } from "./store/store.js";
+import { Provider } from 'react-redux';
 
 const Stack = createNativeStackNavigator();
 
@@ -94,6 +96,7 @@ export default function App() {
   if (loading) return null;
 
   return (
+    <Provider store={store}>
     <AuthContext.Provider value={authContextValue}>
       <SafeAreaProvider>
         <NavigationContainer
@@ -141,5 +144,6 @@ export default function App() {
         </NavigationContainer>
       </SafeAreaProvider>
     </AuthContext.Provider>
+    </Provider>
   );
 }

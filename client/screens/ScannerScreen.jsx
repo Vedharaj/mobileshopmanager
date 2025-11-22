@@ -61,10 +61,10 @@ export default function ScannerScreen({ navigation }) {
         </Text>
 
         <TouchableOpacity
-          style={global.primaryButton}
+          style={{...global.primaryButton, backgroundColor: "#4d94ffff", padding: 5, borderRadius: 3}}
           onPress={requestPermission}
         >
-          <Text style={global.primaryButtonText}>Give Permission</Text>
+          <Text style={{...global.primaryButtonText, color: "#ffffffff"}}>Give Permission</Text>
         </TouchableOpacity>
       </View>
     );
