@@ -14,7 +14,7 @@ import AuthContext from '../context/AuthContext';
 
 export default function HomeScreen() {
   const { signOut } = useContext(AuthContext);
-  const appName = "Ironman";
+  const appName = "Mobile Shop";
 
   const onLogout = () => {
     // Your logout logic here: navigate to login, clear tokens, etc.

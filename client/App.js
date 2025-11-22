@@ -7,14 +7,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import BottomNavbar from "./components/BottomNavbar.jsx";
 
-// screens (make sure exports match these names)
+// screens
 import LoginScreen from "./screens/LoginScreen.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import HomeScreen from "./screens/HomeScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
 import StockScreen from "./screens/StockScreen.jsx";
-import TransactionsScreen from "./screens/TransactionsScreen.jsx"; // << correct name
+import TransactionsScreen from "./screens/TransactionsScreen.jsx";
 import StatsScreen from "./screens/StatsScreen.jsx";
+import ScannerScreen from "./screens/ScannerScreen.jsx";
 
 import AuthContext from "./context/AuthContext.js";
 
@@ -28,32 +29,14 @@ const ROUTE_TO_INDEX = {
   Transactions: 5,
 };
 
-// inside App.js (where navigationRef and handleTabPress are defined)
 const KEY_TO_ROUTE = {
+  scanner: "Scanner",
   profile: "Profile",
   stats: "Stats",
-  home: "Home",
+  home: "Home", // Changed from "Home" to "Scanner"
   stocks: "Stocks",
   transactions: "Transactions",
 };
-
-const handleTabPress = (index, key) => {
-  const routeName = KEY_TO_ROUTE[key] ?? "Home";
-
-  const currentRoute = navigationRef.current?.getCurrentRoute?.()?.name;
-
-  if (routeName === "Home" && currentRoute === "Home") {
-    // already on Home -> set param to timestamp to trigger scanner
-    navigationRef.current?.navigate("Home", { openCamera: Date.now() });
-  } else {
-    navigationRef.current?.navigate(routeName);
-  }
-
-  // update UI active index state for BottomNavbar (if used)
-  setActiveIndex(index);
-};
-
-
 
 export default function App() {
   const navigationRef = useRef(null);
@@ -61,6 +44,7 @@ export default function App() {
   const [userToken, setUserToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(3);
+  const [currentRoute, setCurrentRoute] = useState(null);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -96,13 +80,18 @@ export default function App() {
     },
   };
 
-  if (loading) return null; // or a Splash screen
-
+  // single handleTabPress (defined once, after navigationRef is available)
   const handleTabPress = (index, key) => {
     const routeName = KEY_TO_ROUTE[key] ?? "Home";
-    if (navigationRef.current?.navigate) navigationRef.current.navigate(routeName);
+
+    if (navigationRef.current?.navigate) {
+      navigationRef.current.navigate(routeName);
+    }
+
     setActiveIndex(index);
   };
+
+  if (loading) return null;
 
   return (
     <AuthContext.Provider value={authContextValue}>
@@ -113,8 +102,13 @@ export default function App() {
             try {
               const route = navigationRef.current?.getCurrentRoute?.();
               const name = route?.name;
-              if (name && ROUTE_TO_INDEX[name]) setActiveIndex(ROUTE_TO_INDEX[name]);
-            } catch (e) { /* ignore */ }
+              if (name) {
+                setCurrentRoute(name);
+                if (ROUTE_TO_INDEX[name]) setActiveIndex(ROUTE_TO_INDEX[name]);
+              }
+            } catch (e) {
+              /* ignore */
+            }
           }}
         >
           <View style={{ flex: 1 }}>
@@ -131,14 +125,16 @@ export default function App() {
                   <Stack.Screen name="Stats" component={StatsScreen} />
                   <Stack.Screen name="Stocks" component={StockScreen} />
                   <Stack.Screen name="Transactions" component={TransactionsScreen} />
+                  <Stack.Screen name="Scanner" component={ScannerScreen} />
                 </>
               )}
             </Stack.Navigator>
 
-            {userToken != null && (
+            {userToken != null && currentRoute !== 'Scanner' && (
               <BottomNavbar
-                activeIndex={activeIndex}    // controlled prop
+                activeIndex={activeIndex}
                 onTabPress={handleTabPress}
+                navigationRef={navigationRef}
               />
             )}
           </View>

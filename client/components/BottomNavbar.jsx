@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Animated,
-  Platform,
   Dimensions,
   Text,
 } from "react-native";
@@ -33,6 +32,7 @@ export default function BottomNavbar({
   initialIndex = 3,
   activeIndex, // optional controlled prop
   onTabPress,
+  navigationRef,
 }) {
   // compute default index from controlled prop or initial prop
   const defaultIndex = Math.max(1, Math.min(activeIndex ?? initialIndex, 5));
@@ -82,8 +82,26 @@ export default function BottomNavbar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const openScanner = useCallback(() => {
+    console.log('Home re-clicked');
+    console.log(navigationRef.current.navigate("Scanner"));
+    if (navigationRef?.current) {
+      navigationRef.current.navigate('Scanner');
+    }
+  }, [navigationRef]);
+
   // handle tab press: if uncontrolled, update internal state; always notify parent
   const handlePressIndex = (index) => {
+    const currentActive = typeof activeIndex === "number" ? activeIndex : active;
+
+    console.log(`Tab pressed: index=${index}, currentActive=${currentActive}`);
+
+    // If already on Home and center button re-clicked, open Scanner and stop
+    if (index === 3 && currentActive === 3) {
+      openScanner();
+      return; // prevent calling onTabPress which would trigger another navigation
+    }
+
     if (typeof activeIndex !== "number") {
       setActive(index);
       animateTo(index);

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { global } from '../styles/global';
 
-const Navbar = ({ name = "Ironman", onLogout }) => {
+const Navbar = ({ name = "Mobile Shop", onLogout }) => {
   // Format current date
   const today = new Date();
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];

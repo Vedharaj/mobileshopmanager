@@ -70,4 +70,89 @@ export const global = StyleSheet.create({
     padding: 8,
     borderRadius: 6,
   },
+  
+   scannerContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  scannerTopBar: {
+    position: 'absolute',
+    top: 40,
+    left: 16,
+    right: 16,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButtonTransparent: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#00000088',
+    borderRadius: 999,
+    marginRight: 8,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  scannerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#00000088',
+  },
+  scanBox: {
+    width: 260,
+    height: 260,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#22c55e',
+    overflow: 'hidden',
+    backgroundColor: '#00000055',
+  },
+  scanLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: '#22c55e',
+  },
+  scanHint: {
+    color: 'white',
+    marginTop: 16,
+    fontSize: 14,
+  },
+
+  // permission
+  permissionContainer: {
+    flex: 1,
+    backgroundColor: '#020617',
+    padding: 24,
+    justifyContent: 'center',
+  },
+  permissionTitle: {
+    color: 'white',
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  permissionText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#111827',
+    borderRadius: 999,
+  },
 });
