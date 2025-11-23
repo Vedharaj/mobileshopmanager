@@ -3,10 +3,25 @@ import { StyleSheet, StatusBar, Platform } from 'react-native';
 const STATUSBAR_HEIGHT = Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
 
 export const global = StyleSheet.create({
+  authlink: {
+    marginTop: 15, 
+    textAlign: "center", 
+    color: "blue"
+  },
+  button:{
+    backgroundColor: "#2a81d3ff",
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  btnText: { color: "#fff", textAlign: "center", fontSize: 18 },
+  error: { color: "red", marginBottom: 10 },
   container: {
     flex: 1,
     paddingBottom: 16,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
   input: {
     borderWidth: 1,

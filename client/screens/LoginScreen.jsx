@@ -1,21 +1,18 @@
 import React, { useState, useContext } from 'react';
-import { View, TextInput, Button, Text, Alert } from 'react-native';
-import API from '../api';
-import AuthContext from '../context/AuthContext';
-import { global } from '../styles/global';
+import { View, Text, TextInput, TouchableOpacity, globalheet } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../store/slices/authSlice";
+import { global } from "../styles/global";
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { signIn } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { status, error } = useSelector((state) => state.auth);
 
-  const handleLogin = async () => {
-    try {
-      const res = await API.post('/auth/login', { email, password });
-      signIn(res.data.token);
-    } catch (err) {
-      Alert.alert('Error', err?.response?.data?.msg || 'Login failed');
-    }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const submitLogin = () => {
+    dispatch(login({ email, password }));
   };
 
   return (
@@ -26,9 +23,17 @@ export default function LoginScreen({ navigation }) {
       <Text style={global.label}>Password</Text>
       <TextInput style={global.input} value={password} onChangeText={setPassword} secureTextEntry />
 
-      <Button title="Login" onPress={handleLogin} />
-      <View style={{ height: 12 }} />
-      <Button title="Create account" onPress={() => navigation.navigate('Register')} />
+      {error && <Text style={global.error}>{error}</Text>}
+
+      <TouchableOpacity style={global.button} onPress={submitLogin}>
+        <Text style={global.btnText}>
+          {status === "loading" ? "Logging in..." : "Login"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+        <Text style={global.authlink}>Create New Account</Text>
+      </TouchableOpacity>
     </View>
   );
 }

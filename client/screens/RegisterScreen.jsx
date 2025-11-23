@@ -1,38 +1,39 @@
 import React, { useState, useContext } from 'react';
-import { View, TextInput, Button, Text, Alert } from 'react-native';
-import API from '../api';
-import AuthContext from '../context/AuthContext';
+import { View, TextInput, Button, Text, Alert, TouchableOpacity } from 'react-native';
+import { useDispatch, useSelector } from "react-redux";
+import { register } from "../store/slices/authSlice";
 import { global } from '../styles/global';
 
 export default function RegisterScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { signIn } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { status, error } = useSelector((state) => state.auth);
 
-  const handleRegister = async () => {
-    try {
-      const res = await API.post('/auth/register', { username, email, password });
-      signIn(res.data.token);
-    } catch (err) {
-      Alert.alert('Error', err?.response?.data?.msg || 'Registration failed');
-    }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const submitRegister = () => {
+    dispatch(register({email, password }));
   };
 
   return (
     <View style={global.container}>
-      <Text style={global.label}>Username</Text>
-      <TextInput style={global.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
-
       <Text style={global.label}>Email</Text>
       <TextInput style={global.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
 
       <Text style={global.label}>Password</Text>
       <TextInput style={global.input} value={password} onChangeText={setPassword} secureTextEntry />
+      
+      {error && <Text style={global.error}>{error}</Text>}
 
-      <Button title="Register" onPress={handleRegister} />
-      <View style={{ height: 10 }} />
-      <Button title="Already have account? Login" onPress={() => navigation.navigate('Login')} />
+      <TouchableOpacity style={global.button} onPress={submitRegister}>
+        <Text style={global.btnText}>
+          {status === "loading" ? "Creating..." : "Register"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+        <Text style={global.authlink}>Already have an account? Login</Text>
+      </TouchableOpacity>   
     </View>
   );
 }
