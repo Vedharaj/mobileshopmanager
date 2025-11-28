@@ -4,12 +4,13 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { global } from "../styles/global"; // your theme
 import { showToast } from "../store/slices/toastSlice";
-import { createShop } from "../store/slices/shopsSlice";
+import { createShop, fetchShops } from "../store/slices/shopsSlice";
 
 export default function WelcomeScreen({ navigation }) {
   const dispatch = useDispatch();
 
   const shopsStatus = useSelector((state) => state.shops.status);
+  const shops = useSelector((state) => state.shops?.shops || []);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,13 +30,46 @@ export default function WelcomeScreen({ navigation }) {
 
     try {
       await dispatch(createShop({ name, email, address, contact_no })).unwrap();
+      // refresh shops in store to ensure app state is updated
+      try {
+        await dispatch(fetchShops()).unwrap();
+      } catch (e) {
+        // not fatal for navigation, but log for debugging
+        console.warn('fetchShops after createShop failed', e);
+      }
+
       dispatch(
         showToast({
           message: "Shop created successfully",
           type: "success",
         })
       );
-      navigation.replace("Home");
+
+      // ensure shops updated in store before navigating; sometimes store update can be slightly delayed
+      const waitForShops = async (timeout = 2000) => {
+        const interval = 100;
+        let waited = 0;
+        while (waited < timeout) {
+          const current = (shops && shops.length) || 0;
+          if (current > 0) return true;
+          // small delay
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => setTimeout(r, interval));
+          waited += interval;
+        }
+        return false;
+      };
+
+      await waitForShops();
+
+      // use reset to guarantee we land on Home
+      if (navigation && typeof navigation.reset === 'function') {
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      } else if (navigation && typeof navigation.replace === 'function') {
+        navigation.replace('Home');
+      } else if (navigation && typeof navigation.navigate === 'function') {
+        navigation.navigate('Home');
+      }
     } catch (err) {
       dispatch(
         showToast({

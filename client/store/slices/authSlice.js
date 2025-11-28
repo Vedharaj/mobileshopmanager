@@ -124,12 +124,12 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.token = action.payload.token;
-        state.user = action.payload.user;
-        state.username = action.payload.user?.username || null;
-        state.role = action.payload.user?.role;
-        state.error = null;
-        setAuthToken(action.payload.token);
+        // state.token = action.payload.token;
+        // state.user = action.payload.user;
+        // state.username = action.payload.user?.username || null;
+        // state.role = action.payload.user?.role;
+        // state.error = null;
+        // setAuthToken(action.payload.token);
       })
       .addCase(register.rejected, (state, action) => {
         state.status = 'failed';

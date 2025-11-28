@@ -41,20 +41,21 @@ export default function RegisterScreen({ navigation }) {
   
   const submitRegister = () => {
     dispatch(register({ email, password, username }));
+    navigation.navigate("Login");
   };
 
   const alreadyHaveAccountBtn = () => {
     dispatch(resetError());
     navigation.navigate("Login");
   };
-
+  
   return (
     <View style={global.authcontainer}>
-      <Text style={global.label}>Email</Text>
-      <TextInput style={global.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
-
       <Text style={global.label}>Username</Text>
       <TextInput style={global.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
+
+      <Text style={global.label}>Email</Text>
+      <TextInput style={global.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
 
       <Text style={global.label}>Password</Text>
       <TextInput style={global.input} value={password} onChangeText={setPassword} secureTextEntry />
