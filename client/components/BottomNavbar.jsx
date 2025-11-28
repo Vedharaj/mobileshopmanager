@@ -44,8 +44,8 @@ export default function BottomNavbar({
   const liftsRef = useRef(Array(5).fill().map(() => new Animated.Value(0))).current;
 
   const insets = useSafeAreaInsets();
-  const barBottomOffset = insets.bottom + 12;
-  const centerBottom = barBottomOffset + BAR_HEIGHT / 2;
+  const barBottomOffset = insets.bottom;
+  const centerBottom = barBottomOffset + BAR_HEIGHT / 2 + 12; // Adjusted for floating center button
 
   // animate function (useCallback so effects can depend on it)
   const animateTo = useCallback((index) => {
@@ -242,12 +242,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: BAR_HEIGHT,
     borderRadius: 18,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -260,7 +254,7 @@ const styles = StyleSheet.create({
   },
 
   tabButton: {
-    width: (SCREEN_W - 16 * 2 - CENTER_DIAMETER - 28) / 4,
+    width: (SCREEN_W - 16 * 2 - CENTER_DIAMETER - 28) / 3.5,
     alignItems: "center",
     justifyContent: "center",
   },
