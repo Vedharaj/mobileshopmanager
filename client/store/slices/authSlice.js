@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { setAuthToken } from '../api/axiosClient';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // LOGIN
 export const login = createAsyncThunk(
@@ -7,8 +8,10 @@ export const login = createAsyncThunk(
   async (credentials, thunkAPI) => {
     try {
       const res = await api.post('/auth/login', credentials);
+      await AsyncStorage.setItem("token", res.data.token);  // FIX: res.data.token not res.token
       return res.data;
     } catch (error) {
+      console.log(error);
       const msg =
         error.response?.data?.msg ||
         error.response?.data?.message ||
@@ -53,11 +56,14 @@ const authSlice = createSlice({
       state.user = null;
       state.error = null;
       setAuthToken(null);
+      AsyncStorage.removeItem("token");  // ADD: properly remove token
     },
     setCredentials(state, action) {
-      state.token = action.payload.token;
-      state.user = action.payload.user;
-      setAuthToken(action.payload.token);
+      state.token = action.payload.token || action.payload;  // handle both cases
+      setAuthToken(action.payload.token || action.payload);
+    },
+    resetError(state) {
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
@@ -98,5 +104,5 @@ const authSlice = createSlice({
   }
 });
 
-export const { logout, setCredentials } = authSlice.actions;
+export const { logout, setCredentials, resetError } = authSlice.actions;
 export default authSlice.reducer;

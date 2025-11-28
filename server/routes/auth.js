@@ -55,7 +55,6 @@ router.post('/login', async (req, res) => {
     if (!user)
       return res.status(400).json({ msg: 'Invalid credentials' });
 
-    console.log(user.password_hash);
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       console.log('Password mismatch for user:', user.email);
@@ -70,7 +69,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, email: user.email }
+      user: { id: user._id, email: user.email, role: user.role, shops: user.shops }
     });
 
   } catch (err) {

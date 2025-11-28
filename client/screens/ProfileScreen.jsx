@@ -1,14 +1,24 @@
 import React, { useContext } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
 import { global } from '../styles/global';
-import AuthContext from '../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
 
 const ProfileScreen = () => {
-  const { signOut } = useContext(AuthContext);
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      Alert.alert("Logout", "Do you want to logout?", [
+            { text: "Cancel" },
+            {
+              text: "Logout",
+              style: "destructive",
+              onPress: () => {
+                dispatch(logout());
+              },
+            },
+          ]);
     } catch (err) {
       Alert.alert('Error', 'Failed to sign out');
     }

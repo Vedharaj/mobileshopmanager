@@ -1,46 +1,61 @@
 // HomeScreen.jsx
 import React, { useEffect, useState, useRef, useContext } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  StatusBar,
-} from "react-native";
+import { View, Text, TouchableOpacity, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { global } from '../styles/global';
-import AuthContext from '../context/AuthContext';
+import { global } from "../styles/global";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
 
 export default function HomeScreen() {
-  const { signOut } = useContext(AuthContext);
   const appName = "Mobile Shop";
+  const dispatch = useDispatch();
 
   const onLogout = () => {
-    // Your logout logic here: navigate to login, clear tokens, etc.
-    Alert.alert("Logout", "Do you want to logout?", [
-      { text: "Cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async() => {
-          await signOut();
+    try {
+      Alert.alert("Logout", "Do you want to logout?", [
+        { text: "Cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: () => {
+            dispatch(logout());
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      Alert.alert("Error", "Failed to sign out");
+    }
   };
 
   const today = new Date();
   const months = [
-    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
-  const formattedDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+  const formattedDate = `${today.getDate()} ${
+    months[today.getMonth()]
+  } ${today.getFullYear()}`;
 
   return (
     <SafeAreaView style={global.safeArea}>
-      <StatusBar className="statusBarStyleHomeScreen" barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar
+        className="statusBarStyleHomeScreen"
+        barStyle="dark-content"
+        backgroundColor="#fff"
+      />
       {/* Navbar */}
-      <View style={{...global.navbarContainer, paddingTop: 2, elevation: 0}}>
+      <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
         <Text numberOfLines={1} style={global.navbarName}>
           {appName}
         </Text>

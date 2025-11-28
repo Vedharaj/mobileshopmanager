@@ -16,12 +16,17 @@ export const global = StyleSheet.create({
   },
   btnText: { color: "#fff", textAlign: "center", fontSize: 18 },
   error: { color: "red", marginBottom: 10 },
-  container: {
+  authcontainer: {
     flex: 1,
     paddingBottom: 16,
     backgroundColor: '#ffffff',
     justifyContent: 'center',
     paddingHorizontal: 16,
+  },
+  container: {
+    flex: 1,
+    paddingBottom: 16,
+    backgroundColor: '#ffffff',
   },
   input: {
     borderWidth: 1,

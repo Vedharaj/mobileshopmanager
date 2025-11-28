@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { global } from '../styles/global';
+import { useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
 
-const Navbar = ({ name = "Mobile Shop", onLogout }) => {
+
+const Navbar = ({ name = "Mobile Shop" }) => {
+  const dispatch = useDispatch();
+
   // Format current date
   const today = new Date();
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -19,8 +24,14 @@ const Navbar = ({ name = "Mobile Shop", onLogout }) => {
         <Text style={global.navbarDate}>{formattedDate}</Text>
 
         {/* Logout Icon */}
-        <TouchableOpacity onPress={onLogout}>
-          <MaterialIcons name="logout" size={24} />
+        <TouchableOpacity
+          onPress={() => {
+            console.log('Logout pressed');
+            dispatch(logout());
+          }}
+          accessibilityLabel="Logout"
+        >
+          <Text>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
