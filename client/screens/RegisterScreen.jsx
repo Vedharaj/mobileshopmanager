@@ -12,6 +12,7 @@ export default function RegisterScreen({ navigation }) {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   
   useEffect(() => {
     if (error) {
@@ -39,7 +40,7 @@ export default function RegisterScreen({ navigation }) {
   }, [error, status, dispatch, token, shops, navigation]);
   
   const submitRegister = () => {
-    dispatch(register({email, password }));
+    dispatch(register({ email, password, username }));
   };
 
   const alreadyHaveAccountBtn = () => {
@@ -51,6 +52,9 @@ export default function RegisterScreen({ navigation }) {
     <View style={global.authcontainer}>
       <Text style={global.label}>Email</Text>
       <TextInput style={global.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
+
+      <Text style={global.label}>Username</Text>
+      <TextInput style={global.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
 
       <Text style={global.label}>Password</Text>
       <TextInput style={global.input} value={password} onChangeText={setPassword} secureTextEntry />

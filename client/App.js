@@ -23,7 +23,7 @@ import WelcomeScreen from "./screens/WelcomeScreen.jsx";
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./store/store.js";
-import { setCredentials, fetchMe } from "./store/slices/authSlice.js";
+import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
 import { fetchShops } from "./store/slices/shopsSlice.js";
 
 const Stack = createNativeStackNavigator();
@@ -62,8 +62,15 @@ function RootNavigator() {
         const token = await AsyncStorage.getItem("token");
         if (token) {
           await dispatch(setCredentials(token));
-          await dispatch(fetchShops());
-          await dispatch(fetchMe());
+          try {
+            // ensure token is valid and fetch user/shops; if any fail, treat as unauthenticated
+            await dispatch(fetchMe()).unwrap();
+            await dispatch(fetchShops()).unwrap();
+          } catch (err) {
+            // invalid token or fetch failed -> clear credentials
+            console.warn("Token invalid or fetchMe failed, logging out", err);
+            dispatch(logout());
+          }
         }
       } catch (err) {
         console.error("Failed to load token", err);

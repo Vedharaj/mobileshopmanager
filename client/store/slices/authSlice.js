@@ -67,6 +67,7 @@ export const register = createAsyncThunk(
 const initialState = {
   token: null,
   user: null,
+  username: null,
   status: 'idle',
   error: null,
   role: null,
@@ -79,6 +80,9 @@ const authSlice = createSlice({
     logout(state) {
       state.token = null;
       state.userid = null;
+      state.user = null;
+      state.username = null;
+      state.role = null;
       state.error = null;
       setAuthToken(null);
       AsyncStorage.removeItem("token");  // ADD: properly remove token
@@ -102,6 +106,7 @@ const authSlice = createSlice({
         state.status = 'succeeded';
         state.token = action.payload.token;
         state.user = action.payload.user;
+        state.username = action.payload.user?.username || null;
         state.role = action.payload.user?.role;
         state.error = null;
         // console.log(action.payload);
@@ -121,6 +126,7 @@ const authSlice = createSlice({
         state.status = 'succeeded';
         state.token = action.payload.token;
         state.user = action.payload.user;
+        state.username = action.payload.user?.username || null;
         state.role = action.payload.user?.role;
         state.error = null;
         setAuthToken(action.payload.token);
@@ -138,6 +144,7 @@ const authSlice = createSlice({
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.user = action.payload;
+        state.username = action.payload.username || null;
         state.shops = action.payload.shops || [];
         state.userid = action.payload._id;
         state.role = action.payload.role;

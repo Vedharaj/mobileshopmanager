@@ -6,19 +6,20 @@ const generateToken = (user) => {
 };
 
 exports.register = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'email and password required' });
 
-  const existing = await User.findOne({ email });
-  if (existing) return res.status(400).json({ message: 'email already in use' });
+  // check existing by email or username
+  const existing = await User.findOne({ $or: [{ email }, { username }] });
+  if (existing) return res.status(400).json({ message: 'email or username already in use' });
 
-  const user = new User({ email, password_hash: password });
+  const user = new User({ email, password_hash: password, username });
   await user.save();
 
   const token = generateToken(user);
   res.status(201).json({ 
     token, 
-    user: { id: user._id, email: user.email, role: user.role },
+    user: { id: user._id, email: user.email, username: user.username, role: user.role },
     shops: user.shops || []
   });
 };
@@ -36,7 +37,7 @@ exports.login = async (req, res) => {
   const token = generateToken(user);
   res.json({ 
     token, 
-    user: { id: user._id, email: user.email, role: user.role },
+    user: { id: user._id, email: user.email, username: user.username, role: user.role },
     shops: Array.isArray(user.shops) ? user.shops : []
   });
 };
