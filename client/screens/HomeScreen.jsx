@@ -4,29 +4,14 @@ import { View, Text, TouchableOpacity, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { global } from "../styles/global";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
 
 export default function HomeScreen() {
-  const appName = "Mobile Shop";
+  const { role } = useSelector((state) => state.auth);
+  const { shops } = useSelector((state) => state.shops);
+  const appName = shops.length > 0 ? shops[0].shop_name : "My Store";
   const dispatch = useDispatch();
-
-  const onLogout = () => {
-    try {
-      Alert.alert("Logout", "Do you want to logout?", [
-        { text: "Cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: () => {
-            dispatch(logout());
-          },
-        },
-      ]);
-    } catch (err) {
-      Alert.alert("Error", "Failed to sign out");
-    }
-  };
 
   const today = new Date();
   const months = [
@@ -56,21 +41,14 @@ export default function HomeScreen() {
       />
       {/* Navbar */}
       <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
-        <Text numberOfLines={1} style={global.navbarName}>
+        <Text numberOfLines={2} style={global.navbarName}>
           {appName}
+          {"\n"}
+          <Text style={global.navbarRole}>{role || "User"}</Text>
         </Text>
 
         <View style={global.navbarRight}>
           <Text style={global.navbarDate}>{formattedDate}</Text>
-
-          <TouchableOpacity
-            onPress={onLogout}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={global.logoutBtn}
-            accessibilityLabel="Logout"
-          >
-            <MaterialIcons name="logout" size={24} color="#111" />
-          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>

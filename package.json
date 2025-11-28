@@ -1,0 +1,23 @@
+{
+  "name": "mobileshopmanager",
+  "version": "1.0.0",
+  "description": "Mobile Shop Manager - Full Stack Application",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "keywords": [
+    "shop",
+    "manager",
+    "mobile",
+    "react-native"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -2,12 +2,13 @@ import React, { useState, useContext, useEffect } from 'react';
 import { View, TextInput, Button, Text, Alert, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import { register, resetError } from "../store/slices/authSlice";
+import { fetchShops } from "../store/slices/shopsSlice";
 import { global } from '../styles/global';
 import { showToast } from '../store/slices/toastSlice';
 
 export default function RegisterScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { status, error } = useSelector((state) => state.auth);
+  const { status, error, token, shops } = useSelector((state) => state.auth);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,15 +23,20 @@ export default function RegisterScreen({ navigation }) {
       );
     }
 
-    if (status === "succeeded") {
+    if (status === "succeeded" && token) {
       dispatch(
         showToast({
           message: "Account created successfully 🎉",
           type: "success",
         })
       );
+      dispatch(fetchShops());
+      if (shops.length === 0)
+        navigation.replace("welcome");
+      else
+        navigation.replace("Home");
     }
-  }, [error, status, dispatch]);
+  }, [error, status, dispatch, token, shops, navigation]);
   
   const submitRegister = () => {
     dispatch(register({email, password }));

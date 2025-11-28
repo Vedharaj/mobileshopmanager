@@ -3,15 +3,15 @@ import { View, Text } from 'react-native';
 import { global } from '../styles/global';
 import Navbar from '../components/Navbar'; 
 
-const TransactionsScreen = () => {
+const ServicesScreen = () => {
   return (
     <View style={global.container}>
       <View style={global.navbarContainer}>
-        <Text style={global.navbarName}>Transactions</Text>
+        <Text style={global.navbarName}>Services</Text>
       </View>
       <Text style={global.message}>Transaction history and details go here</Text>
     </View>
   );
 };
 
-export default TransactionsScreen;
+export default ServicesScreen;

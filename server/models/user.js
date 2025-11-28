@@ -14,7 +14,7 @@ const UserShopSubSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, sparse: true },
   password_hash: { type: String, required: true },
-  role: { type: String, default: 'boss' },
+  role: { type: String, default: 'owner' },
   membership_level: { type: String },
   shops: [UserShopSubSchema],
   created_at: { type: Date, default: Date.now },

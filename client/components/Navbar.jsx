@@ -26,7 +26,7 @@ const Navbar = ({ name = "Mobile Shop" }) => {
         {/* Logout Icon */}
         <TouchableOpacity
           onPress={() => {
-            console.log('Logout pressed');
+            // console.log('Logout pressed');
             dispatch(logout());
           }}
           accessibilityLabel="Logout"

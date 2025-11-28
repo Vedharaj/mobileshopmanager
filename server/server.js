@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const shopsRoutes = require('./routes/shops');
 
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(morgan('dev'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/shops', shopsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

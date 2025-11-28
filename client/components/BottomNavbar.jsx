@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PRIMARY_COLOR } from "../styles/global";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -19,8 +20,8 @@ const LEFT_TABS = [
 ];
 
 const RIGHT_TABS = [
-  { key: "stocks", icon: "show-chart", label: "Stocks" },
-  { key: "transactions", icon: "receipt-long", label: "Transactions" },
+  { key: "Products", icon: "show-chart", label: "Products" },
+  { key: "Services", icon: "receipt-long", label: "Services" },
 ];
 
 const CENTER_TAB = { key: "home", icon: "qr-code-scanner" };
@@ -53,12 +54,12 @@ export default function BottomNavbar({
       Animated.parallel([
         Animated.timing(scalesRef[i], {
           toValue: isActive ? 1.14 : 1,
-          duration: 180,
+          duration: 100,
           useNativeDriver: true,
         }),
         Animated.timing(liftsRef[i], {
           toValue: isActive ? (i === 2 ? -8 : -4) : 0,
-          duration: 180,
+          duration: 100,
           useNativeDriver: true,
         }),
       ]).start();
@@ -124,16 +125,16 @@ export default function BottomNavbar({
     Animated.spring(scalesRef[i], {
       toValue: 0.92,
       useNativeDriver: true,
-      speed: 20,
-      bounciness: 6,
+      speed: 40,
+      bounciness: 4,
     }).start();
   };
   const handlePressOut = (i, index) => {
     Animated.spring(scalesRef[i], {
       toValue: active === index ? 1.14 : 1,
       useNativeDriver: true,
-      speed: 20,
-      bounciness: 6,
+      speed: 40,
+      bounciness: 4,
     }).start();
   };
 
@@ -157,12 +158,12 @@ export default function BottomNavbar({
           <Icon
             name={tab.icon}
             size={24}
-            color={active === displayIndex ? "#0a84ff" : "#9aa0a6"}
+            color={active === displayIndex ? PRIMARY_COLOR : "#9aa0a6"}
           />
           <Text
             style={[
               styles.label,
-              { color: active === displayIndex ? "#0a84ff" : "#9aa0a6" },
+              { color: active === displayIndex ? PRIMARY_COLOR : "#9aa0a6" },
             ]}
             numberOfLines={1}
           >
@@ -204,7 +205,7 @@ export default function BottomNavbar({
           {
             bottom: centerBottom,
             left: (SCREEN_W - CENTER_DIAMETER) / 2,
-            transform: [{ translateY: liftsRef[2] }],
+            transform: [{ translateY: liftsRef[1] }],
           },
         ]}
       >
@@ -289,10 +290,10 @@ const styles = StyleSheet.create({
     width: CENTER_DIAMETER,
     height: CENTER_DIAMETER,
     borderRadius: CENTER_DIAMETER / 2,
-    backgroundColor: "#0a84ff",
+    backgroundColor: PRIMARY_COLOR,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0a84ff",
+    shadowColor: PRIMARY_COLOR,
     shadowOpacity: 0.22,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },

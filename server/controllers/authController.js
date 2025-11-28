@@ -16,7 +16,11 @@ exports.register = async (req, res) => {
   await user.save();
 
   const token = generateToken(user);
-  res.status(201).json({ token, user: { id: user._id, email: user.email } });
+  res.status(201).json({ 
+    token, 
+    user: { id: user._id, email: user.email, role: user.role },
+    shops: user.shops || []
+  });
 };
 
 exports.login = async (req, res) => {
@@ -30,7 +34,11 @@ exports.login = async (req, res) => {
   if (!match) return res.status(400).json({ message: 'invalid credentials' });
 
   const token = generateToken(user);
-  res.json({ token, user: { id: user._id, email: user.email } });
+  res.json({ 
+    token, 
+    user: { id: user._id, email: user.email, role: user.role },
+    shops: Array.isArray(user.shops) ? user.shops : []
+  });
 };
 
 exports.me = async (req, res) => {

@@ -1,17 +1,18 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { login, resetError, setCredentials } from "../store/slices/authSlice";
+import { login, resetError } from "../store/slices/authSlice";
+import { fetchShops } from "../store/slices/shopsSlice";
 import { global } from "../styles/global";
-import { showToast } from '../store/slices/toastSlice';
+import { showToast } from "../store/slices/toastSlice";
 
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { status, error, token, user } = useSelector((state) => state.auth);
+  const { status, error } = useSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+
   useEffect(() => {
     if (error) {
       dispatch(
@@ -21,21 +22,15 @@ export default function LoginScreen({ navigation }) {
         })
       );
     }
-    
-    if (status === "succeeded" && token) {
-      // Token already saved in AsyncStorage by the thunk
-      // and already set in Redux by login.fulfilled
-      dispatch(
-        showToast({
-          message: "Login successful 🎉",
-          type: "success",
-        })
-      );
-      // Navigate to Home screen
-      navigation.replace("Home");
+  }, [error, dispatch]);
+
+  // Fetch shops after successful login
+  useEffect(() => {
+    if (status === "succeeded") {
+      dispatch(fetchShops());
     }
-  }, [error, status, token, dispatch, navigation]);  // ADD navigation to deps
-  
+  }, [status, dispatch]);
+
   const submitLogin = () => {
     if (!email || !password) {
       dispatch(
@@ -47,7 +42,6 @@ export default function LoginScreen({ navigation }) {
       return;
     }
     dispatch(login({ email, password }));
-
   };
 
   const createNewAcountBtn = () => {
@@ -58,27 +52,27 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={global.authcontainer}>
       <Text style={global.label}>Email</Text>
-      <TextInput 
-        style={global.input} 
-        value={email} 
-        onChangeText={setEmail} 
+      <TextInput
+        style={global.input}
+        value={email}
+        onChangeText={setEmail}
         autoCapitalize="none"
         placeholder="Enter your email"
         editable={status !== "loading"}
       />
 
       <Text style={global.label}>Password</Text>
-      <TextInput 
-        style={global.input} 
-        value={password} 
-        onChangeText={setPassword} 
+      <TextInput
+        style={global.input}
+        value={password}
+        onChangeText={setPassword}
         secureTextEntry
         placeholder="Enter your password"
         editable={status !== "loading"}
       />
 
-      <TouchableOpacity 
-        style={[global.button, status === "loading" && {opacity: 0.6}]} 
+      <TouchableOpacity
+        style={[global.button, status === "loading" && { opacity: 0.6 }]}
         onPress={submitLogin}
         disabled={status === "loading"}
       >

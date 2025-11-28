@@ -1,10 +1,8 @@
-// App.js
-import React, { useEffect, useState, useRef } from "react";
+  import React, { useEffect, useState, useRef } from "react";
 import { View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 // components
@@ -16,15 +14,17 @@ import LoginScreen from "./screens/LoginScreen.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import HomeScreen from "./screens/HomeScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
-import StockScreen from "./screens/StockScreen.jsx";
-import TransactionsScreen from "./screens/TransactionsScreen.jsx";
+import Productscreen from "./screens/ProductScreen.jsx";
+import ServicesScreen from "./screens/ServicesScreen.jsx";
 import StatsScreen from "./screens/StatsScreen.jsx";
 import ScannerScreen from "./screens/ScannerScreen.jsx";
+import WelcomeScreen from "./screens/WelcomeScreen.jsx";
 
-// ✅ Redux
+// Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./store/store.js";
-import { setCredentials } from "./store/slices/authSlice.js";
+import { setCredentials, fetchMe } from "./store/slices/authSlice.js";
+import { fetchShops } from "./store/slices/shopsSlice.js";
 
 const Stack = createNativeStackNavigator();
 
@@ -32,8 +32,8 @@ const ROUTE_TO_INDEX = {
   Profile: 1,
   Stats: 2,
   Home: 3,
-  Stocks: 4,
-  Transactions: 5,
+  Products: 4,
+  Services: 5,
 };
 
 const KEY_TO_ROUTE = {
@@ -41,11 +41,10 @@ const KEY_TO_ROUTE = {
   profile: "Profile",
   stats: "Stats",
   home: "Home",
-  stocks: "Stocks",
-  transactions: "Transactions",
+  Products: "Products",
+  Services: "Services",
 };
 
-// 🔁 This component is INSIDE <Provider>, so it can use useDispatch/useSelector
 function RootNavigator() {
   const navigationRef = useRef(null);
   const dispatch = useDispatch();
@@ -54,15 +53,17 @@ function RootNavigator() {
   const [activeIndex, setActiveIndex] = useState(3);
   const [currentRoute, setCurrentRoute] = useState(null);
 
-  // ✅ Get token from Redux instead of userToken variable
   const userToken = useSelector((state) => state.auth.token);
+  const shops = useSelector((state) => state.shops?.shops || []);
 
   useEffect(() => {
     const loadToken = async () => {
       try {
         const token = await AsyncStorage.getItem("token");
         if (token) {
-          dispatch(setCredentials(token));
+          await dispatch(setCredentials(token));
+          await dispatch(fetchShops());
+          await dispatch(fetchMe());
         }
       } catch (err) {
         console.error("Failed to load token", err);
@@ -83,6 +84,15 @@ function RootNavigator() {
 
   if (loading) return null;
 
+  const isAuthenticated = !!userToken;
+  const initialRouteName = !isAuthenticated
+    ? "Login"
+    : shops.length === 0
+    ? "welcome"
+    : "Home";
+
+  const activeRoute = currentRoute ?? initialRouteName;
+
   return (
     <NavigationContainer
       ref={navigationRef}
@@ -94,34 +104,37 @@ function RootNavigator() {
             setCurrentRoute(name);
             if (ROUTE_TO_INDEX[name]) setActiveIndex(ROUTE_TO_INDEX[name]);
           }
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       }}
     >
       <View style={{ flex: 1 }}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {userToken == null ? (
+        <Stack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName={initialRouteName}
+          key={initialRouteName}
+        >
+          {!isAuthenticated ? (
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
             </>
           ) : (
             <>
+              <Stack.Screen name="welcome" component={WelcomeScreen} />
               <Stack.Screen name="Home" component={HomeScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Stats" component={StatsScreen} />
-              <Stack.Screen name="Stocks" component={StockScreen} />
+              <Stack.Screen name="Products" component={Productscreen} />
               <Stack.Screen
-                name="Transactions"
-                component={TransactionsScreen}
+                name="Services"
+                component={ServicesScreen}
               />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>
           )}
         </Stack.Navigator>
 
-        {userToken != null && currentRoute !== "Scanner" && (
+        {userToken != null && activeRoute !== "Scanner" && activeRoute !== "welcome" && (
           <BottomNavbar
             activeIndex={activeIndex}
             onTabPress={handleTabPress}
@@ -135,7 +148,6 @@ function RootNavigator() {
   );
 }
 
-// 🔰 OUTER component: wraps everything with Provider + SafeAreaProvider
 export default function App() {
   return (
     <Provider store={store}>
