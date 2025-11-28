@@ -8,15 +8,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
 
 export default function HomeScreen() {
-  const { role } = useSelector((state) => state.auth);
+  const { role, username } = useSelector((state) => state.auth);
   const { shops } = useSelector((state) => state.shops);
-  const appName = shops.length > 0 ? shops[0].shop_name : "My Store";
   const dispatch = useDispatch();
 
   const today = new Date();
   const months = [
     "Jan",
-    "Feb",
+  "Feb",
     "Mar",
     "Apr",
     "May",
@@ -42,7 +41,7 @@ export default function HomeScreen() {
       {/* Navbar */}
       <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
         <Text numberOfLines={2} style={global.navbarName}>
-          {appName}
+          {username}
           {"\n"}
           <Text style={global.navbarRole}>{role || "User"}</Text>
         </Text>

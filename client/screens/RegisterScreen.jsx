@@ -40,6 +40,15 @@ export default function RegisterScreen({ navigation }) {
   }, [error, status, dispatch, token, shops, navigation]);
   
   const submitRegister = () => {
+    if (!username || !email || !password) {
+      dispatch(
+        showToast({
+          message: "Please enter username, email, and password",
+          type: "error",
+        })
+      );
+      return;
+    }
     dispatch(register({ email, password, username }));
     navigation.navigate("Login");
   };

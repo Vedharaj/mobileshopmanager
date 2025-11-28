@@ -13,7 +13,8 @@ export const fetchShops = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      return res.data.shops || [];
+    //   console.log(res.data.shops);
+      return res.data.shops;
     } catch (error) {
       const msg = error.response?.data?.msg || error.message || 'Failed to fetch shops';
       return thunkAPI.rejectWithValue(msg);

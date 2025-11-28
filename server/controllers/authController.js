@@ -7,7 +7,7 @@ const generateToken = (user) => {
 
 exports.register = async (req, res) => {
   const { email, password, username } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'email and password required' });
+  if (!email || !password || !username) return res.status(400).json({ message: 'email, password, and username required' });
 
   // check existing by email or username
   const existing = await User.findOne({ $or: [{ email }, { username }] });

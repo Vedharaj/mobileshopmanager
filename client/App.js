@@ -19,6 +19,9 @@ import ServicesScreen from "./screens/ServicesScreen.jsx";
 import StatsScreen from "./screens/StatsScreen.jsx";
 import ScannerScreen from "./screens/ScannerScreen.jsx";
 import WelcomeScreen from "./screens/WelcomeScreen.jsx";
+import EditProfile from "./screens/EditProfile.jsx";
+import ShopManagement from "./screens/ShopManagement.jsx";
+import StaffManagement from "./screens/StaffManagement.jsx";
 
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
@@ -27,6 +30,7 @@ import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
 import { fetchShops } from "./store/slices/shopsSlice.js";
 
 const Stack = createNativeStackNavigator();
+const HIDE_BOTTOM_NAVBAR_SCREENS = ["Scanner", "welcome", "EditProfile", "ShopManagement", "StaffManagement"];
 
 const ROUTE_TO_INDEX = {
   Profile: 1,
@@ -61,11 +65,11 @@ function RootNavigator() {
       try {
         const token = await AsyncStorage.getItem("token");
         if (token) {
-          await dispatch(setCredentials(token));
+          dispatch(setCredentials(token));
           try {
-            // ensure token is valid and fetch user/shops; if any fail, treat as unauthenticated
-            await dispatch(fetchMe()).unwrap();
-            await dispatch(fetchShops()).unwrap();
+            // ensure token is valid by fetching user
+            dispatch(fetchMe());
+            await dispatch(fetchShops());
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
             console.warn("Token invalid or fetchMe failed, logging out", err);
@@ -132,6 +136,9 @@ function RootNavigator() {
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Stats" component={StatsScreen} />
               <Stack.Screen name="Products" component={Productscreen} />
+              <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: true }}/>
+              <Stack.Screen name="ShopManagement" component={ShopManagement} options={{ headerShown: true }}/>
+              <Stack.Screen name="StaffManagement" component={StaffManagement} options={{ headerShown: true }}/>
               <Stack.Screen
                 name="Services"
                 component={ServicesScreen}
@@ -141,7 +148,7 @@ function RootNavigator() {
           )}
         </Stack.Navigator>
 
-        {userToken != null && activeRoute !== "Scanner" && activeRoute !== "welcome" && (
+        {userToken != null && !HIDE_BOTTOM_NAVBAR_SCREENS.includes(activeRoute) && (
           <BottomNavbar
             activeIndex={activeIndex}
             onTabPress={handleTabPress}

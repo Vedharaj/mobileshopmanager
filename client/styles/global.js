@@ -16,7 +16,7 @@ export const global = StyleSheet.create({
     borderRadius: 8,
     marginTop: 10,
   },
-  btnText: { color: "#fff", textAlign: "center", fontSize: 18 },
+  btnText: { color: "#fff", textAlign: "center", fontSize: 16 },
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -26,14 +26,18 @@ export const global = StyleSheet.create({
   authcontainer: {
     flex: 1,
     paddingBottom: 16,
-    backgroundColor: "#ffffff",
     justifyContent: "center",
     paddingHorizontal: 16,
+  },
+  mainContainer: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#fff",
   },
   container: {
     flex: 1,
     paddingBottom: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
   },
   input: {
     borderWidth: 1,
@@ -226,7 +230,7 @@ export const global = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#dcdbdbff"
+    borderBottomColor: "#dcdbdbff",
   },
   profileRowLast: {
     flexDirection: "row",

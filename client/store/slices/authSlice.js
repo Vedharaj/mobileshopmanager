@@ -13,6 +13,7 @@ export const fetchMe = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
+      // console.log(res.data);
       return res.data;
     } catch (error) {
       const msg =
@@ -32,7 +33,7 @@ export const login = createAsyncThunk(
     try {
       const res = await api.post('/auth/login', credentials);
       await AsyncStorage.setItem("token", res.data.token);
-      // console.log(res.data);
+      console.log(res.data);
       return res.data;
     } catch (error) {
       // console.log(error);
@@ -64,6 +65,29 @@ export const register = createAsyncThunk(
   }
 );
 
+// UPDATE PROFILE
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (userData, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.put('/auth/updateProfile', userData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data;
+    } catch (error) {
+      console.log(error);
+      const msg =
+        error.response?.data?.msg ||
+        error.response?.data?.message ||
+        'Profile update failed';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
 const initialState = {
   token: null,
   user: null,
@@ -79,7 +103,6 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.token = null;
-      state.userid = null;
       state.user = null;
       state.username = null;
       state.role = null;
@@ -151,6 +174,20 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchMe.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = action.payload.user;
+        state.username = action.payload.user?.username || null;
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       });

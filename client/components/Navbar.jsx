@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
 
-const Navbar = ({ name = "Mobile Shop" }) => {
+const Navbar = () => {
   const dispatch = useDispatch();
 
   // Format current date

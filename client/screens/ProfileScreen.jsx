@@ -25,44 +25,46 @@ const preferenceData = [
   {
     id: 1,
     title: "Theme",
-    icon: <Ionicons name="color-palette-outline" size={24} color={PRIMARY_COLOR} />,
+    icon: (
+      <Ionicons name="color-palette-outline" size={24} color={PRIMARY_COLOR} />
+    ),
     navigatePage: "ThemeSettings",
   },
 ];
 
-const ProfileContainer = ({ data, children }) => {
-  return (
-    <View style={global.profileContainer}>
-      {data &&
-        data.map((item, index) => (
-          <View
-            key={item.id}
-            style={
-              index === data.length - 1 && !children
-                ? global.profileRowLast
-                : global.profileRow
-            }
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              {item.icon}
-              <Text>{item.title}</Text>
-            </View>
-            <AntDesign name="arrow-right" size={18} color="#b7b5b5ff" />
-          </View>
-        ))}
-      {children && <View style={global.profileRowLast}>{children}</View>}
-    </View>
-  );
-};
-
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+
   const shops = useSelector((state) => state.shops.shops);
-  const { role } = useSelector((state) => state.auth);
-  const currentShop = shops.length > 0 ? shops[0] : null;
-  const shopName = currentShop ? currentShop.shop_name : "No Shop";
+  const { role, username } = useSelector((state) => state.auth);
+
+  const ProfileContainer = ({ data, children }) => {
+    return (
+      <View style={global.profileContainer}>
+        {data &&
+          data.map((item, index) => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate(item.navigatePage)}
+              key={item.id}
+              style={
+                index === data.length - 1 && !children
+                  ? global.profileRowLast
+                  : global.profileRow
+              }
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+              >
+                {item.icon}
+                <Text>{item.title}</Text>
+              </View>
+              <AntDesign name="arrow-right" size={18} color="#b7b5b5ff" />
+            </TouchableOpacity>
+          ))}
+        {children && <View style={global.profileRowLast}>{children}</View>}
+      </View>
+    );
+  };
 
   const handleLogout = async () => {
     try {
@@ -88,31 +90,44 @@ const ProfileScreen = () => {
           <AntDesign name="shop" size={42} color="white" />
         </View>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ ...global.title, fontSize: 16 }}>{shopName}</Text>
+          <Text style={{ ...global.title, fontSize: 16 }}>{username}</Text>
           <Text style={{ color: "#717171ff" }}>{role}</Text>
         </View>
         <TouchableOpacity
           style={global.button1}
-          onPress={() => console.log("edit button clicked!")}
+          onPress={() => navigation.navigate("EditProfile")}
         >
           <Text style={global.btnText1}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
       {role === "owner" && (
         <>
-        <Text style={{ ...global.subtitle, marginBottom: 10, marginStart: 16 }}>Shop Management</Text>
-        <ProfileContainer data={ShopManagementData} />
+          <Text
+            style={{ ...global.subtitle, marginBottom: 10, marginStart: 16 }}
+          >
+            Shop Management
+          </Text>
+          <ProfileContainer data={ShopManagementData} />
         </>
       )}
 
-      <Text style={{ ...global.subtitle, marginBottom: 10, marginStart: 16, marginTop: 20 }}>Preference</Text>
+      <Text
+        style={{
+          ...global.subtitle,
+          marginBottom: 10,
+          marginStart: 16,
+          marginTop: 20,
+        }}
+      >
+        Preference
+      </Text>
       <ProfileContainer data={preferenceData}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
           onPress={handleLogout}
         >
           <Entypo name="log-out" size={22} color="red" />
-          <Text style={{color: "red"}}>Sign Out</Text>
+          <Text style={{ color: "red" }}>Sign Out</Text>
         </TouchableOpacity>
       </ProfileContainer>
     </View>

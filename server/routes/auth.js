@@ -2,25 +2,27 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/user');
 const auth = require('../middleware/auth');
 
-// REGISTER (email + password only)
+// REGISTER (email + password + username)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
-    if (!email || !password)
+    if (!email || !password || !username)
       return res.status(400).json({ msg: 'Please enter all fields' });
 
-    const existing = await User.findOne({ email });
+    // check existing by email or username
+    const existing = await User.findOne({ $or: [{ email }, { username }] });
     if (existing)
-      return res.status(400).json({ msg: 'User already exists' });
+      return res.status(400).json({ msg: 'Email or username already in use' });
 
     // Let the User model's pre-save hook hash the password.
     const user = new User({
       email,
-      password_hash: password
+      password_hash: password,
+      username
     });
 
     await user.save();
@@ -31,9 +33,10 @@ router.post('/register', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    res.json({
+    res.status(201).json({
       token,
-      user: { id: user._id, email: user.email }
+      user: { id: user._id, email: user.email, username: user.username, role: user.role },
+      shops: user.shops || []
     });
 
   } catch (err) {
@@ -66,9 +69,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    res.json({
+    res.status(200).json({
       token,
-      user: { id: user._id, email: user.email, role: user.role, shops: user.shops }
+      user: { id: user._id, email: user.email, username: user.username, role: user.role },
+      shops: Array.isArray(user.shops) ? user.shops : []
     });
 
   } catch (err) {
@@ -82,7 +86,55 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password_hash");
-    res.json(user);
+    res.json({
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      shops: Array.isArray(user.shops) ? user.shops : []
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// UPDATE PROFILE (protected)
+router.put('/updateProfile', auth, async (req, res) => {
+  try {
+    const { email, username } = req.body;
+    const user = await User.findById(req.user.id);
+
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Check if both email and username are provided and are the same as current ones
+    if (email && username && user.email === email && user.username === username) {
+      return res.status(400).json({ msg: 'New email or username cannot be the same as old ones' });
+    }
+
+    if (email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ msg: 'Email already in use' });
+      }
+      user.email = email;
+    }
+
+    if (username) {
+      const existingUser = await User.findOne({ username });
+      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ msg: 'Username already in use' });
+      }
+      user.username = username;
+    }
+
+    await user.save();
+
+    res.status(200).json({ msg: 'Profile updated successfully', user: { id: user._id, email: user.email, username: user.username, role: user.role } });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: 'Server error' });
