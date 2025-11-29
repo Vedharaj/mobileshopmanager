@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../styles/global";
+import { useThemeColors } from "../styles/global"; // Import useThemeColors
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -35,6 +35,7 @@ export default function BottomNavbar({
   onTabPress,
   navigationRef,
 }) {
+  const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
   // compute default index from controlled prop or initial prop
   const defaultIndex = Math.max(1, Math.min(activeIndex ?? initialIndex, 5));
   const [active, setActive] = useState(defaultIndex);
@@ -158,12 +159,12 @@ export default function BottomNavbar({
           <Icon
             name={tab.icon}
             size={24}
-            color={active === displayIndex ? PRIMARY_COLOR : "#9aa0a6"}
+            color={active === displayIndex ? primaryColor : "#9aa0a6"}
           />
           <Text
             style={[
               styles.label,
-              { color: active === displayIndex ? PRIMARY_COLOR : "#9aa0a6" },
+              { color: active === displayIndex ? primaryColor : "#9aa0a6" },
             ]}
             numberOfLines={1}
           >
@@ -213,7 +214,11 @@ export default function BottomNavbar({
           onPress={() => handlePressIndex(3)}
           onPressIn={() => handlePressIn(2)}
           onPressOut={() => handlePressOut(2, 3)}
-          style={({ pressed }) => [styles.centerButton, pressed && { opacity: 0.95 }]}
+          style={({ pressed }) => [
+            styles.centerButton,
+            { backgroundColor: primaryColor, shadowColor: primaryColor },
+            pressed && { opacity: 0.95 },
+          ]}
           android_ripple={{ color: "rgba(255,255,255,0.12)", radius: CENTER_DIAMETER / 2 }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -284,10 +289,10 @@ const styles = StyleSheet.create({
     width: CENTER_DIAMETER,
     height: CENTER_DIAMETER,
     borderRadius: CENTER_DIAMETER / 2,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: "#4c956c", // static fallback, overridden dynamically
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: PRIMARY_COLOR,
+    shadowColor: "#4c956c", // static fallback, overridden dynamically
     shadowOpacity: 0.22,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },

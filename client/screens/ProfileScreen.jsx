@@ -1,70 +1,41 @@
-import React, { useContext } from "react";
-import { View, Text, Button, Alert, TouchableOpacity } from "react-native";
-import { global } from "../styles/global";
+import React from "react";
+import { View, Text, Alert, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
-import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
-import { PRIMARY_COLOR } from "../styles/global";
+import { AntDesign, Entypo, Ionicons, FontAwesome5 } from "@expo/vector-icons";
 
-const ShopManagementData = [
-  {
-    id: 1,
-    title: "Manage shop",
-    icon: <Entypo name="shop" size={24} color={PRIMARY_COLOR} />,
-    navigatePage: "ShopManagement",
-  },
-  {
-    id: 2,
-    title: "Staff Management",
-    icon: <AntDesign name="team" size={24} color={PRIMARY_COLOR} />,
-    navigatePage: "StaffManagement",
-  },
-];
-
-const preferenceData = [
-  {
-    id: 1,
-    title: "Theme",
-    icon: (
-      <Ionicons name="color-palette-outline" size={24} color={PRIMARY_COLOR} />
-    ),
-    navigatePage: "ThemeSettings",
-  },
-];
-
-const ProfileScreen = ({ navigation }) => {
+export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
+  const { username, role } = useSelector((state) => state.auth);
+  const { primaryColor } = useThemeColors();
 
-  const shops = useSelector((state) => state.shops.shops);
-  const { role, username } = useSelector((state) => state.auth);
+  const ShopManagementData = [
+    {
+      id: 1,
+      title: "Manage shops",
+      icon: <Entypo name="shop" size={24} color={primaryColor} />,
+      navigatePage: "ShopManagement",
+    },
+    {
+      id: 2,
+      title: "Manage staff",
+      icon: <AntDesign name="team" size={24} color={primaryColor} />,
+      navigatePage: "StaffManagement",
+    },
+  ];
 
-  const ProfileContainer = ({ data, children }) => {
-    return (
-      <View style={global.profileContainer}>
-        {data &&
-          data.map((item, index) => (
-            <TouchableOpacity
-              onPress={() => navigation.navigate(item.navigatePage)}
-              key={item.id}
-              style={
-                index === data.length - 1 && !children
-                  ? global.profileRowLast
-                  : global.profileRow
-              }
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-              >
-                {item.icon}
-                <Text>{item.title}</Text>
-              </View>
-              <AntDesign name="arrow-right" size={18} color="#b7b5b5ff" />
-            </TouchableOpacity>
-          ))}
-        {children && <View style={global.profileRowLast}>{children}</View>}
-      </View>
-    );
-  };
+  const preferenceData = [
+    {
+      id: 1,
+      title: "Theme Settings",
+      icon: (
+        <Ionicons name="color-palette-outline" size={24} color={primaryColor} />
+      ),
+      navigatePage: "ThemeSettings",
+    },
+  ];
 
   const handleLogout = async () => {
     try {
@@ -84,54 +55,83 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={{ ...global.container, padding: 10 }}>
-      <View style={global.profileHeader}>
-        <View style={global.profileIcon}>
-          <AntDesign name="shop" size={42} color="white" />
-        </View>
-        <View style={{ alignItems: "center" }}>
-          <Text style={{ ...global.title, fontSize: 16 }}>{username}</Text>
-          <Text style={{ color: "#717171ff" }}>{role}</Text>
-        </View>
-        <TouchableOpacity
-          style={global.button1}
-          onPress={() => navigation.navigate("EditProfile")}
-        >
-          <Text style={global.btnText1}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
-      {role === "owner" && (
-        <>
-          <Text
-            style={{ ...global.subtitle, marginBottom: 10, marginStart: 16 }}
+    <SafeAreaView style={global.safeArea}>
+      <ScrollView style={global.mainContainer}>
+        <View style={global.profileHeader}>
+          <View
+            style={{ ...global.profileIcon, backgroundColor: primaryColor }}
           >
-            Shop Management
-          </Text>
-          <ProfileContainer data={ShopManagementData} />
-        </>
-      )}
+            <FontAwesome5 name="user-alt" size={34} color="white" />
+          </View>
+          <Text style={{ fontSize: 22, fontWeight: "700" }}>{username}</Text>
+          <Text style={{ fontSize: 14, color: primaryColor }}>{role}</Text>
+        </View>
 
-      <Text
-        style={{
-          ...global.subtitle,
-          marginBottom: 10,
-          marginStart: 16,
-          marginTop: 20,
-        }}
-      >
-        Preference
-      </Text>
-      <ProfileContainer data={preferenceData}>
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-          onPress={handleLogout}
-        >
-          <Entypo name="log-out" size={22} color="red" />
-          <Text style={{ color: "red" }}>Sign Out</Text>
-        </TouchableOpacity>
-      </ProfileContainer>
-    </View>
+        {role !== "staff" && (
+          <>
+            <Text style={{marginBottom: 10, color: "#aaa"}}>Shop Management</Text>
+
+            <View style={global.profileContainer}>
+              <TouchableOpacity
+                style={global.profileRow}
+                onPress={() => navigation.navigate("EditProfile")}
+              >
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                >
+                  <AntDesign name="edit" size={24} color={primaryColor} />
+                  <Text style={{ fontSize: 16 }}>Edit Profile</Text>
+                </View>
+                <AntDesign name="right" size={20} color="black" />
+              </TouchableOpacity>
+
+              {ShopManagementData.map((item, index) => (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate(item.navigatePage)}
+                  key={item.id}
+                  style={
+                    index === ShopManagementData.length - 1
+                      ? global.profileRowLast
+                      : global.profileRow
+                  }
+                >
+                  <View
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                  >
+                    {item.icon}
+                    <Text style={{ fontSize: 16 }}>{item.title}</Text>
+                  </View>
+                  <AntDesign name="right" size={20} color="black" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+        <Text style={{marginBottom: 10, marginTop: 10, color: "#aaa"}}>Preference</Text>
+        <View style={global.profileContainer}>
+          {preferenceData.map((item, index) => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate(item.navigatePage)}
+              key={item.id}
+              style={global.profileRowLast}
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+              >
+                {item.icon}
+                <Text style={{ fontSize: 16 }}>{item.title}</Text>
+              </View>
+              <AntDesign name="right" size={20} color="black" />
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity style={global.logoutBtn} onPress={handleLogout}>
+            <Text style={{ textAlign: "center", color: "red", fontSize: 16 }}>
+              Logout
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
-};
-
-export default ProfileScreen;
+}

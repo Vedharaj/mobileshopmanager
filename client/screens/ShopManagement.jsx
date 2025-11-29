@@ -8,7 +8,7 @@ import {
   Keyboard,
   Alert,
 } from "react-native";
-import { global, PRIMARY_COLOR } from "../styles/global";
+import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
 import { useDispatch, useSelector } from "react-redux";
 import { createShop, fetchShops, deleteShop, updateShop } from "../store/slices/shopsSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
@@ -18,6 +18,7 @@ const ShopManagement = () => {
   const dispatch = useDispatch();
 
   const { shops, status, error } = useSelector((state) => state.shops);
+  const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -137,7 +138,7 @@ const ShopManagement = () => {
                 size={20}
                 color="black"
               />
-              <Text style={{ color: PRIMARY_COLOR, fontSize: 16 }}>
+              <Text style={{ color: primaryColor, fontSize: 16 }}>
                 {shop.name}
               </Text>
             </TouchableOpacity>

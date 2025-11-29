@@ -1,9 +1,17 @@
 import { StyleSheet, StatusBar, Platform } from "react-native";
+import { useSelector } from "react-redux"
 
-const STATUSBAR_HEIGHT =
-  Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
-export const PRIMARY_COLOR = "#4c956c";
-export const SECONDARY_COLOR = "#77bfa3";
+const STATUSBAR_HEIGHT = Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
+
+// Default static colors (fallback)
+export const PRIMARY_COLOR_DEFAULT = '#2a81d3ff';
+export const SECONDARY_COLOR_DEFAULT = '#90CAF9';
+
+// Custom hook to access theme colors
+export const useThemeColors = () => {
+  const { primaryColor, secondaryColor } = useSelector((state) => state.theme);
+  return { primaryColor, secondaryColor };
+};
 
 export const global = StyleSheet.create({
   authlink: {
@@ -12,7 +20,7 @@ export const global = StyleSheet.create({
     color: "blue",
   },
   button: {
-    backgroundColor: "#2a81d3ff",
+    backgroundColor: PRIMARY_COLOR_DEFAULT,
     padding: 8,
     borderRadius: 8,
     marginTop: 10,
@@ -84,7 +92,7 @@ export const global = StyleSheet.create({
     flex: 1,
   },
   navbarRole: {
-    color: PRIMARY_COLOR,
+    color: PRIMARY_COLOR_DEFAULT, // Use default static color here
     fontSize: 12,
   },
   navbarRight: {
@@ -211,7 +219,7 @@ export const global = StyleSheet.create({
     paddingTop: STATUSBAR_HEIGHT > 0 ? STATUSBAR_HEIGHT : 12,
   },
   profileIcon: {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: PRIMARY_COLOR_DEFAULT, // Use default static color here
     padding: 16,
     borderRadius: 999,
   },
@@ -247,7 +255,7 @@ export const global = StyleSheet.create({
     justifyContent: 'center',
     right: 20,
     bottom: 40,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: PRIMARY_COLOR_DEFAULT, // Use default static color here
     borderRadius: 28,
     paddingHorizontal: 16, // Added padding for text
     // elevation: 8,
@@ -255,6 +263,7 @@ export const global = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
+    elevation: 3,
   },
   fabText: {
     color: 'white',

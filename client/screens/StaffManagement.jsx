@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Picker } from '@react-native-picker/picker'; // Corrected Picker import
-import { global, PRIMARY_COLOR } from "../styles/global";
+import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
 import { useDispatch, useSelector } from "react-redux";
 import { fetchStaff, createStaff, deleteStaff, updateStaff } from "../store/slices/staffSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
@@ -20,6 +20,7 @@ const StaffManagement = () => {
 
   const { staff, status, error } = useSelector((state) => state.staff);
   const { shops } = useSelector((state) => state.shops); // Get shops from Redux
+  const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -148,7 +149,7 @@ const StaffManagement = () => {
                 size={20}
                 color="black"
               />
-              <Text style={{ color: PRIMARY_COLOR, fontSize: 16 }}>
+              <Text style={{ color: primaryColor, fontSize: 16 }}>
                 {staff.username}
               </Text>
             </TouchableOpacity>

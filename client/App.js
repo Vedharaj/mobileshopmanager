@@ -23,12 +23,14 @@ import WelcomeScreen from "./screens/WelcomeScreen.jsx";
 import EditProfile from "./screens/EditProfile.jsx";
 import ShopManagement from "./screens/ShopManagement.jsx";
 import StaffManagement from "./screens/StaffManagement.jsx";
+import ThemeSettings from "./screens/ThemeSettings.jsx";
 
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./store/store.js";
 import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
 import { fetchShops, clearShops } from "./store/slices/shopsSlice.js"; // Import clearShops
+import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-import loadThemeFromStorage
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +40,7 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "EditProfile",
   "ShopManagement",
   "StaffManagement",
+  "ThemeSettings",
 ];
 
 const ROUTE_TO_INDEX = {
@@ -69,10 +72,14 @@ function RootNavigator() {
   const userToken = useSelector((state) => state.auth.token);
   const userRole = useSelector((state) => state.auth.role);
   const shops = useSelector((state) => state.shops?.shops || []);
+  const shopsStatus = useSelector((state) => state.shops.status);
 
   useEffect(() => {
     const loadToken = async () => {
       try {
+        // Load theme first
+        await dispatch(loadThemeFromStorage()).unwrap(); // Re-add loadThemeFromStorage
+
         const token = await AsyncStorage.getItem("token");
         if (token) {
           dispatch(setCredentials(token));
@@ -113,7 +120,17 @@ function RootNavigator() {
 
   // Moved the navigation logic to a dedicated useEffect to ensure data is loaded
   useEffect(() => {
-    if (loading || !shopsLoaded || !navigationRef.current) return;
+    if (loading || !shopsLoaded || !navigationRef.current || shopsStatus === 'loading') return; // Wait for shopsStatus to not be loading
+
+    // Get current route to avoid resetting if user is on a management screen
+    const currentRoute = navigationRef.current?.getCurrentRoute?.();
+    const currentRouteName = currentRoute?.name;
+    
+    // Don't reset if user is on a management or settings screen
+    const protectedRoutes = ["ShopManagement", "StaffManagement", "ThemeSettings", "EditProfile", "Scanner"];
+    if (currentRouteName && protectedRoutes.includes(currentRouteName)) {
+      return; // Don't reset navigation if user is on a protected route
+    }
 
     let targetRoute;
     if (!isAuthenticated) {
@@ -126,12 +143,14 @@ function RootNavigator() {
       targetRoute = "Home"; // Owners with shops go to Home
     }
 
-    // Reset navigation to the determined targetRoute
-    navigationRef.current.reset({
-      index: 0,
-      routes: [{ name: targetRoute }],
-    });
-  }, [loading, shopsLoaded, isAuthenticated, userRole, shops.length]);
+    // Only reset if we're not already on the target route
+    if (currentRouteName !== targetRoute) {
+      navigationRef.current.reset({
+        index: 0,
+        routes: [{ name: targetRoute }],
+      });
+    }
+  }, [loading, shopsLoaded, isAuthenticated, userRole, shops.length, shopsStatus]); // Add shopsStatus to dependencies
 
   const handleTabPress = (index, key) => {
     const routeName = KEY_TO_ROUTE[key] ?? "Home";
@@ -188,6 +207,11 @@ function RootNavigator() {
                 name="StaffManagement"
                 component={StaffManagement}
                 options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="ThemeSettings"
+                component={ThemeSettings}
+                options={{headerShown: true}}
               />
               <Stack.Screen name="Services" component={ServicesScreen} />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
