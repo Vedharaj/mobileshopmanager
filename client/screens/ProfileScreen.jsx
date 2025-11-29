@@ -24,6 +24,18 @@ export default function ProfileScreen({ navigation }) {
       icon: <AntDesign name="team" size={24} color={primaryColor} />,
       navigatePage: "StaffManagement",
     },
+    {
+      id: 3,
+      title: "Manage categories",
+      icon: <AntDesign name="appstore" size={24} color={primaryColor} />,
+      navigatePage: "CategoryManagement",
+    },
+    {
+      id: 4,
+      title: "Manage customers",
+      icon: <AntDesign name="user" size={24} color={primaryColor} />,
+      navigatePage: "CustomerManagement",
+    },
   ];
 
   const preferenceData = [

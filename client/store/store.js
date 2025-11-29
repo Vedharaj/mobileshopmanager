@@ -3,6 +3,10 @@ import authReducer from './slices/authSlice';
 import toast from './slices/toastSlice';
 import shopsReducer from './slices/shopsSlice';
 import staffReducer from './slices/staffSlice';
+import productReducer from './slices/productSlice';
+import categoryReducer from './slices/categorySlice';
+import customerReducer from './slices/customerSlice';
+import serviceReducer from './slices/serviceSlice';
 import themeReducer from './slices/themeSlice'; // Import theme reducer
 
 export const store = configureStore({
@@ -11,6 +15,10 @@ export const store = configureStore({
     toast: toast,
     shops: shopsReducer,
     staff: staffReducer,
+    products: productReducer,
+    categories: categoryReducer,
+    customers: customerReducer,
+    services: serviceReducer,
     theme: themeReducer, // Add theme reducer
   },
 });

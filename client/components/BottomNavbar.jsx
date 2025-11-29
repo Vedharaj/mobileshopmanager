@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemeColors } from "../styles/global"; // Import useThemeColors
+import { useThemeColors, BAR_HEIGHT, CENTER_DIAMETER } from "../styles/global"; // Import useThemeColors and constants
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -25,9 +25,6 @@ const RIGHT_TABS = [
 ];
 
 const CENTER_TAB = { key: "home", icon: "qr-code-scanner" };
-
-const BAR_HEIGHT = 64;
-const CENTER_DIAMETER = 72;
 
 export default function BottomNavbar({
   initialIndex = 3,
@@ -46,7 +43,7 @@ export default function BottomNavbar({
 
   const insets = useSafeAreaInsets();
   const barBottomOffset = insets.bottom;
-  const centerBottom = barBottomOffset + BAR_HEIGHT / 2 + 12; // Adjusted for floating center button
+  const centerBottom = barBottomOffset + BAR_HEIGHT / 4; // Adjusted for floating center button
 
   // animate function (useCallback so effects can depend on it)
   const animateTo = useCallback((index) => {
@@ -282,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: CENTER_DIAMETER / 2,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 60,
+    zIndex: 40,
   },
 
   centerButton: {

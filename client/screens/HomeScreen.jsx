@@ -2,15 +2,14 @@
 import React, { useEffect, useState, useRef, useContext } from "react";
 import { View, Text, TouchableOpacity, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
-import { global } from "../styles/global";
+import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../store/slices/authSlice";
 
 export default function HomeScreen() {
   const { role, username } = useSelector((state) => state.auth);
   const { shops } = useSelector((state) => state.shops);
   const dispatch = useDispatch();
+  const { primaryColor } = useThemeColors();
 
   const today = new Date();
   const months = [
@@ -43,7 +42,7 @@ export default function HomeScreen() {
         <Text numberOfLines={2} style={global.navbarName}>
           {username}
           <Text>{"\n"}</Text>
-          <Text style={global.navbarRole}>{role || "User"}</Text>
+          <Text style={{ ...global.navbarRole, color: primaryColor }}>{role || "User"}</Text>
         </Text>
 
         <View style={global.navbarRight}>

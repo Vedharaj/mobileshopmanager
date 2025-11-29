@@ -23,6 +23,8 @@ import WelcomeScreen from "./screens/WelcomeScreen.jsx";
 import EditProfile from "./screens/EditProfile.jsx";
 import ShopManagement from "./screens/ShopManagement.jsx";
 import StaffManagement from "./screens/StaffManagement.jsx";
+import CategoryManagement from "./screens/CategoryManagement.jsx";
+import CustomerManagement from "./screens/CustomerManagement.jsx";
 import ThemeSettings from "./screens/ThemeSettings.jsx";
 
 // Redux
@@ -40,6 +42,8 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "EditProfile",
   "ShopManagement",
   "StaffManagement",
+  "CategoryManagement",
+  "CustomerManagement",
   "ThemeSettings",
 ];
 
@@ -120,14 +124,28 @@ function RootNavigator() {
 
   // Moved the navigation logic to a dedicated useEffect to ensure data is loaded
   useEffect(() => {
-    if (loading || !shopsLoaded || !navigationRef.current || shopsStatus === 'loading') return; // Wait for shopsStatus to not be loading
+    if (
+      loading ||
+      !shopsLoaded ||
+      !navigationRef.current ||
+      shopsStatus === "loading"
+    )
+      return; // Wait for shopsStatus to not be loading
 
     // Get current route to avoid resetting if user is on a management screen
     const currentRoute = navigationRef.current?.getCurrentRoute?.();
     const currentRouteName = currentRoute?.name;
-    
+
     // Don't reset if user is on a management or settings screen
-    const protectedRoutes = ["ShopManagement", "StaffManagement", "ThemeSettings", "EditProfile", "Scanner"];
+    const protectedRoutes = [
+      "ShopManagement",
+      "StaffManagement",
+      "CategoryManagement",
+      "CustomerManagement",
+      "ThemeSettings",
+      "EditProfile",
+      "Scanner",
+    ];
     if (currentRouteName && protectedRoutes.includes(currentRouteName)) {
       return; // Don't reset navigation if user is on a protected route
     }
@@ -150,7 +168,14 @@ function RootNavigator() {
         routes: [{ name: targetRoute }],
       });
     }
-  }, [loading, shopsLoaded, isAuthenticated, userRole, shops.length, shopsStatus]); // Add shopsStatus to dependencies
+  }, [
+    loading,
+    shopsLoaded,
+    isAuthenticated,
+    userRole,
+    shops.length,
+    shopsStatus,
+  ]); // Add shopsStatus to dependencies
 
   const handleTabPress = (index, key) => {
     const routeName = KEY_TO_ROUTE[key] ?? "Home";
@@ -191,8 +216,16 @@ function RootNavigator() {
               <Stack.Screen name="welcome" component={WelcomeScreen} />
               <Stack.Screen name="Home" component={HomeScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
-              <Stack.Screen name="Stats" component={StatsScreen} />
-              <Stack.Screen name="Products" component={Productscreen} />
+              <Stack.Screen
+                name="Stats"
+                component={StatsScreen}
+                options={{ headerShown: true, headerBackVisible: false }}
+              />
+              <Stack.Screen
+                name="Products"
+                component={Productscreen}
+                options={{ headerShown: true, headerBackVisible: false }}
+              />
               <Stack.Screen
                 name="EditProfile"
                 component={EditProfile}
@@ -209,11 +242,25 @@ function RootNavigator() {
                 options={{ headerShown: true }}
               />
               <Stack.Screen
+                name="CategoryManagement"
+                component={CategoryManagement}
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="CustomerManagement"
+                component={CustomerManagement}
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
                 name="ThemeSettings"
                 component={ThemeSettings}
-                options={{headerShown: true}}
+                options={{ headerShown: true }}
               />
-              <Stack.Screen name="Services" component={ServicesScreen} />
+              <Stack.Screen
+                name="Services"
+                component={ServicesScreen}
+                options={{ headerShown: true, headerBackVisible: false }}
+              />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>
           )}

@@ -1,7 +1,12 @@
 import { StyleSheet, StatusBar, Platform } from "react-native";
 import { useSelector } from "react-redux"
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const STATUSBAR_HEIGHT = Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
+
+// BottomNavbar constants (moved here to avoid circular dependency)
+export const BAR_HEIGHT = 64;
+export const CENTER_DIAMETER = 72;
 
 // Default static colors (fallback)
 export const PRIMARY_COLOR_DEFAULT = '#2a81d3ff';
@@ -204,8 +209,8 @@ export const global = StyleSheet.create({
   //buttons
   button1: {
     backgroundColor: "#000",
-    padding: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 28,
     marginTop: 10,
   },
@@ -248,22 +253,14 @@ export const global = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    // width: 56, // Removed fixed width to allow for text
-    height: 56,
-    flexDirection: 'row', // Added to align icon and text horizontally
+    height: BAR_HEIGHT,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     right: 20,
-    bottom: 40,
-    backgroundColor: PRIMARY_COLOR_DEFAULT, // Use default static color here
+    bottom: 10 + BAR_HEIGHT / 2 + 12,
     borderRadius: 28,
-    paddingHorizontal: 16, // Added padding for text
-    // elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    padding: 12,
   },
   fabText: {
     color: 'white',

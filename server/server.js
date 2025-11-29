@@ -8,7 +8,11 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const shopsRoutes = require('./routes/shops');
-const staffRoutes = require('./routes/staff'); // Import staff routes
+const staffRoutes = require('./routes/staff');
+const categoryRoutes = require('./routes/categories');
+const customerRoutes = require('./routes/customers');
+const productRoutes = require('./routes/products');
+const serviceRoutes = require('./routes/services');
 
 
 const app = express();
@@ -24,7 +28,11 @@ app.use(morgan('dev'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/shops', shopsRoutes);
-app.use('/api/staff', staffRoutes); // Use staff routes
+app.use('/api/staff', staffRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/services', serviceRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
