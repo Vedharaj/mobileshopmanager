@@ -25,9 +25,9 @@ export default function LoginScreen({ navigation }) {
   }, [error, dispatch]);
 
   // Fetch shops after successful login
-  useEffect(() => {
+  useEffect(async() => {
     if (status === "succeeded") {
-      dispatch(fetchShops());
+      await dispatch(fetchShops());
     }
   }, [status, dispatch]);
 

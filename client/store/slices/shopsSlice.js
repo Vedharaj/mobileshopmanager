@@ -42,6 +42,46 @@ export const createShop = createAsyncThunk(
   }
 );
 
+// Delete a shop and return updated shops list
+export const deleteShop = createAsyncThunk(
+  'shops/delete',
+  async (shopId, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.delete(`/shops/${shopId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // server returns { msg, shops }
+      return res.data.shops || [];
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to delete shop';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+// Update an existing shop and return updated shops list
+export const updateShop = createAsyncThunk(
+  'shops/update',
+  async ({ shopId, shopData }, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.put(`/shops/${shopId}`, shopData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // server returns { msg, shop, shops }
+      return res.data.shops || [];
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to update shop';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
 const initialState = {
   shops: [],
   status: 'idle',
@@ -90,6 +130,34 @@ const shopsSlice = createSlice({
         state.error = null;
       })
       .addCase(createShop.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(deleteShop.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(deleteShop.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.shops = action.payload;
+        state.error = null;
+      })
+      .addCase(deleteShop.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(updateShop.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(updateShop.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.shops = action.payload;
+        state.error = null;
+      })
+      .addCase(updateShop.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       });

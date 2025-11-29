@@ -1,23 +1,13 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const UserShopSubSchema = new mongoose.Schema({
-  shop_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
-  shop_name: { type: String },
-  shop_contactno: { type: String },
-  shop_address: { type: String },
-  role_in_shop: { type: String },
-  created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now }
-});
-
 const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, sparse: true },
   username: { type: String, unique: true, sparse: true },
   password_hash: { type: String, required: true },
   role: { type: String, default: 'owner' },
   membership_level: { type: String },
-  shops: [UserShopSubSchema],
+  shops: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Shop' }], // Modified to store only shop_ids
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });

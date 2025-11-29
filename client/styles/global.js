@@ -3,6 +3,7 @@ import { StyleSheet, StatusBar, Platform } from "react-native";
 const STATUSBAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
 export const PRIMARY_COLOR = "#4c956c";
+export const SECONDARY_COLOR = "#77bfa3";
 
 export const global = StyleSheet.create({
   authlink: {
@@ -237,4 +238,28 @@ export const global = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  fab: {
+    position: 'absolute',
+    // width: 56, // Removed fixed width to allow for text
+    height: 56,
+    flexDirection: 'row', // Added to align icon and text horizontally
+    alignItems: 'center',
+    justifyContent: 'center',
+    right: 20,
+    bottom: 40,
+    backgroundColor: PRIMARY_COLOR,
+    borderRadius: 28,
+    paddingHorizontal: 16, // Added padding for text
+    // elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  fabText: {
+    color: 'white',
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
+  }
 });

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PRIMARY_COLOR } from "../styles/global";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../styles/global";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 

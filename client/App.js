@@ -69,7 +69,7 @@ function RootNavigator() {
           try {
             // ensure token is valid by fetching user
             dispatch(fetchMe());
-            await dispatch(fetchShops());
+            await dispatch(fetchShops()).unwrap(); // Ensure fetchShops is awaited and unwrapped
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
             console.warn("Token invalid or fetchMe failed, logging out", err);

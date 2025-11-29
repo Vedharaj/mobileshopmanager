@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       token,
       user: { id: user._id, email: user.email, username: user.username, role: user.role },
-      shops: user.shops || []
+      shops: user.shops // shops is now an array of ObjectIds
     });
 
   } catch (err) {
@@ -72,7 +72,7 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       token,
       user: { id: user._id, email: user.email, username: user.username, role: user.role },
-      shops: Array.isArray(user.shops) ? user.shops : []
+      shops: user.shops // shops is now an array of ObjectIds
     });
 
   } catch (err) {
@@ -91,7 +91,7 @@ router.get('/me', auth, async (req, res) => {
       email: user.email,
       username: user.username,
       role: user.role,
-      shops: Array.isArray(user.shops) ? user.shops : []
+      shops: user.shops || [] // shops is now an array of ObjectIds
     });
   } catch (err) {
     console.error(err);
@@ -133,7 +133,11 @@ router.put('/updateProfile', auth, async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ msg: 'Profile updated successfully', user: { id: user._id, email: user.email, username: user.username, role: user.role } });
+    res.status(200).json({
+      msg: 'Profile updated successfully',
+      user: { id: user._id, email: user.email, username: user.username, role: user.role },
+      shops: user.shops || [] // shops is now an array of ObjectIds
+    });
 
   } catch (err) {
     console.error(err);
