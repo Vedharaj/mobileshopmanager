@@ -14,6 +14,7 @@ router.get('/', auth, async (req, res) => {
       shop_id: { $in: shopIds }
     })
       .populate('shop_id', 'name')
+      .populate('user_id', 'username')
       .populate('category_id', 'name')
       .populate('customer_id', 'name');
 
@@ -30,6 +31,7 @@ router.post('/', auth, async (req, res) => {
     const {
       name,
       shop_id,
+      user_id,
       category_id,
       customer_id,
       qty,
@@ -37,7 +39,9 @@ router.post('/', auth, async (req, res) => {
       selling_price,
       cgst,
       sgst,
-      minimum_stock
+      minimum_stock,
+      date,
+      note
     } = req.body;
 
     if (!name || !shop_id) {
@@ -53,6 +57,7 @@ router.post('/', auth, async (req, res) => {
     const product = new Product({
       name,
       shop_id,
+      user_id: user_id || req.user._id,
       category_id: category_id || null,
       customer_id: customer_id || null,
       qty: qty || 0,
@@ -60,7 +65,9 @@ router.post('/', auth, async (req, res) => {
       selling_price: selling_price || 0,
       cgst: cgst || 0,
       sgst: sgst || 0,
-      minimum_stock: minimum_stock || 0
+      minimum_stock: minimum_stock || 0,
+      date: date ? new Date(date) : new Date(),
+      note: note || ''
     });
 
     await product.save();
@@ -72,6 +79,7 @@ router.post('/', auth, async (req, res) => {
       shop_id: { $in: shopIds }
     })
       .populate('shop_id', 'name')
+      .populate('user_id', 'username')
       .populate('category_id', 'name')
       .populate('customer_id', 'name');
 
@@ -95,7 +103,9 @@ router.put('/:id', auth, async (req, res) => {
       selling_price,
       cgst,
       sgst,
-      minimum_stock
+      minimum_stock,
+      date,
+      note
     } = req.body;
 
     if (!name) {
@@ -122,6 +132,10 @@ router.put('/:id', auth, async (req, res) => {
     product.cgst = cgst || 0;
     product.sgst = sgst || 0;
     product.minimum_stock = minimum_stock || 0;
+    if (date) {
+      product.date = new Date(date);
+    }
+    product.note = note || '';
     await product.save();
 
     // Return all products for user's shops
@@ -131,6 +145,7 @@ router.put('/:id', auth, async (req, res) => {
       shop_id: { $in: shopIds }
     })
       .populate('shop_id', 'name')
+      .populate('user_id', 'username')
       .populate('category_id', 'name')
       .populate('customer_id', 'name');
 
@@ -166,6 +181,7 @@ router.delete('/:id', auth, async (req, res) => {
       shop_id: { $in: shopIds }
     })
       .populate('shop_id', 'name')
+      .populate('user_id', 'username')
       .populate('category_id', 'name')
       .populate('customer_id', 'name');
 

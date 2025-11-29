@@ -12,6 +12,9 @@ const ServiceSchema = new mongoose.Schema({
   payment_method: { type: String, default: 'cash' },
   payment_breakdown: { type: Object },
   status: { type: String, default: 'pending' },
+  received_date: { type: Date, required: true },
+  return_date: { type: Date, required: true },
+  note: { type: String, default: '' },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });

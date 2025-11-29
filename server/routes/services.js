@@ -37,11 +37,22 @@ router.post('/', auth, async (req, res) => {
       paid_amount,
       balance,
       payment_method,
-      status
+      status,
+      received_date,
+      return_date,
+      note
     } = req.body;
 
     if (!service_name || !shop_id) {
       return res.status(400).json({ msg: 'Service name and shop_id are required' });
+    }
+
+    if (!received_date) {
+      return res.status(400).json({ msg: 'Received date is required' });
+    }
+
+    if (!return_date) {
+      return res.status(400).json({ msg: 'Return date is required' });
     }
 
     // Check if shop exists and belongs to the authenticated user
@@ -62,7 +73,10 @@ router.post('/', auth, async (req, res) => {
       paid_amount: paid_amount || 0,
       balance: balance !== undefined ? balance : calculatedBalance,
       payment_method: payment_method || 'cash',
-      status: status || 'pending'
+      status: status || 'pending',
+      received_date: received_date ? new Date(received_date) : new Date(),
+      return_date: return_date ? new Date(return_date) : new Date(),
+      note: note || ''
     });
 
     await service.save();
@@ -96,11 +110,22 @@ router.put('/:id', auth, async (req, res) => {
       paid_amount,
       balance,
       payment_method,
-      status
+      status,
+      received_date,
+      return_date,
+      note
     } = req.body;
 
     if (!service_name) {
       return res.status(400).json({ msg: 'Service name is required' });
+    }
+
+    if (!received_date) {
+      return res.status(400).json({ msg: 'Received date is required' });
+    }
+
+    if (!return_date) {
+      return res.status(400).json({ msg: 'Return date is required' });
     }
 
     const service = await Service.findById(serviceId);
@@ -122,6 +147,13 @@ router.put('/:id', auth, async (req, res) => {
     service.balance = balance !== undefined ? balance : (service.total_amount - service.paid_amount);
     service.payment_method = payment_method || 'cash';
     service.status = status || 'pending';
+    if (received_date) {
+      service.received_date = new Date(received_date);
+    }
+    if (return_date) {
+      service.return_date = new Date(return_date);
+    }
+    service.note = note || '';
     await service.save();
 
     // Return all services for user's shops

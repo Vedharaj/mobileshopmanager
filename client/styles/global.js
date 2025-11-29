@@ -30,7 +30,7 @@ export const global = StyleSheet.create({
     borderRadius: 8,
     marginTop: 10,
   },
-  btnText: { color: "#fff", textAlign: "center", fontSize: 16 },
+  btnText: { color: "#fff", textAlign: "center", fontSize: 14 },
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -59,7 +59,7 @@ export const global = StyleSheet.create({
     padding: 10,
     borderRadius: 6,
     marginBottom: 12,
-    fontSize: 12,
+    fontSize: 14,
   },
   label: {
     fontSize: 12,
@@ -142,7 +142,7 @@ export const global = StyleSheet.create({
   },
   backButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
   },
   scannerTitle: {
     color: "white",
@@ -174,7 +174,7 @@ export const global = StyleSheet.create({
   scanHint: {
     color: "white",
     marginTop: 16,
-    fontSize: 14,
+    fontSize: 12,
   },
 
   // permission
@@ -193,7 +193,7 @@ export const global = StyleSheet.create({
   },
   permissionText: {
     color: "#9ca3af",
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 24,
   },
   backButton: {
@@ -265,7 +265,7 @@ export const global = StyleSheet.create({
   fabText: {
     color: 'white',
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
   }
 });

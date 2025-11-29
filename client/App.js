@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 // components
 import BottomNavbar from "./components/BottomNavbar.jsx";
 import Toast from "./components/Toast.jsx";
+import SplashScreen from "./components/SplashScreen.jsx";
 
 // screens
 import LoginScreen from "./screens/LoginScreen.jsx";
@@ -77,6 +78,7 @@ function RootNavigator() {
   const userRole = useSelector((state) => state.auth.role);
   const shops = useSelector((state) => state.shops?.shops || []);
   const shopsStatus = useSelector((state) => state.shops.status);
+  const authStatus = useSelector((state) => state.auth.status);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -185,7 +187,15 @@ function RootNavigator() {
     setActiveIndex(index);
   };
 
-  if (loading || !shopsLoaded) return null;
+  // Show splash screen while loading (only if authenticated or still checking authentication)
+  // Don't show splash screen if user is logged out (not authenticated and initial load is complete)
+  const shouldShowSplash = loading || 
+    (!isAuthenticated && !shopsLoaded) || 
+    (isAuthenticated && (!shopsLoaded || authStatus === "loading" || shopsStatus === "loading"));
+  
+  if (shouldShowSplash) {
+    return <SplashScreen />;
+  }
 
   return (
     <NavigationContainer

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Alert, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { global, useThemeColors } from "../styles/global";
+import { global, useThemeColors, BAR_HEIGHT } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
 import { AntDesign, Entypo, Ionicons, FontAwesome5 } from "@expo/vector-icons";
@@ -68,7 +68,10 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={global.safeArea}>
-      <ScrollView style={global.mainContainer}>
+      <ScrollView
+        style={global.mainContainer}
+        contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 40 }}
+      >
         <View style={global.profileHeader}>
           <View
             style={{ ...global.profileIcon, backgroundColor: primaryColor }}
@@ -81,7 +84,9 @@ export default function ProfileScreen({ navigation }) {
 
         {role !== "staff" && (
           <>
-            <Text style={{marginBottom: 10, color: "#aaa"}}>Shop Management</Text>
+            <Text style={{ marginBottom: 10, color: "#aaa" }}>
+              Shop Management
+            </Text>
 
             <View style={global.profileContainer}>
               <TouchableOpacity
@@ -89,7 +94,11 @@ export default function ProfileScreen({ navigation }) {
                 onPress={() => navigation.navigate("EditProfile")}
               >
                 <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
                 >
                   <AntDesign name="edit" size={24} color={primaryColor} />
                   <Text style={{ fontSize: 16 }}>Edit Profile</Text>
@@ -108,7 +117,11 @@ export default function ProfileScreen({ navigation }) {
                   }
                 >
                   <View
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
                   >
                     {item.icon}
                     <Text style={{ fontSize: 16 }}>{item.title}</Text>
@@ -119,7 +132,9 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </>
         )}
-        <Text style={{marginBottom: 10, marginTop: 10, color: "#aaa"}}>Preference</Text>
+        <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
+          Preference
+        </Text>
         <View style={global.profileContainer}>
           {preferenceData.map((item, index) => (
             <TouchableOpacity

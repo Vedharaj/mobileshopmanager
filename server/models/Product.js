@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
   shop_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   name: { type: String, required: true },
@@ -11,6 +12,8 @@ const ProductSchema = new mongoose.Schema({
   cgst: { type: Number, default: 0 },
   sgst: { type: Number, default: 0 },
   minimum_stock: { type: Number, default: 0 },
+  date: { type: Date, default: Date.now },
+  note: { type: String, default: '' },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });

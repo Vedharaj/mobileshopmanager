@@ -8,6 +8,7 @@ import {
   Keyboard,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Picker } from '@react-native-picker/picker';
 import { global, useThemeColors, BAR_HEIGHT } from "../styles/global";
@@ -24,11 +25,32 @@ const ProductScreen = () => {
   const { categories } = useSelector((state) => state.categories);
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
-  const { role, user } = useSelector((state) => state.auth);
+  const { userid, role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
   
   // Get staff's shop from user object
   const staffShops = user?.shops || [];
+
+  // Helper function to format date as YYYY-MM-DD
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Get current date as default
+  const getCurrentDate = () => formatDate(new Date());
+
+  // Validate date format (YYYY-MM-DD)
+  const isValidDate = (dateString) => {
+    if (!dateString) return false;
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) return false;
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date);
+  };
 
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
@@ -39,9 +61,12 @@ const ProductScreen = () => {
   const [minimumStock, setMinimumStock] = useState("");
   const [selectedShopId, setSelectedShopId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [productDate, setProductDate] = useState(getCurrentDate());
+  const [note, setNote] = useState("");
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -150,6 +175,10 @@ const ProductScreen = () => {
     const [productMinimumStock, setProductMinimumStock] = useState(product.minimum_stock?.toString() || "0");
     const [productCategoryId, setProductCategoryId] = useState(product.category_id?._id || product.category_id || "");
     const [productCustomerId, setProductCustomerId] = useState(product.customer_id?._id || product.customer_id || "");
+    const [productDate, setProductDate] = useState(
+      product.date ? formatDate(new Date(product.date)) : getCurrentDate()
+    );
+    const [productNote, setProductNote] = useState(product.note || "");
 
     // Filter categories by product's shop
     const productShopId = product.shop_id?._id || product.shop_id;
@@ -158,6 +187,48 @@ const ProductScreen = () => {
     );
 
     const handleUpdateProduct = async () => {
+      // Validate mandatory fields
+      if (!productQty || productQty.trim() === "") {
+        dispatch(
+          showToast({
+            message: "Please enter Quantity",
+            type: "error",
+          })
+        );
+        return;
+      }
+
+      if (!productCostPrice || productCostPrice.trim() === "") {
+        dispatch(
+          showToast({
+            message: "Please enter Cost Price",
+            type: "error",
+          })
+        );
+        return;
+      }
+
+      if (!productSellingPrice || productSellingPrice.trim() === "") {
+        dispatch(
+          showToast({
+            message: "Please enter Selling Price",
+            type: "error",
+          })
+        );
+        return;
+      }
+
+      // Validate date
+      if (!productDate || !isValidDate(productDate)) {
+        dispatch(
+          showToast({
+            message: "Please enter a valid date (YYYY-MM-DD)",
+            type: "error",
+          })
+        );
+        return;
+      }
+
       if (
         productName === (product.name || "") &&
         productQty === (product.qty?.toString() || "0") &&
@@ -167,14 +238,18 @@ const ProductScreen = () => {
         productSgst === (product.sgst?.toString() || "0") &&
         productMinimumStock === (product.minimum_stock?.toString() || "0") &&
         productCategoryId === (product.category_id?._id || product.category_id || "") &&
-        productCustomerId === (product.customer_id?._id || product.customer_id || "")
+        productCustomerId === (product.customer_id?._id || product.customer_id || "") &&
+        productNote === (product.note || "")
       ) {
-        dispatch(showToast({
-          message: "No changes made to product details",
-          type: "info",
-        }));
-        setShowDetails(false);
-        return;
+        const productDateValue = product.date ? formatDate(new Date(product.date)) : getCurrentDate();
+        if (productDate === productDateValue) {
+          dispatch(showToast({
+            message: "No changes made to product details",
+            type: "info",
+          }));
+          setShowDetails(false);
+          return;
+        }
       }
       try {
         await dispatch(updateProduct({
@@ -189,6 +264,8 @@ const ProductScreen = () => {
             minimum_stock: parseInt(productMinimumStock) || 0,
             category_id: productCategoryId || null,
             customer_id: productCustomerId || null,
+            date: productDate || getCurrentDate(),
+            note: productNote || '',
           },
         })).unwrap();
         dispatch(showToast({
@@ -302,10 +379,25 @@ const ProductScreen = () => {
 
             <TextInput
               style={global.input}
-              placeholder="Minimum Stock *"
+              placeholder="Minimum Stock"
               value={productMinimumStock}
               onChangeText={setProductMinimumStock}
               keyboardType="numeric"
+            />
+
+            <TextInput
+              style={global.input}
+              placeholder="Date (YYYY-MM-DD) *"
+              value={productDate}
+              onChangeText={setProductDate}
+            />
+
+            <TextInput
+              style={global.input}
+              placeholder="Note"
+              value={productNote}
+              onChangeText={setProductNote}
+              multiline
             />
 
             {productShopCategories.length > 0 && (
@@ -313,6 +405,8 @@ const ProductScreen = () => {
                 <Picker
                   selectedValue={productCategoryId}
                   onValueChange={(itemValue) => setProductCategoryId(itemValue)}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
                 >
                   <Picker.Item label="No Category" value="" />
                   {productShopCategories.map((category) => (
@@ -327,6 +421,8 @@ const ProductScreen = () => {
                 <Picker
                   selectedValue={productCustomerId}
                   onValueChange={(itemValue) => setProductCustomerId(itemValue)}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
                 >
                   <Picker.Item label="No Customer" value="" />
                   {customers.map((customer) => (
@@ -363,6 +459,49 @@ const ProductScreen = () => {
       return;
     }
 
+    // Validate mandatory fields
+    if (!qty || qty.trim() === "") {
+      dispatch(
+        showToast({
+          message: "Please enter Quantity",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (!costPrice || costPrice.trim() === "") {
+      dispatch(
+        showToast({
+          message: "Please enter Cost Price",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (!sellingPrice || sellingPrice.trim() === "") {
+      dispatch(
+        showToast({
+          message: "Please enter Selling Price",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    // Validate date
+    if (!productDate || !isValidDate(productDate)) {
+      dispatch(
+        showToast({
+          message: "Please enter a valid date (YYYY-MM-DD)",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    setIsAddingProduct(true);
     try {
       await dispatch(createProduct({
         name,
@@ -373,7 +512,10 @@ const ProductScreen = () => {
         sgst: parseFloat(sgst) || 0,
         minimum_stock: parseInt(minimumStock) || 0,
         shop_id: selectedShopId,
+        user_id: userid,
         category_id: selectedCategoryId || null,
+        date: productDate || getCurrentDate(),
+        note: note || '',
       })).unwrap();
 
       dispatch(
@@ -390,6 +532,8 @@ const ProductScreen = () => {
       setSgst("");
       setMinimumStock("");
       setSelectedCategoryId("");
+      setProductDate(getCurrentDate());
+      setNote("");
       // Reset shop selection based on role
       if (role === 'staff' && staffShops.length > 0) {
         const staffShopId = staffShops[0]?._id || staffShops[0];
@@ -406,6 +550,8 @@ const ProductScreen = () => {
           type: "error",
         })
       );
+    } finally {
+      setIsAddingProduct(false);
     }
   };
 
@@ -413,7 +559,7 @@ const ProductScreen = () => {
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <ScrollView 
         style={global.mainContainer}
-        contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 40 }}
+        contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 60 }}
       >
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Product</Text>
@@ -435,6 +581,8 @@ const ProductScreen = () => {
                       setSelectedShopId(itemValue);
                       setSelectedCategoryId(""); // Reset category when shop changes
                     }}
+                    style={{ fontSize: 12 }}
+                    itemStyle={{ fontSize: 12 }}
                   >
                     {shops.map((shop) => (
                       <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
@@ -457,6 +605,8 @@ const ProductScreen = () => {
                             setSelectedCategoryId(itemValue);
                           }
                         }}
+                        style={{ fontSize: 12 }}
+                        itemStyle={{ fontSize: 12 }}
                       >
                         <Picker.Item label="No Category" value="" />
                         {shopCategories.map((category) => (
@@ -497,7 +647,7 @@ const ProductScreen = () => {
 
               <TextInput
                 style={global.input}
-                placeholder="Quantity"
+                placeholder="Quantity *"
                 value={qty}
                 onChangeText={setQty}
                 keyboardType="numeric"
@@ -505,7 +655,7 @@ const ProductScreen = () => {
 
               <TextInput
                 style={global.input}
-                placeholder="Cost Price"
+                placeholder="Cost Price *"
                 value={costPrice}
                 onChangeText={setCostPrice}
                 keyboardType="decimal-pad"
@@ -513,7 +663,7 @@ const ProductScreen = () => {
 
               <TextInput
                 style={global.input}
-                placeholder="Selling Price"
+                placeholder="Selling Price *"
                 value={sellingPrice}
                 onChangeText={setSellingPrice}
                 keyboardType="decimal-pad"
@@ -543,6 +693,21 @@ const ProductScreen = () => {
                 keyboardType="numeric"
               />
 
+              <TextInput
+                style={global.input}
+                placeholder="Date (YYYY-MM-DD) *"
+                value={productDate}
+                onChangeText={setProductDate}
+              />
+
+              <TextInput
+                style={global.input}
+                placeholder="Note"
+                value={note}
+                onChangeText={setNote}
+                multiline
+              />
+
               <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
                 <TouchableOpacity
                   style={{ ...global.button1, width: "30%", backgroundColor: "#666" }}
@@ -556,6 +721,8 @@ const ProductScreen = () => {
                     setSgst("");
                     setMinimumStock("");
                     setSelectedCategoryId("");
+                    setProductDate(getCurrentDate());
+                    setNote("");
                     setShowCreateCategory(false);
                     setNewCategoryName("");
                     Keyboard.dismiss();
@@ -564,19 +731,70 @@ const ProductScreen = () => {
                   <Text style={global.btnText}>Close</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{ ...global.button1, width: "30%" }}
+                  style={{ 
+                    ...global.button1, 
+                    width: "30%",
+                    opacity: isAddingProduct ? 0.6 : 1,
+                  }}
                   onPress={handleAddProduct}
+                  disabled={isAddingProduct}
                 >
-                  <Text style={global.btnText}>Add</Text>
+                  {isAddingProduct ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={global.btnText}>Add</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </>
           )}
     </View>
         <Text style={{ marginBottom: 5, marginTop: 20 }}>Product List</Text>
-        {products.map((product) => (
-          <ProductContainer key={product._id} product={product} />
-        ))}
+        {(() => {
+          // Group products by date
+          const groupedProducts = products.reduce((acc, product) => {
+            const productDate = product.date 
+              ? formatDate(new Date(product.date)) 
+              : getCurrentDate();
+            if (!acc[productDate]) {
+              acc[productDate] = [];
+            }
+            acc[productDate].push(product);
+            return acc;
+          }, {});
+
+          // Sort dates in descending order (newest first)
+          const sortedDates = Object.keys(groupedProducts).sort((a, b) => {
+            return new Date(b) - new Date(a);
+          });
+
+          if (sortedDates.length === 0) {
+            return (
+              <Text style={{ textAlign: "center", color: "#999", marginTop: 20 }}>
+                No products found
+              </Text>
+            );
+          }
+
+          return sortedDates.map((date) => (
+            <View key={date} style={{ marginTop: 15 }}>
+              <Text style={{ 
+                fontSize: 16, 
+                fontWeight: "bold", 
+                color: primaryColor,
+                marginBottom: 10,
+                paddingBottom: 5,
+                borderBottomWidth: 1,
+                borderBottomColor: "#ddd"
+              }}>
+                {date}
+              </Text>
+              {groupedProducts[date].map((product) => (
+                <ProductContainer key={product._id} product={product} />
+              ))}
+            </View>
+          ));
+        })()}
       </ScrollView>
     </TouchableWithoutFeedback>
   );
