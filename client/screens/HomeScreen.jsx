@@ -42,7 +42,7 @@ export default function HomeScreen() {
       <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
         <Text numberOfLines={2} style={global.navbarName}>
           {username}
-          {"\n"}
+          <Text>{"\n"}</Text>
           <Text style={global.navbarRole}>{role || "User"}</Text>
         </Text>
 

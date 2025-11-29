@@ -239,7 +239,7 @@ const ShopManagement = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <View style={global.mainContainer}>
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Shop</Text>
@@ -249,7 +249,6 @@ const ShopManagement = () => {
             value={name}
             onChangeText={setName}
             onFocus={() => setIsNameFocused(true)}
-            onBlur={() => setIsNameFocused(false)}
           />
 
           {isNameFocused && (

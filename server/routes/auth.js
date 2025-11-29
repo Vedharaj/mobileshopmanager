@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 // REGISTER (email + password + username)
@@ -46,19 +46,25 @@ router.post('/register', async (req, res) => {
 });
 
 
-// LOGIN (email + password only)
+// LOGIN (email or username + password)
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body; // Changed from email to identifier
+    // console.log(identifier, password);
+    
 
-    if (!email || !password)
-      return res.status(400).json({ msg: 'Please enter all fields' });
+    if (!identifier || !password)
+      return res.status(400).json({ msg: 'Please enter username/email and password' }); // Updated error message
 
-    const user = await User.findOne({ email });
-    if (!user)
+    const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] }); // Search by email or username
+    if (!user) {
+      // console.log("User not found for identifier:", identifier);
       return res.status(400).json({ msg: 'Invalid credentials' });
+    }
 
+    // console.log("User found:", user.username, user.email, user.role);
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    // console.log("Password match result:", isMatch);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }

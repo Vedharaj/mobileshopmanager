@@ -1,4 +1,5 @@
-  import React, { useEffect, useState, useRef } from "react";
+// App.js
+import React, { useEffect, useState, useRef } from "react";
 import { View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -27,10 +28,17 @@ import StaffManagement from "./screens/StaffManagement.jsx";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./store/store.js";
 import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
-import { fetchShops } from "./store/slices/shopsSlice.js";
+import { fetchShops, clearShops } from "./store/slices/shopsSlice.js"; // Import clearShops
 
 const Stack = createNativeStackNavigator();
-const HIDE_BOTTOM_NAVBAR_SCREENS = ["Scanner", "welcome", "EditProfile", "ShopManagement", "StaffManagement"];
+
+const HIDE_BOTTOM_NAVBAR_SCREENS = [
+  "Scanner",
+  "welcome",
+  "EditProfile",
+  "ShopManagement",
+  "StaffManagement",
+];
 
 const ROUTE_TO_INDEX = {
   Profile: 1,
@@ -54,10 +62,12 @@ function RootNavigator() {
   const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(true);
+  const [shopsLoaded, setShopsLoaded] = useState(false);
   const [activeIndex, setActiveIndex] = useState(3);
   const [currentRoute, setCurrentRoute] = useState(null);
 
   const userToken = useSelector((state) => state.auth.token);
+  const userRole = useSelector((state) => state.auth.role);
   const shops = useSelector((state) => state.shops?.shops || []);
 
   useEffect(() => {
@@ -67,23 +77,61 @@ function RootNavigator() {
         if (token) {
           dispatch(setCredentials(token));
           try {
-            // ensure token is valid by fetching user
-            dispatch(fetchMe());
-            await dispatch(fetchShops()).unwrap(); // Ensure fetchShops is awaited and unwrapped
+            await dispatch(fetchMe()).unwrap();
+            await dispatch(fetchShops()).unwrap();
+            setShopsLoaded(true);
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
             console.warn("Token invalid or fetchMe failed, logging out", err);
             dispatch(logout());
+            dispatch(clearShops()); // Dispatch clearShops after logout
+            setShopsLoaded(true);
           }
+        } else {
+          setShopsLoaded(true);
         }
       } catch (err) {
         console.error("Failed to load token", err);
+        setShopsLoaded(true);
       } finally {
         setLoading(false);
       }
     };
     loadToken();
   }, [dispatch]);
+
+  const isAuthenticated = !!userToken;
+  const initialRouteName = !isAuthenticated
+    ? "Login"
+    : userRole === "staff"
+    ? "Home" // Changed from "StaffManagement" to "Home"
+    : shops.length === 0
+    ? "welcome"
+    : "Home";
+
+  const activeRoute = currentRoute ?? initialRouteName;
+
+  // Moved the navigation logic to a dedicated useEffect to ensure data is loaded
+  useEffect(() => {
+    if (loading || !shopsLoaded || !navigationRef.current) return;
+
+    let targetRoute;
+    if (!isAuthenticated) {
+      targetRoute = "Login";
+    } else if (userRole === "staff") {
+      targetRoute = "Home"; // Staff always go to Home
+    } else if (shops.length === 0) {
+      targetRoute = "welcome"; // Owners with no shops go to Welcome
+    } else {
+      targetRoute = "Home"; // Owners with shops go to Home
+    }
+
+    // Reset navigation to the determined targetRoute
+    navigationRef.current.reset({
+      index: 0,
+      routes: [{ name: targetRoute }],
+    });
+  }, [loading, shopsLoaded, isAuthenticated, userRole, shops.length]);
 
   const handleTabPress = (index, key) => {
     const routeName = KEY_TO_ROUTE[key] ?? "Home";
@@ -93,16 +141,7 @@ function RootNavigator() {
     setActiveIndex(index);
   };
 
-  if (loading) return null;
-
-  const isAuthenticated = !!userToken;
-  const initialRouteName = !isAuthenticated
-    ? "Login"
-    : shops.length === 0
-    ? "welcome"
-    : "Home";
-
-  const activeRoute = currentRoute ?? initialRouteName;
+  if (loading || !shopsLoaded) return null;
 
   return (
     <NavigationContainer
@@ -121,8 +160,7 @@ function RootNavigator() {
       <View style={{ flex: 1 }}>
         <Stack.Navigator
           screenOptions={{ headerShown: false }}
-          initialRouteName={initialRouteName}
-          key={initialRouteName}
+          // initialRouteName is now handled by the useEffect above
         >
           {!isAuthenticated ? (
             <>
@@ -136,25 +174,36 @@ function RootNavigator() {
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Stats" component={StatsScreen} />
               <Stack.Screen name="Products" component={Productscreen} />
-              <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: true }}/>
-              <Stack.Screen name="ShopManagement" component={ShopManagement} options={{ headerShown: true }}/>
-              <Stack.Screen name="StaffManagement" component={StaffManagement} options={{ headerShown: true }}/>
               <Stack.Screen
-                name="Services"
-                component={ServicesScreen}
+                name="EditProfile"
+                component={EditProfile}
+                options={{ headerShown: true }}
               />
+              <Stack.Screen
+                name="ShopManagement"
+                component={ShopManagement}
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="StaffManagement"
+                component={StaffManagement}
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen name="Services" component={ServicesScreen} />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>
           )}
         </Stack.Navigator>
 
-        {userToken != null && !HIDE_BOTTOM_NAVBAR_SCREENS.includes(activeRoute) && (
-          <BottomNavbar
-            activeIndex={activeIndex}
-            onTabPress={handleTabPress}
-            navigationRef={navigationRef}
-          />
-        )}
+        {userToken != null &&
+          activeRoute &&
+          !HIDE_BOTTOM_NAVBAR_SCREENS.includes(activeRoute) && (
+            <BottomNavbar
+              activeIndex={activeIndex}
+              onTabPress={handleTabPress}
+              navigationRef={navigationRef}
+            />
+          )}
 
         <Toast />
       </View>

@@ -25,6 +25,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     if (status === "succeeded" && token) {
+      dispatch(resetError()); // Clear any previous error on successful registration
       dispatch(
         showToast({
           message: "Account created successfully 🎉",
@@ -39,7 +40,7 @@ export default function RegisterScreen({ navigation }) {
     }
   }, [error, status, dispatch, token, shops, navigation]);
   
-  const submitRegister = () => {
+  const submitRegister = async () => {
     if (!username || !email || !password) {
       dispatch(
         showToast({
@@ -49,8 +50,13 @@ export default function RegisterScreen({ navigation }) {
       );
       return;
     }
-    dispatch(register({ email, password, username }));
-    navigation.navigate("Login");
+    try {
+      await dispatch(register({ email, password, username })).unwrap();
+      navigation.navigate("Login");
+    } catch (err) {
+      // The error will be handled by the useEffect above which shows the toast
+      console.error("Registration failed:", err);
+    }
   };
 
   const alreadyHaveAccountBtn = () => {

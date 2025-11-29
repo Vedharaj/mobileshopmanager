@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api, { setAuthToken } from '../api/axiosClient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// Removed: import { clearShops } from "./shopsSlice"; // Import clearShops from shopsSlice
 
 // Fetch user information (call /me endpoint)
 export const fetchMe = createAsyncThunk(
@@ -33,7 +34,7 @@ export const login = createAsyncThunk(
     try {
       const res = await api.post('/auth/login', credentials);
       await AsyncStorage.setItem("token", res.data.token);
-      console.log(res.data);
+      // console.log(res.data);
       return res.data;
     } catch (error) {
       // console.log(error);
@@ -78,7 +79,7 @@ export const updateProfile = createAsyncThunk(
       });
       return res.data;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       const msg =
         error.response?.data?.msg ||
         error.response?.data?.message ||
@@ -101,14 +102,16 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout(state) {
+    logout(state) { // Removed action parameter
       state.token = null;
       state.user = null;
       state.username = null;
       state.role = null;
       state.error = null;
+      state.shops = []; // Clear shops on logout
       setAuthToken(null);
-      AsyncStorage.removeItem("token");  // ADD: properly remove token
+      AsyncStorage.removeItem("token");
+      // Removed: action.asyncDispatch(clearShops()); // Dispatch clearShops from shopsSlice
     },
     setCredentials(state, action) {
       state.token = action.payload.token || action.payload;  // handle both cases

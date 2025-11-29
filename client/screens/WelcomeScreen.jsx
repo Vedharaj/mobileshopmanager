@@ -83,7 +83,7 @@ export default function WelcomeScreen({ navigation }) {
   return (
     <View style={global.authcontainer}>
       <Text style={[global.title, { marginBottom: 10 }]}>Welcome 🎉</Text>
-      <Text style={[global.subtitle, { marginBottom: 10 }]}>
+      <Text style={{ textAlign: "center", marginBottom: 20 }}>
         Let’s quickly set up your store
       </Text>
 

@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, default: 'owner' },
   membership_level: { type: String },
   shops: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Shop' }], // Modified to store only shop_ids
+  contact_no: { type: String }, // Add contact_no field
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });
@@ -17,8 +18,9 @@ UserSchema.methods.comparePassword = function (password) {
 };
 
 UserSchema.pre('save', async function (next) {
-  if (this.isModified('password_hash')) {
-    // assume password_hash currently holds plain password for initial seeding or when explicitly set
+  // Check if password_hash is modified and if it's not already hashed
+  // A simple check for length and presence of bcrypt prefix might be enough
+  if (this.isModified('password_hash') && this.password_hash.length < 60) { // bcrypt hashes are typically ~60 chars
     const salt = await bcrypt.genSalt(10);
     this.password_hash = await bcrypt.hash(this.password_hash, salt);
   }

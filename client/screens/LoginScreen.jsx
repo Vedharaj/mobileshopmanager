@@ -10,7 +10,7 @@ export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
   const { status, error } = useSelector((state) => state.auth);
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   useEffect(() => {
@@ -24,24 +24,26 @@ export default function LoginScreen({ navigation }) {
     }
   }, [error, dispatch]);
 
-  // Fetch shops after successful login
-  useEffect(async() => {
-    if (status === "succeeded") {
-      await dispatch(fetchShops());
-    }
+  useEffect(() => {
+    const fetchShopsOnLogin = async () => {
+      if (status === "succeeded") {
+        await dispatch(fetchShops()).unwrap();
+      }
+    };
+    fetchShopsOnLogin();
   }, [status, dispatch]);
 
   const submitLogin = () => {
-    if (!email || !password) {
+    if (!identifier || !password) {
       dispatch(
         showToast({
-          message: "Please enter email and password",
+          message: "Please enter username/email and password",
           type: "error",
         })
       );
       return;
     }
-    dispatch(login({ email, password }));
+    dispatch(login({ identifier, password }));
   };
 
   const createNewAcountBtn = () => {
@@ -51,13 +53,13 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={global.authcontainer}>
-      <Text style={global.label}>Email</Text>
+      <Text style={global.label}>Username or Email</Text>
       <TextInput
         style={global.input}
-        value={email}
-        onChangeText={setEmail}
+        value={identifier}
+        onChangeText={setIdentifier}
         autoCapitalize="none"
-        placeholder="Enter your email"
+        placeholder="Enter your username or email"
         editable={status !== "loading"}
       />
 
