@@ -1,16 +1,17 @@
 import { StyleSheet, StatusBar, Platform } from "react-native";
-import { useSelector } from "react-redux"
+import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const STATUSBAR_HEIGHT = Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
+const STATUSBAR_HEIGHT =
+  Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
 
 // BottomNavbar constants (moved here to avoid circular dependency)
 export const BAR_HEIGHT = 64;
 export const CENTER_DIAMETER = 72;
 
 // Default static colors (fallback)
-export const PRIMARY_COLOR_DEFAULT = '#2a81d3ff';
-export const SECONDARY_COLOR_DEFAULT = '#90CAF9';
+export const PRIMARY_COLOR_DEFAULT = "#2a81d3ff";
+export const SECONDARY_COLOR_DEFAULT = "#90CAF9";
 
 // Custom hook to access theme colors
 export const useThemeColors = () => {
@@ -252,20 +253,27 @@ export const global = StyleSheet.create({
     alignItems: "center",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     height: BAR_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     right: 20,
     bottom: 10 + BAR_HEIGHT / 2 + 12,
     borderRadius: 28,
     padding: 12,
   },
   fabText: {
-    color: 'white',
+    color: "white",
     marginLeft: 8,
     fontSize: 12,
-    fontWeight: 'bold',
-  }
+    fontWeight: "bold",
+  },
+  productLabel: {
+    backgroundColor: "#ccc",
+    fontSize: 12,
+    padding: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+  },
 });

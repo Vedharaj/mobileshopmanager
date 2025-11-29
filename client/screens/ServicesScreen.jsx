@@ -1,4 +1,3 @@
-// screens/ServicesScreen.jsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -71,6 +70,7 @@ const ServicesScreen = () => {
   const [newCustomerAddress, setNewCustomerAddress] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [isAddingService, setIsAddingService] = useState(false);
+  const [filterShopId, setFilterShopId] = useState(""); // shop filter
 
   useEffect(() => {
     const loadData = async () => {
@@ -82,8 +82,10 @@ const ServicesScreen = () => {
     if (role === "staff" && staffShops.length > 0) {
       const staffShopId = staffShops[0]?._id || staffShops[0];
       setSelectedShopId(staffShopId);
+      setFilterShopId(staffShopId); // staff only sees their shop
     } else if (shops.length > 0) {
       setSelectedShopId(shops[0]._id);
+      setFilterShopId(""); // owner default: all shops
     }
   }, [dispatch, shops, role, staffShops]);
 
@@ -336,36 +338,72 @@ const ServicesScreen = () => {
                   {service.service_name}
                 </Text>
               </TouchableOpacity>
+
               <View
                 style={{
                   flexDirection: "row",
                   gap: 20,
                   marginLeft: 10,
-                  // marginTop: 8,
                   flexWrap: "wrap",
                   margin: 0,
                 }}
               >
-                <Text style={{ color: "#666", fontSize: 12 }}>
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 60,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   To:{"\n "}
                   <Text style={{ color: primaryColor }}>
                     {service.customer_id?.name || "N/A"}
                   </Text>
                 </Text>
-                <Text style={{ color: "#666", fontSize: 12 }}>
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 60,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   By:{"\n "}
                   <Text style={{ color: primaryColor }}>
                     {service.user_id?.username || "N/A"}
                   </Text>
                 </Text>
-                <Text style={{ color: "#666", fontSize: 12 }}>
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 60,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   Shop:{"\n "}
                   <Text style={{ color: primaryColor }}>
                     {service.shop_id?.name || "N/A"}
                   </Text>
                 </Text>
-                <Text style={{ color: "#666", fontSize: 12 }}>
-                  Remaining:{"\n "}
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 80,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  Balance:{"\n "}
                   <Text style={{ color: primaryColor }}>
                     ₹{service.balance?.toString() || "0"}
                   </Text>
@@ -857,7 +895,70 @@ const ServicesScreen = () => {
             </>
           )}
         </View>
+
         <Text style={{ marginBottom: 5, marginTop: 20 }}>Service List</Text>
+
+        {/* Shop filter chips */}
+        {role !== "staff" && shops.length > 0 && (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              marginTop: 8,
+              marginBottom: 4,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setFilterShopId("")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: filterShopId === "" ? primaryColor : "#ccc",
+                backgroundColor: filterShopId === "" ? primaryColor : "#fff",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: filterShopId === "" ? "#fff" : "#333",
+                }}
+              >
+                All Shops
+              </Text>
+            </TouchableOpacity>
+
+            {shops.map((shop) => {
+              const id = shop._id;
+              const isActive = filterShopId === id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  onPress={() => setFilterShopId(id)}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: isActive ? primaryColor : "#ccc",
+                    backgroundColor: isActive ? primaryColor : "#fff",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: isActive ? "#fff" : "#333",
+                    }}
+                  >
+                    {shop.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         <View>
           <View
@@ -905,7 +1006,7 @@ const ServicesScreen = () => {
         </View>
 
         {(() => {
-          const filteredServices =
+          const baseServices =
             activeTab === 0
               ? services.filter(
                   (service) =>
@@ -917,6 +1018,12 @@ const ServicesScreen = () => {
                     service.status === "completed" ||
                     service.status === "cancelled"
                 );
+
+          const filteredServices = baseServices.filter((service) => {
+            if (!filterShopId) return true;
+            const serviceShopId = service.shop_id?._id || service.shop_id;
+            return serviceShopId === filterShopId;
+          });
 
           if (filteredServices.length === 0) {
             return (
