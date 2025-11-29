@@ -23,8 +23,11 @@ const ServicesScreen = () => {
   const { services, status, error } = useSelector((state) => state.services);
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
-  const { userid } = useSelector((state) => state.auth);
+  const { userid, role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
+  
+  // Get staff's shop from user object
+  const staffShops = user?.shops || [];
 
   const [serviceName, setServiceName] = useState("");
   const [description, setDescription] = useState("");
@@ -47,11 +50,16 @@ const ServicesScreen = () => {
     };
     loadData();
 
-    // Set initial selected shop if shops are available
-    if (shops.length > 0) {
+    // Set initial selected shop
+    if (role === 'staff' && staffShops.length > 0) {
+      // Staff: use their assigned shop
+      const staffShopId = staffShops[0]?._id || staffShops[0];
+      setSelectedShopId(staffShopId);
+    } else if (shops.length > 0) {
+      // Owner: use shops from shops state
       setSelectedShopId(shops[0]._id);
     }
-  }, [dispatch, shops]);
+  }, [dispatch, shops, role, staffShops]);
 
   const handleCreateCustomer = async () => {
     if (!newCustomerName) {
@@ -326,7 +334,9 @@ const ServicesScreen = () => {
     if (!serviceName || !selectedShopId) {
       dispatch(
         showToast({
-          message: "Please enter service name and select a shop",
+          message: role === 'staff' 
+            ? "Please enter service name" 
+            : "Please enter service name and select a shop",
           type: "error",
         })
       );
@@ -363,7 +373,13 @@ const ServicesScreen = () => {
       setPaidAmount("");
       setPaymentMethod("cash");
       setStatusValue("pending");
-      setSelectedShopId(shops.length > 0 ? shops[0]._id : "");
+      // Reset shop selection based on role
+      if (role === 'staff' && staffShops.length > 0) {
+        const staffShopId = staffShops[0]?._id || staffShops[0];
+        setSelectedShopId(staffShopId);
+      } else if (shops.length > 0) {
+        setSelectedShopId(shops[0]._id);
+      }
       setSelectedCustomerId("");
       setIsServiceNameFocused(false);
       Keyboard.dismiss();
@@ -510,7 +526,7 @@ const ServicesScreen = () => {
                 </Picker>
               </View>
 
-              {shops.length > 0 && (
+              {role !== 'staff' && shops.length > 0 && (
                 <View style={{ ...global.input, padding: 0, marginTop: 10 }}>
                   <Picker
                     selectedValue={selectedShopId}
@@ -534,6 +550,13 @@ const ServicesScreen = () => {
                     setPaidAmount("");
                     setPaymentMethod("cash");
                     setStatusValue("pending");
+                    // Reset shop selection based on role
+                    if (role === 'staff' && staffShops.length > 0) {
+                      const staffShopId = staffShops[0]?._id || staffShops[0];
+                      setSelectedShopId(staffShopId);
+                    } else if (shops.length > 0) {
+                      setSelectedShopId(shops[0]._id);
+                    }
                     setSelectedCustomerId("");
                     setShowCreateCustomer(false);
                     setNewCustomerName("");

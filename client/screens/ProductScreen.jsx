@@ -24,7 +24,11 @@ const ProductScreen = () => {
   const { categories } = useSelector((state) => state.categories);
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
+  const { role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
+  
+  // Get staff's shop from user object
+  const staffShops = user?.shops || [];
 
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
@@ -46,11 +50,16 @@ const ProductScreen = () => {
     };
     loadData();
 
-    // Set initial selected shop if shops are available
-    if (shops.length > 0) {
+    // Set initial selected shop
+    if (role === 'staff' && staffShops.length > 0) {
+      // Staff: use their assigned shop
+      const staffShopId = staffShops[0]?._id || staffShops[0];
+      setSelectedShopId(staffShopId);
+    } else if (shops.length > 0) {
+      // Owner: use shops from shops state
       setSelectedShopId(shops[0]._id);
     }
-  }, [dispatch, shops]);
+  }, [dispatch, shops, role, staffShops]);
 
   // Filter categories by selected shop
   const shopCategories = categories.filter(cat => cat.shop_id === selectedShopId || cat.shop_id?._id === selectedShopId);
@@ -345,7 +354,9 @@ const ProductScreen = () => {
     if (!name || !selectedShopId) {
       dispatch(
         showToast({
-          message: "Please enter product name and select a shop",
+          message: role === 'staff' 
+            ? "Please enter product name" 
+            : "Please enter product name and select a shop",
           type: "error",
         })
       );
@@ -379,7 +390,13 @@ const ProductScreen = () => {
       setSgst("");
       setMinimumStock("");
       setSelectedCategoryId("");
-      setSelectedShopId(shops.length > 0 ? shops[0]._id : "");
+      // Reset shop selection based on role
+      if (role === 'staff' && staffShops.length > 0) {
+        const staffShopId = staffShops[0]?._id || staffShops[0];
+        setSelectedShopId(staffShopId);
+      } else if (shops.length > 0) {
+        setSelectedShopId(shops[0]._id);
+      }
       setIsNameFocused(false);
       Keyboard.dismiss();
     } catch (err) {
@@ -410,7 +427,7 @@ const ProductScreen = () => {
 
           {isNameFocused && (
             <>
-              {shops.length > 0 && (
+              {role !== 'staff' && shops.length > 0 && (
                 <View style={{ ...global.input, padding: 0 }}>
                   <Picker
                     selectedValue={selectedShopId}
