@@ -1,0 +1,203 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../api/axiosClient';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Fetch authenticated user's sales
+export const fetchSales = createAsyncThunk(
+  'sales/fetch',
+  async (_, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.get('/sales', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.sales;
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to fetch sales';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+// Fetch a single sale by ID
+export const fetchSaleById = createAsyncThunk(
+  'sales/fetchById',
+  async (saleId, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.get(`/sales/${saleId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.sale;
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to fetch sale';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+// Create a new sale
+export const createSale = createAsyncThunk(
+  'sales/create',
+  async (payload, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.post('/sales', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.sales;
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to create sale';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+// Update an existing sale
+export const updateSale = createAsyncThunk(
+  'sales/update',
+  async ({ saleId, saleData }, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.put(`/sales/${saleId}`, saleData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.sales;
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to update sale';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+// Delete a sale
+export const deleteSale = createAsyncThunk(
+  'sales/delete',
+  async (saleId, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await api.delete(`/sales/${saleId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.sales;
+    } catch (error) {
+      const msg = error.response?.data?.msg || error.message || 'Failed to delete sale';
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
+const initialState = {
+  sales: [],
+  currentSale: null,
+  status: 'idle',
+  error: null,
+};
+
+const salesSlice = createSlice({
+  name: 'sales',
+  initialState,
+  reducers: {
+    setSales(state, action) {
+      state.sales = action.payload || [];
+    },
+    setCurrentSale(state, action) {
+      state.currentSale = action.payload;
+    },
+    clearSales(state) {
+      state.sales = [];
+      state.currentSale = null;
+      state.status = 'idle';
+      state.error = null;
+    },
+    resetError(state) {
+      state.error = null;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchSales.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchSales.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.sales = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchSales.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(fetchSaleById.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchSaleById.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.currentSale = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchSaleById.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(createSale.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createSale.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.sales = action.payload;
+        state.error = null;
+      })
+      .addCase(createSale.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(updateSale.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(updateSale.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.sales = action.payload;
+        state.error = null;
+      })
+      .addCase(updateSale.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(deleteSale.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(deleteSale.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.sales = action.payload;
+        state.error = null;
+      })
+      .addCase(deleteSale.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      });
+  }
+});
+
+export const { setSales, setCurrentSale, clearSales, resetError } = salesSlice.actions;
+export default salesSlice.reducer;
+

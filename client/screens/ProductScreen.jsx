@@ -199,6 +199,8 @@ const ProductScreen = () => {
 
   const ProductContainer = ({ product, index, data }) => {
     const [showDetails, setShowDetails] = useState(false);
+    const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
+    const [isQuickAdjusting, setIsQuickAdjusting] = useState(false);
     const [productName, setProductName] = useState(product.name || "");
     const [productQty, setProductQty] = useState(
       product.qty?.toString() || "0"
@@ -307,6 +309,7 @@ const ProductScreen = () => {
           return;
         }
       }
+      setIsUpdatingProduct(true);
       try {
         await dispatch(
           updateProduct({
@@ -343,6 +346,8 @@ const ProductScreen = () => {
           })
         );
         console.error("Product update error:", error);
+      } finally {
+        setIsUpdatingProduct(false);
       }
     };
 
@@ -361,6 +366,7 @@ const ProductScreen = () => {
         ? productDateValue
         : getCurrentDate();
 
+      setIsQuickAdjusting(true);
       try {
         await dispatch(
           updateProduct({
@@ -399,6 +405,8 @@ const ProductScreen = () => {
         );
         // revert on error
         setProductQty(oldQty.toString());
+      } finally {
+        setIsQuickAdjusting(false);
       }
     };
 
@@ -508,28 +516,40 @@ const ProductScreen = () => {
         >
           <TouchableOpacity
             onPress={() => handleQuickAdjust("add")}
+            disabled={isQuickAdjusting}
             style={{
               paddingVertical: 4,
               paddingHorizontal: 10,
               borderRadius: 6,
               borderWidth: 1,
               borderColor: primaryColor,
+              opacity: isQuickAdjusting ? 0.6 : 1,
             }}
           >
-            <Text style={{ fontSize: 12, color: primaryColor }}>+ 1</Text>
+            {isQuickAdjusting ? (
+              <ActivityIndicator size="small" color={primaryColor} />
+            ) : (
+              <Text style={{ fontSize: 12, color: primaryColor }}>+ 1</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => handleQuickAdjust("sub")}
+            disabled={isQuickAdjusting}
             style={{
               paddingVertical: 4,
               paddingHorizontal: 10,
               borderRadius: 6,
               borderWidth: 1,
               borderColor: "#ba181b",
+              opacity: isQuickAdjusting ? 0.6 : 1,
             }}
           >
-            <Text style={{ fontSize: 12, color: "#ba181b" }}>- 1</Text>
+            {isQuickAdjusting ? (
+              <ActivityIndicator size="small" color="#ba181b" />
+            ) : (
+              <Text style={{ fontSize: 12, color: "#ba181b" }}>- 1</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -555,6 +575,7 @@ const ProductScreen = () => {
               placeholder="Product Name *"
               value={productName}
               onChangeText={setProductName}
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -563,6 +584,7 @@ const ProductScreen = () => {
               value={productQty}
               onChangeText={setProductQty}
               keyboardType="numeric"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -571,6 +593,7 @@ const ProductScreen = () => {
               value={productCostPrice}
               onChangeText={setProductCostPrice}
               keyboardType="decimal-pad"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -579,6 +602,7 @@ const ProductScreen = () => {
               value={productSellingPrice}
               onChangeText={setProductSellingPrice}
               keyboardType="decimal-pad"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -587,6 +611,7 @@ const ProductScreen = () => {
               value={productCgst}
               onChangeText={setProductCgst}
               keyboardType="decimal-pad"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -595,6 +620,7 @@ const ProductScreen = () => {
               value={productSgst}
               onChangeText={setProductSgst}
               keyboardType="decimal-pad"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -603,6 +629,7 @@ const ProductScreen = () => {
               value={productMinimumStock}
               onChangeText={setProductMinimumStock}
               keyboardType="numeric"
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -610,6 +637,7 @@ const ProductScreen = () => {
               placeholder="Date (YYYY-MM-DD) *"
               value={productDateValue}
               onChangeText={setProductDateValue}
+              editable={!isUpdatingProduct}
             />
 
             <TextInput
@@ -618,13 +646,15 @@ const ProductScreen = () => {
               value={productNote}
               onChangeText={setProductNote}
               multiline
+              editable={!isUpdatingProduct}
             />
 
             {productShopCategories.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
+              <View style={{ ...global.input, padding: 0, opacity: isUpdatingProduct ? 0.6 : 1 }}>
                 <Picker
                   selectedValue={productCategoryId}
                   onValueChange={(itemValue) => setProductCategoryId(itemValue)}
+                  enabled={!isUpdatingProduct}
                   style={{ fontSize: 12 }}
                   itemStyle={{ fontSize: 12 }}
                 >
@@ -641,10 +671,11 @@ const ProductScreen = () => {
             )}
 
             {customers.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
+              <View style={{ ...global.input, padding: 0, opacity: isUpdatingProduct ? 0.6 : 1 }}>
                 <Picker
                   selectedValue={productCustomerId}
                   onValueChange={(itemValue) => setProductCustomerId(itemValue)}
+                  enabled={!isUpdatingProduct}
                   style={{ fontSize: 12 }}
                   itemStyle={{ fontSize: 12 }}
                 >
@@ -662,10 +693,19 @@ const ProductScreen = () => {
 
             <View>
               <TouchableOpacity
-                style={{ marginTop: 10, ...global.button1 }}
+                style={{ 
+                  marginTop: 10, 
+                  ...global.button1,
+                  opacity: isUpdatingProduct ? 0.6 : 1,
+                }}
                 onPress={handleUpdateProduct}
+                disabled={isUpdatingProduct}
               >
-                <Text style={global.btnText1}>Save {productName}</Text>
+                {isUpdatingProduct ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={global.btnText1}>Save {productName}</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

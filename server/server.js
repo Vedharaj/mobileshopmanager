@@ -13,6 +13,7 @@ const categoryRoutes = require('./routes/categories');
 const customerRoutes = require('./routes/customers');
 const productRoutes = require('./routes/products');
 const serviceRoutes = require('./routes/services');
+const salesRoutes = require('./routes/sales');
 
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/sales', salesRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

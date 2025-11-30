@@ -7,6 +7,7 @@ import productReducer from './slices/productSlice';
 import categoryReducer from './slices/categorySlice';
 import customerReducer from './slices/customerSlice';
 import serviceReducer from './slices/serviceSlice';
+import salesReducer from './slices/salesSlice';
 import themeReducer from './slices/themeSlice'; // Import theme reducer
 
 export const store = configureStore({
@@ -19,6 +20,7 @@ export const store = configureStore({
     categories: categoryReducer,
     customers: customerReducer,
     services: serviceReducer,
+    sales: salesReducer,
     theme: themeReducer, // Add theme reducer
   },
 });

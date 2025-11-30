@@ -20,6 +20,7 @@ import {
   updateService,
 } from "../store/slices/serviceSlice";
 import { fetchCustomers, createCustomer } from "../store/slices/customerSlice";
+import { createSale, updateSale, fetchSales } from "../store/slices/salesSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
 
@@ -29,6 +30,7 @@ const ServicesScreen = () => {
   const { services } = useSelector((state) => state.services);
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
+  const { sales } = useSelector((state) => state.sales);
   const { userid, role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
 
@@ -55,8 +57,8 @@ const ServicesScreen = () => {
   const [serviceName, setServiceName] = useState("");
   const [description, setDescription] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const [paidAmount, setPaidAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [amountInCash, setAmountInCash] = useState("");
+  const [amountInEcash, setAmountInEcash] = useState("");
   const [statusValue, setStatusValue] = useState("pending");
   const [selectedShopId, setSelectedShopId] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -169,6 +171,7 @@ const ServicesScreen = () => {
 
   const ServiceContainer = ({ service, index, data }) => {
     const [showDetails, setShowDetails] = useState(false);
+    const [isUpdatingService, setIsUpdatingService] = useState(false);
     const [serviceNameValue, setServiceNameValue] = useState(
       service.service_name || ""
     );
@@ -178,11 +181,11 @@ const ServicesScreen = () => {
     const [serviceTotalAmount, setServiceTotalAmount] = useState(
       service.total_amount?.toString() || "0"
     );
-    const [servicePaidAmount, setServicePaidAmount] = useState(
-      service.paid_amount?.toString() || "0"
+    const [serviceAmountInCash, setServiceAmountInCash] = useState(
+      service.amount_in_cash?.toString() || "0"
     );
-    const [servicePaymentMethod, setServicePaymentMethod] = useState(
-      service.payment_method || "cash"
+    const [serviceAmountInEcash, setServiceAmountInEcash] = useState(
+      service.amount_in_ecash?.toString() || "0"
     );
     const [serviceStatus, setServiceStatus] = useState(
       service.status || "pending"
@@ -223,8 +226,8 @@ const ServicesScreen = () => {
         return;
       }
 
-      const balance =
-        parseFloat(serviceTotalAmount) - parseFloat(servicePaidAmount);
+      const totalPaid = (parseFloat(serviceAmountInCash) || 0) + (parseFloat(serviceAmountInEcash) || 0);
+      const balance = parseFloat(serviceTotalAmount) - totalPaid;
 
       const serviceReceivedDateValue = service.received_date
         ? formatDate(new Date(service.received_date))
@@ -237,8 +240,8 @@ const ServicesScreen = () => {
         serviceNameValue === (service.service_name || "") &&
         serviceDescription === (service.description || "") &&
         serviceTotalAmount === (service.total_amount?.toString() || "0") &&
-        servicePaidAmount === (service.paid_amount?.toString() || "0") &&
-        servicePaymentMethod === (service.payment_method || "cash") &&
+        serviceAmountInCash === (service.amount_in_cash?.toString() || "0") &&
+        serviceAmountInEcash === (service.amount_in_ecash?.toString() || "0") &&
         serviceStatus === (service.status || "pending") &&
         serviceCustomerId ===
           (service.customer_id?._id || service.customer_id || "") &&
@@ -255,7 +258,16 @@ const ServicesScreen = () => {
         setShowDetails(false);
         return;
       }
+      setIsUpdatingService(true);
       try {
+        const newAmountInCash = parseFloat(serviceAmountInCash) || 0;
+        const newAmountInEcash = parseFloat(serviceAmountInEcash) || 0;
+        const newTotalPaid = newAmountInCash + newAmountInEcash;
+        const previousAmountInCash = parseFloat(service.amount_in_cash || 0);
+        const previousAmountInEcash = parseFloat(service.amount_in_ecash || 0);
+        const previousTotalPaid = previousAmountInCash + previousAmountInEcash;
+        const paidAmountChanged = newTotalPaid !== previousTotalPaid;
+
         await dispatch(
           updateService({
             serviceId: service._id,
@@ -263,9 +275,9 @@ const ServicesScreen = () => {
               service_name: serviceNameValue,
               description: serviceDescription,
               total_amount: parseFloat(serviceTotalAmount) || 0,
-              paid_amount: parseFloat(servicePaidAmount) || 0,
+              amount_in_cash: newAmountInCash,
+              amount_in_ecash: newAmountInEcash,
               balance: balance,
-              payment_method: servicePaymentMethod,
               status: serviceStatus,
               customer_id: serviceCustomerId || null,
               received_date: serviceReceivedDate || getCurrentDate(),
@@ -274,6 +286,127 @@ const ServicesScreen = () => {
             },
           })
         ).unwrap();
+
+        // Handle sales update when paid amounts change
+        if (paidAmountChanged && newTotalPaid > 0) {
+          try {
+            // Find existing sales for this service
+            const existingSales = sales?.filter(
+              (sale) => sale.service_id?._id === service._id || sale.service_id === service._id
+            );
+
+            // Update or create cash sale
+            if (newAmountInCash > 0) {
+              const cashSale = existingSales?.find(s => s.payment_method === 'cash');
+              if (cashSale) {
+                await dispatch(
+                  updateSale({
+                    saleId: cashSale._id || cashSale.id,
+                    saleData: {
+                      paid_amount: newAmountInCash,
+                      total_amount: parseFloat(serviceTotalAmount) || 0,
+                      balance: balance,
+                      payment_method: 'cash',
+                      customer_id: serviceCustomerId || null,
+                      order_date: serviceReceivedDate || getCurrentDate(),
+                      notes: `Service: ${serviceNameValue} (Cash)`,
+                    },
+                  })
+                ).unwrap();
+              } else {
+                await dispatch(
+                  createSale({
+                    shop_id: service.shop_id?._id || service.shop_id,
+                    user_id: service.user_id?._id || service.user_id,
+                    customer_id: serviceCustomerId || null,
+                    service_id: service._id,
+                    order_date: serviceReceivedDate || getCurrentDate(),
+                    total_amount: parseFloat(serviceTotalAmount) || 0,
+                    paid_amount: newAmountInCash,
+                    balance: balance,
+                    payment_method: 'cash',
+                    status: 'completed',
+                    notes: `Service: ${serviceNameValue} (Cash)`,
+                    items: [],
+                  })
+                ).unwrap();
+              }
+            } else if (newAmountInCash === 0 && previousAmountInCash > 0) {
+              // If cash amount is set to 0, update existing cash sale to 0
+              const cashSale = existingSales?.find(s => s.payment_method === 'cash');
+              if (cashSale) {
+                await dispatch(
+                  updateSale({
+                    saleId: cashSale._id || cashSale.id,
+                    saleData: {
+                      paid_amount: 0,
+                      total_amount: parseFloat(serviceTotalAmount) || 0,
+                      balance: balance,
+                    },
+                  })
+                ).unwrap();
+              }
+            }
+
+            // Update or create ecash sale
+            if (newAmountInEcash > 0) {
+              const ecashSale = existingSales?.find(s => s.payment_method !== 'cash');
+              if (ecashSale) {
+                await dispatch(
+                  updateSale({
+                    saleId: ecashSale._id || ecashSale.id,
+                    saleData: {
+                      paid_amount: newAmountInEcash,
+                      total_amount: parseFloat(serviceTotalAmount) || 0,
+                      balance: 0,
+                      payment_method: 'upi',
+                      customer_id: serviceCustomerId || null,
+                      order_date: serviceReceivedDate || getCurrentDate(),
+                      notes: `Service: ${serviceNameValue} (E-Cash)`,
+                    },
+                  })
+                ).unwrap();
+              } else {
+                await dispatch(
+                  createSale({
+                    shop_id: service.shop_id?._id || service.shop_id,
+                    user_id: service.user_id?._id || service.user_id,
+                    customer_id: serviceCustomerId || null,
+                    service_id: service._id,
+                    order_date: serviceReceivedDate || getCurrentDate(),
+                    total_amount: parseFloat(serviceTotalAmount) || 0,
+                    paid_amount: newAmountInEcash,
+                    balance: 0,
+                    payment_method: 'upi',
+                    status: 'completed',
+                    notes: `Service: ${serviceNameValue} (E-Cash)`,
+                    items: [],
+                  })
+                ).unwrap();
+              }
+            } else if (newAmountInEcash === 0 && previousAmountInEcash > 0) {
+              // If ecash amount is set to 0, update existing ecash sale to 0
+              const ecashSale = existingSales?.find(s => s.payment_method !== 'cash');
+              if (ecashSale) {
+                await dispatch(
+                  updateSale({
+                    saleId: ecashSale._id || ecashSale.id,
+                    saleData: {
+                      paid_amount: 0,
+                      total_amount: parseFloat(serviceTotalAmount) || 0,
+                      balance: balance,
+                    },
+                  })
+                ).unwrap();
+              }
+            }
+
+            dispatch(fetchSales());
+          } catch (salesError) {
+            console.error("Sales update error:", salesError);
+          }
+        }
+
         dispatch(
           showToast({
             message: `Service "${serviceNameValue}" updated successfully!`,
@@ -291,11 +424,13 @@ const ServicesScreen = () => {
           })
         );
         console.error("Service update error:", error);
+      } finally {
+        setIsUpdatingService(false);
       }
     };
 
-    const balance =
-      parseFloat(serviceTotalAmount) - parseFloat(servicePaidAmount);
+      const totalPaid = (parseFloat(serviceAmountInCash) || 0) + (parseFloat(serviceAmountInEcash) || 0);
+      const balance = parseFloat(serviceTotalAmount) - totalPaid;
 
     return (
       <View
@@ -434,6 +569,7 @@ const ServicesScreen = () => {
               placeholder="Service Name *"
               value={serviceNameValue}
               onChangeText={setServiceNameValue}
+              editable={!isUpdatingService}
             />
 
             <TextInput
@@ -442,13 +578,15 @@ const ServicesScreen = () => {
               value={serviceDescription}
               onChangeText={setServiceDescription}
               multiline
+              editable={!isUpdatingService}
             />
 
             {customers.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
+              <View style={{ ...global.input, padding: 0, opacity: isUpdatingService ? 0.6 : 1 }}>
                 <Picker
                   selectedValue={serviceCustomerId}
                   onValueChange={(itemValue) => setServiceCustomerId(itemValue)}
+                  enabled={!isUpdatingService}
                 >
                   <Picker.Item label="No Customer" value="" />
                   {customers.map((customer) => (
@@ -468,14 +606,25 @@ const ServicesScreen = () => {
               value={serviceTotalAmount}
               onChangeText={setServiceTotalAmount}
               keyboardType="decimal-pad"
+              editable={!isUpdatingService}
             />
 
             <TextInput
               style={global.input}
-              placeholder="Paid Amount *"
-              value={servicePaidAmount}
-              onChangeText={setServicePaidAmount}
+              placeholder="Amount in Cash *"
+              value={serviceAmountInCash}
+              onChangeText={setServiceAmountInCash}
               keyboardType="decimal-pad"
+              editable={!isUpdatingService}
+            />
+
+            <TextInput
+              style={global.input}
+              placeholder="Amount in E-Cash *"
+              value={serviceAmountInEcash}
+              onChangeText={setServiceAmountInEcash}
+              keyboardType="decimal-pad"
+              editable={!isUpdatingService}
             />
 
             <Text style={{ marginTop: 10, marginBottom: 5, color: "#666" }}>
@@ -487,6 +636,7 @@ const ServicesScreen = () => {
               placeholder="Received Date (YYYY-MM-DD) *"
               value={serviceReceivedDate}
               onChangeText={setServiceReceivedDate}
+              editable={!isUpdatingService}
             />
 
             <TextInput
@@ -494,6 +644,7 @@ const ServicesScreen = () => {
               placeholder="Return Date (YYYY-MM-DD) *"
               value={serviceReturnDate}
               onChangeText={setServiceReturnDate}
+              editable={!isUpdatingService}
             />
 
             <TextInput
@@ -502,26 +653,14 @@ const ServicesScreen = () => {
               value={serviceNote}
               onChangeText={setServiceNote}
               multiline
+              editable={!isUpdatingService}
             />
 
-            <View style={{ ...global.input, padding: 0 }}>
-              <Picker
-                selectedValue={servicePaymentMethod}
-                onValueChange={(itemValue) =>
-                  setServicePaymentMethod(itemValue)
-                }
-              >
-                <Picker.Item label="Cash" value="cash" />
-                <Picker.Item label="Card" value="card" />
-                <Picker.Item label="UPI" value="upi" />
-                <Picker.Item label="Bank Transfer" value="bank_transfer" />
-              </Picker>
-            </View>
-
-            <View style={{ ...global.input, padding: 0, marginTop: 10 }}>
+            <View style={{ ...global.input, padding: 0, marginTop: 10, opacity: isUpdatingService ? 0.6 : 1 }}>
               <Picker
                 selectedValue={serviceStatus}
                 onValueChange={(itemValue) => setServiceStatus(itemValue)}
+                enabled={!isUpdatingService}
               >
                 <Picker.Item label="Pending" value="pending" />
                 <Picker.Item label="In Progress" value="in_progress" />
@@ -532,10 +671,19 @@ const ServicesScreen = () => {
 
             <View>
               <TouchableOpacity
-                style={{ marginTop: 10, ...global.button1 }}
+                style={{ 
+                  marginTop: 10, 
+                  ...global.button1,
+                  opacity: isUpdatingService ? 0.6 : 1,
+                }}
                 onPress={handleUpdateService}
+                disabled={isUpdatingService}
               >
-                <Text style={global.btnText1}>Save {serviceNameValue}</Text>
+                {isUpdatingService ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={global.btnText1}>Save {serviceNameValue}</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -579,19 +727,21 @@ const ServicesScreen = () => {
     }
 
     const total = parseFloat(totalAmount) || 0;
-    const paid = parseFloat(paidAmount) || 0;
-    const balance = total - paid;
+    const cashAmount = parseFloat(amountInCash) || 0;
+    const ecashAmount = parseFloat(amountInEcash) || 0;
+    const totalPaid = cashAmount + ecashAmount;
+    const balance = total - totalPaid;
 
     setIsAddingService(true);
     try {
-      await dispatch(
+      const servicesResult = await dispatch(
         createService({
           service_name: serviceName,
           description,
           total_amount: total,
-          paid_amount: paid,
+          amount_in_cash: cashAmount,
+          amount_in_ecash: ecashAmount,
           balance: balance,
-          payment_method: paymentMethod,
           status: statusValue,
           shop_id: selectedShopId,
           user_id: userid,
@@ -602,6 +752,62 @@ const ServicesScreen = () => {
         })
       ).unwrap();
 
+      // Create sales if amounts > 0
+      if (totalPaid > 0) {
+        try {
+          // Find the newly created service from the result (most recent one with matching name)
+          const createdService = servicesResult?.find(
+            (s) => s.service_name === serviceName
+          ) || servicesResult?.[servicesResult.length - 1]; // Fallback to last service if not found
+          
+          if (createdService && createdService._id) {
+            // Create cash sale if amount in cash > 0
+            if (cashAmount > 0) {
+              await dispatch(
+                createSale({
+                  shop_id: selectedShopId,
+                  user_id: userid,
+                  customer_id: selectedCustomerId || null,
+                  service_id: createdService._id,
+                  order_date: receivedDate || getCurrentDate(),
+                  total_amount: total,
+                  paid_amount: cashAmount,
+                  balance: balance,
+                  payment_method: 'cash',
+                  status: 'completed',
+                  notes: `Service: ${serviceName} (Cash)`,
+                  items: [],
+                })
+              ).unwrap();
+            }
+            // Create ecash sale if amount in ecash > 0
+            if (ecashAmount > 0) {
+              await dispatch(
+                createSale({
+                  shop_id: selectedShopId,
+                  user_id: userid,
+                  customer_id: selectedCustomerId || null,
+                  service_id: createdService._id,
+                  order_date: receivedDate || getCurrentDate(),
+                  total_amount: total,
+                  paid_amount: ecashAmount,
+                  balance: 0,
+                  payment_method: 'upi',
+                  status: 'completed',
+                  notes: `Service: ${serviceName} (E-Cash)`,
+                  items: [],
+                })
+              ).unwrap();
+            }
+            // Refresh sales in HomeScreen
+            dispatch(fetchSales());
+          }
+        } catch (salesError) {
+          console.error("Sales creation error:", salesError);
+          // Don't fail the service creation if sales creation fails
+        }
+      }
+
       dispatch(
         showToast({
           message: "Service created successfully!",
@@ -611,8 +817,8 @@ const ServicesScreen = () => {
       setServiceName("");
       setDescription("");
       setTotalAmount("");
-      setPaidAmount("");
-      setPaymentMethod("cash");
+      setAmountInCash("");
+      setAmountInEcash("");
       setStatusValue("pending");
       setReceivedDate(getCurrentDate());
       setReturnDate(getCurrentDate());
@@ -757,16 +963,24 @@ const ServicesScreen = () => {
 
               <TextInput
                 style={global.input}
-                placeholder="Paid Amount *"
-                value={paidAmount}
-                onChangeText={setPaidAmount}
+                placeholder="Amount in Cash *"
+                value={amountInCash}
+                onChangeText={setAmountInCash}
                 keyboardType="decimal-pad"
               />
 
-              {totalAmount && paidAmount && (
+              <TextInput
+                style={global.input}
+                placeholder="Amount in E-Cash *"
+                value={amountInEcash}
+                onChangeText={setAmountInEcash}
+                keyboardType="decimal-pad"
+              />
+
+              {totalAmount && (amountInCash || amountInEcash) && (
                 <Text style={{ marginTop: 5, marginBottom: 5, color: "#666" }}>
                   Balance: ₹
-                  {(parseFloat(totalAmount) - parseFloat(paidAmount)).toFixed(
+                  {(parseFloat(totalAmount) - (parseFloat(amountInCash || 0) + parseFloat(amountInEcash || 0))).toFixed(
                     2
                   )}
                 </Text>
@@ -794,17 +1008,6 @@ const ServicesScreen = () => {
                 multiline
               />
 
-              <View style={{ ...global.input, padding: 0 }}>
-                <Picker
-                  selectedValue={paymentMethod}
-                  onValueChange={(itemValue) => setPaymentMethod(itemValue)}
-                >
-                  <Picker.Item label="Cash" value="cash" />
-                  <Picker.Item label="Card" value="card" />
-                  <Picker.Item label="UPI" value="upi" />
-                  <Picker.Item label="Bank Transfer" value="bank_transfer" />
-                </Picker>
-              </View>
 
               <View style={{ ...global.input, padding: 0, marginTop: 10 }}>
                 <Picker
@@ -854,8 +1057,8 @@ const ServicesScreen = () => {
                     setServiceName("");
                     setDescription("");
                     setTotalAmount("");
-                    setPaidAmount("");
-                    setPaymentMethod("cash");
+                    setAmountInCash("");
+                    setAmountInEcash("");
                     setStatusValue("pending");
                     setReceivedDate(getCurrentDate());
                     setReturnDate(getCurrentDate());

@@ -34,9 +34,9 @@ router.post('/', auth, async (req, res) => {
       customer_id,
       description,
       total_amount,
-      paid_amount,
+      amount_in_cash,
+      amount_in_ecash,
       balance,
-      payment_method,
       status,
       received_date,
       return_date,
@@ -61,7 +61,10 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Shop not found or you don\'t have access to it' });
     }
 
-    const calculatedBalance = (total_amount || 0) - (paid_amount || 0);
+    const amountInCash = amount_in_cash || 0;
+    const amountInEcash = amount_in_ecash || 0;
+    const totalPaid = amountInCash + amountInEcash;
+    const calculatedBalance = (total_amount || 0) - totalPaid;
 
     const service = new Service({
       service_name,
@@ -70,9 +73,9 @@ router.post('/', auth, async (req, res) => {
       customer_id: customer_id || null,
       description: description || '',
       total_amount: total_amount || 0,
-      paid_amount: paid_amount || 0,
+      amount_in_cash: amountInCash,
+      amount_in_ecash: amountInEcash,
       balance: balance !== undefined ? balance : calculatedBalance,
-      payment_method: payment_method || 'cash',
       status: status || 'pending',
       received_date: received_date ? new Date(received_date) : new Date(),
       return_date: return_date ? new Date(return_date) : new Date(),
@@ -107,9 +110,9 @@ router.put('/:id', auth, async (req, res) => {
       customer_id,
       description,
       total_amount,
-      paid_amount,
+      amount_in_cash,
+      amount_in_ecash,
       balance,
-      payment_method,
       status,
       received_date,
       return_date,
@@ -143,9 +146,10 @@ router.put('/:id', auth, async (req, res) => {
     service.customer_id = customer_id || null;
     service.description = description || '';
     service.total_amount = total_amount || 0;
-    service.paid_amount = paid_amount || 0;
-    service.balance = balance !== undefined ? balance : (service.total_amount - service.paid_amount);
-    service.payment_method = payment_method || 'cash';
+    service.amount_in_cash = amount_in_cash || 0;
+    service.amount_in_ecash = amount_in_ecash || 0;
+    const totalPaid = (amount_in_cash || 0) + (amount_in_ecash || 0);
+    service.balance = balance !== undefined ? balance : (service.total_amount - totalPaid);
     service.status = status || 'pending';
     if (received_date) {
       service.received_date = new Date(received_date);

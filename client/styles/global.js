@@ -1,6 +1,9 @@
-import { StyleSheet, StatusBar, Platform } from "react-native";
+import { StyleSheet, StatusBar, Platform, Dimensions } from "react-native";
 import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = 50;
 
 const STATUSBAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
@@ -63,7 +66,7 @@ export const global = StyleSheet.create({
     fontSize: 14,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
     marginHorizontal: 2,
@@ -83,7 +86,7 @@ export const global = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: "#ddd",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
@@ -99,7 +102,7 @@ export const global = StyleSheet.create({
   },
   navbarRole: {
     color: PRIMARY_COLOR_DEFAULT, // Use default static color here
-    fontSize: 12,
+    fontSize: 14,
   },
   navbarRight: {
     flexDirection: "row",
@@ -108,13 +111,14 @@ export const global = StyleSheet.create({
   },
   navbarDate: {
     color: "#111",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "500",
     marginRight: 8,
   },
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingHorizontal: 10,
   },
   logoutBtn: {
     padding: 8,
@@ -175,7 +179,7 @@ export const global = StyleSheet.create({
   scanHint: {
     color: "white",
     marginTop: 16,
-    fontSize: 12,
+    fontSize: 14,
   },
 
   // permission
@@ -194,7 +198,7 @@ export const global = StyleSheet.create({
   },
   permissionText: {
     color: "#9ca3af",
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 24,
   },
   backButton: {
@@ -266,14 +270,154 @@ export const global = StyleSheet.create({
   fabText: {
     color: "white",
     marginLeft: 8,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "bold",
   },
   productLabel: {
     backgroundColor: "#ccc",
-    fontSize: 12,
+    fontSize: 14,
     padding: 1,
     borderRadius: 999,
     paddingHorizontal: 8,
   },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  summaryBox: {
+    flex: 1,
+    marginHorizontal: 4,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+  },
+  summaryIncome: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#2ecc71',
+  },
+  summaryExpense: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#e74c3c',
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  swipeArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dateItem: {
+    width: SCREEN_WIDTH / 7,
+    height: 60,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedDateItem: {
+    backgroundColor: '#007bff33',
+    borderColor: '#007bff',
+  },
+  disabledDateItem: {
+    opacity: 0.3,
+  },
+  dayLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dateLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  filtersRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  filterBox: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  picker: {
+    height: 40,
+    width: '100%',
+  },
+  txnItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    marginVertical: 4,
+  },
+  txnTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  txnSubtitle: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 2,
+  },
+  txnAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  txnIncome: {
+    color: '#2ecc71',
+  },
+  txnExpense: {
+    color: '#e74c3c',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 6,
+  },
+  addExpenseButton: {
+  backgroundColor: '#e74c3c',
+  paddingVertical: 14,
+  borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginTop: 10,
+  marginBottom: 20,
+  elevation: 3,
+},
+addExpenseText: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#fff',
+},
 });
