@@ -14,6 +14,7 @@ import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
+import Entypo from '@expo/vector-icons/Entypo';
 
 const getWeekDates = (weekOffset = 0) => {
   const startOfWeek = moment().startOf('week').add(weekOffset, 'weeks');
@@ -22,7 +23,7 @@ const getWeekDates = (weekOffset = 0) => {
     .map((_, i) => startOfWeek.clone().add(i, 'days'));
 };
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { role, username, user } = useSelector((state) => state.auth);
   const { shops } = useSelector((state) => state.shops);
   const { sales, status: salesStatus } = useSelector((state) => state.sales);
@@ -210,7 +211,7 @@ export default function HomeScreen() {
       {/* Navbar */}
       <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
         <Text numberOfLines={2} style={global.navbarName}>
-          {username}
+          {username}{" "}
           <Text style={{ ...global.navbarRole, color: primaryColor }}>
             {role || "User"}
           </Text>
@@ -222,21 +223,25 @@ export default function HomeScreen() {
       </View>
       <View style={global.container}>
 
-      {/* Income / Expense / Cash / E-Cash summary row */}
-      <View style={global.summaryRow}>
-        <View style={[global.summaryBox, global.summaryIncome]}>
+      {/* Income / Expense summary - Row 1 */}
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+        <View style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}>
           <Text style={global.summaryLabel}>Income</Text>
           <Text style={global.summaryValue}>₹{totalIncome}</Text>
         </View>
-        <View style={[global.summaryBox, global.summaryExpense]}>
+        <View style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}>
           <Text style={global.summaryLabel}>Expense</Text>
           <Text style={global.summaryValue}>₹{totalExpense}</Text>
         </View>
-        <View style={[global.summaryBox, global.summaryCash]}>
+      </View>
+
+      {/* Cash on Hand / E-Cash summary - Row 2 */}
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+        <View style={[global.summaryBox, global.summaryCash, { flex: 1 }]}>
           <Text style={global.summaryLabel}>Cash on Hand</Text>
           <Text style={global.summaryValue}>₹{cashOnHand}</Text>
         </View>
-        <View style={[global.summaryBox, { borderLeftWidth: 4, borderLeftColor: '#3498db' }]}>
+        <View style={[global.summaryBox, { borderLeftWidth: 4, borderLeftColor: '#3498db', flex: 1 }]}>
           <Text style={global.summaryLabel}>E-Cash</Text>
           <Text style={global.summaryValue}>₹{eCash}</Text>
         </View>
@@ -333,8 +338,7 @@ export default function HomeScreen() {
         <Text style={global.sectionTitle}>Transaction History</Text>
         <TouchableOpacity
           onPress={() => {
-            console.log('Transaction history button clicked');
-            // TODO: Add action for button
+            navigation.navigate('Transaction');
           }}
           style={{
             paddingHorizontal: 12,
@@ -343,7 +347,8 @@ export default function HomeScreen() {
             backgroundColor: primaryColor,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
+          <Entypo name="plus" size={16} color="white" />
            Add
           </Text>
         </TouchableOpacity>

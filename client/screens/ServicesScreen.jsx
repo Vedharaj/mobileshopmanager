@@ -57,8 +57,6 @@ const ServicesScreen = () => {
   const [serviceName, setServiceName] = useState("");
   const [description, setDescription] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const [amountInCash, setAmountInCash] = useState("");
-  const [amountInEcash, setAmountInEcash] = useState("");
   const [statusValue, setStatusValue] = useState("pending");
   const [selectedShopId, setSelectedShopId] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -181,12 +179,6 @@ const ServicesScreen = () => {
     const [serviceTotalAmount, setServiceTotalAmount] = useState(
       service.total_amount?.toString() || "0"
     );
-    const [serviceAmountInCash, setServiceAmountInCash] = useState(
-      service.amount_in_cash?.toString() || "0"
-    );
-    const [serviceAmountInEcash, setServiceAmountInEcash] = useState(
-      service.amount_in_ecash?.toString() || "0"
-    );
     const [serviceStatus, setServiceStatus] = useState(
       service.status || "pending"
     );
@@ -203,6 +195,13 @@ const ServicesScreen = () => {
         ? formatDate(new Date(service.return_date))
         : getCurrentDate()
     );
+    const [serviceAmountInCash, setServiceAmountInCash] = useState(
+      service.amount_in_cash?.toString() || "0"
+    );
+    const [serviceAmountInEcash, setServiceAmountInEcash] = useState(
+      service.amount_in_ecash?.toString() || "0"
+    );
+
     const [serviceNote, setServiceNote] = useState(service.note || "");
 
     const handleUpdateService = async () => {
@@ -226,8 +225,8 @@ const ServicesScreen = () => {
         return;
       }
 
-      const totalPaid = (parseFloat(serviceAmountInCash) || 0) + (parseFloat(serviceAmountInEcash) || 0);
-      const balance = parseFloat(serviceTotalAmount) - totalPaid;
+      const balance = parseFloat(serviceTotalAmount) || 0;
+
 
       const serviceReceivedDateValue = service.received_date
         ? formatDate(new Date(service.received_date))
@@ -240,11 +239,9 @@ const ServicesScreen = () => {
         serviceNameValue === (service.service_name || "") &&
         serviceDescription === (service.description || "") &&
         serviceTotalAmount === (service.total_amount?.toString() || "0") &&
-        serviceAmountInCash === (service.amount_in_cash?.toString() || "0") &&
-        serviceAmountInEcash === (service.amount_in_ecash?.toString() || "0") &&
         serviceStatus === (service.status || "pending") &&
         serviceCustomerId ===
-          (service.customer_id?._id || service.customer_id || "") &&
+        (service.customer_id?._id || service.customer_id || "") &&
         serviceReceivedDate === serviceReceivedDateValue &&
         serviceReturnDate === serviceReturnDateValue &&
         serviceNote === (service.note || "")
@@ -429,8 +426,8 @@ const ServicesScreen = () => {
       }
     };
 
-      const totalPaid = (parseFloat(serviceAmountInCash) || 0) + (parseFloat(serviceAmountInEcash) || 0);
-      const balance = parseFloat(serviceTotalAmount) - totalPaid;
+    const totalPaid = (parseFloat(serviceAmountInCash) || 0) + (parseFloat(serviceAmountInEcash) || 0);
+    const balance = parseFloat(serviceTotalAmount) - totalPaid;
 
     return (
       <View
@@ -546,20 +543,6 @@ const ServicesScreen = () => {
               </View>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => handleDeleteService(service._id)}
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              borderWidth: 1,
-              borderColor: "#ba181b",
-              padding: 5,
-              borderRadius: 5,
-            }}
-          >
-            <MaterialIcons name="delete" size={16} color="#ba181b" />
-          </TouchableOpacity>
         </View>
 
         {showDetails && (
@@ -609,24 +592,6 @@ const ServicesScreen = () => {
               editable={!isUpdatingService}
             />
 
-            <TextInput
-              style={global.input}
-              placeholder="Amount in Cash *"
-              value={serviceAmountInCash}
-              onChangeText={setServiceAmountInCash}
-              keyboardType="decimal-pad"
-              editable={!isUpdatingService}
-            />
-
-            <TextInput
-              style={global.input}
-              placeholder="Amount in E-Cash *"
-              value={serviceAmountInEcash}
-              onChangeText={setServiceAmountInEcash}
-              keyboardType="decimal-pad"
-              editable={!isUpdatingService}
-            />
-
             <Text style={{ marginTop: 10, marginBottom: 5, color: "#666" }}>
               Balance: ₹{balance.toFixed(2)}
             </Text>
@@ -669,10 +634,28 @@ const ServicesScreen = () => {
               </Picker>
             </View>
 
-            <View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
+            >
               <TouchableOpacity
-                style={{ 
-                  marginTop: 10, 
+                style={{
+                  ...global.button1,
+                  backgroundColor: "#ba181b",
+                  opacity: isUpdatingService ? 0.6 : 1,
+                }}
+                onPress={() => handleDeleteService(service._id)}
+                disabled={isUpdatingService}
+              >
+                <Text style={global.btnText}>Delete</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
                   ...global.button1,
                   opacity: isUpdatingService ? 0.6 : 1,
                 }}
@@ -727,10 +710,10 @@ const ServicesScreen = () => {
     }
 
     const total = parseFloat(totalAmount) || 0;
-    const cashAmount = parseFloat(amountInCash) || 0;
-    const ecashAmount = parseFloat(amountInEcash) || 0;
+    const balance = total;
+    const cashAmount = 0; // Default to 0 if not provided
+    const ecashAmount = 0; // Default to 0 if not provided
     const totalPaid = cashAmount + ecashAmount;
-    const balance = total - totalPaid;
 
     setIsAddingService(true);
     try {
@@ -739,9 +722,7 @@ const ServicesScreen = () => {
           service_name: serviceName,
           description,
           total_amount: total,
-          amount_in_cash: cashAmount,
-          amount_in_ecash: ecashAmount,
-          balance: balance,
+          balance: total,
           status: statusValue,
           shop_id: selectedShopId,
           user_id: userid,
@@ -759,7 +740,7 @@ const ServicesScreen = () => {
           const createdService = servicesResult?.find(
             (s) => s.service_name === serviceName
           ) || servicesResult?.[servicesResult.length - 1]; // Fallback to last service if not found
-          
+
           if (createdService && createdService._id) {
             // Create cash sale if amount in cash > 0
             if (cashAmount > 0) {
@@ -817,8 +798,6 @@ const ServicesScreen = () => {
       setServiceName("");
       setDescription("");
       setTotalAmount("");
-      setAmountInCash("");
-      setAmountInEcash("");
       setStatusValue("pending");
       setReceivedDate(getCurrentDate());
       setReturnDate(getCurrentDate());
@@ -961,26 +940,10 @@ const ServicesScreen = () => {
                 keyboardType="decimal-pad"
               />
 
-              <TextInput
-                style={global.input}
-                placeholder="Amount in Cash *"
-                value={amountInCash}
-                onChangeText={setAmountInCash}
-                keyboardType="decimal-pad"
-              />
-
-              <TextInput
-                style={global.input}
-                placeholder="Amount in E-Cash *"
-                value={amountInEcash}
-                onChangeText={setAmountInEcash}
-                keyboardType="decimal-pad"
-              />
-
-              {totalAmount && (amountInCash || amountInEcash) && (
+              {totalAmount && (0 || 0) && (
                 <Text style={{ marginTop: 5, marginBottom: 5, color: "#666" }}>
                   Balance: ₹
-                  {(parseFloat(totalAmount) - (parseFloat(amountInCash || 0) + parseFloat(amountInEcash || 0))).toFixed(
+                  {(parseFloat(totalAmount) - (parseFloat(0 || 0) + parseFloat(0 || 0))).toFixed(
                     2
                   )}
                 </Text>
@@ -1057,8 +1020,6 @@ const ServicesScreen = () => {
                     setServiceName("");
                     setDescription("");
                     setTotalAmount("");
-                    setAmountInCash("");
-                    setAmountInEcash("");
                     setStatusValue("pending");
                     setReceivedDate(getCurrentDate());
                     setReturnDate(getCurrentDate());
@@ -1212,15 +1173,15 @@ const ServicesScreen = () => {
           const baseServices =
             activeTab === 0
               ? services.filter(
-                  (service) =>
-                    service.status === "pending" ||
-                    service.status === "in_progress"
-                )
+                (service) =>
+                  service.status === "pending" ||
+                  service.status === "in_progress"
+              )
               : services.filter(
-                  (service) =>
-                    service.status === "completed" ||
-                    service.status === "cancelled"
-                );
+                (service) =>
+                  service.status === "completed" ||
+                  service.status === "cancelled"
+              );
 
           const filteredServices = baseServices.filter((service) => {
             if (!filterShopId) return true;
@@ -1247,8 +1208,8 @@ const ServicesScreen = () => {
                   ? formatDate(new Date(service.received_date))
                   : getCurrentDate()
                 : service.return_date
-                ? formatDate(new Date(service.return_date))
-                : getCurrentDate();
+                  ? formatDate(new Date(service.return_date))
+                  : getCurrentDate();
             if (!acc[serviceDate]) {
               acc[serviceDate] = [];
             }

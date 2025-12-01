@@ -27,6 +27,7 @@ import StaffManagement from "./screens/StaffManagement.jsx";
 import CategoryManagement from "./screens/CategoryManagement.jsx";
 import CustomerManagement from "./screens/CustomerManagement.jsx";
 import ThemeSettings from "./screens/ThemeSettings.jsx";
+import TransactionScreen from "./screens/TransactionScreen.jsx";
 
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
@@ -46,6 +47,7 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "CategoryManagement",
   "CustomerManagement",
   "ThemeSettings",
+  "Transaction",
 ];
 
 const ROUTE_TO_INDEX = {
@@ -73,6 +75,7 @@ function RootNavigator() {
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [activeIndex, setActiveIndex] = useState(3);
   const [currentRoute, setCurrentRoute] = useState(null);
+  const [isWaitingForShops, setIsWaitingForShops] = useState(false);
 
   const userToken = useSelector((state) => state.auth.token);
   const userRole = useSelector((state) => state.auth.role);
@@ -270,6 +273,11 @@ function RootNavigator() {
                 name="Services"
                 component={ServicesScreen}
                 options={{ headerShown: true, headerBackVisible: false }}
+              />
+              <Stack.Screen
+                name="Transaction"
+                component={TransactionScreen}
+                options={{ headerShown: true }}
               />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>

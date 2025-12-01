@@ -14,6 +14,7 @@ const customerRoutes = require('./routes/customers');
 const productRoutes = require('./routes/products');
 const serviceRoutes = require('./routes/services');
 const salesRoutes = require('./routes/sales');
+const salesItemsRoutes = require('./routes/salesItems');
 
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/sales-items', salesItemsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -49,6 +51,26 @@ const PORT = process.env.PORT || 5000;
 const mongouri = process.env.MONGO_URI;
 
 connectDB(mongouri).then(() => {
-  app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+  const server = app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+
+  // Handle EADDRINUSE error
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Trying alternative port...`);
+      const altPort = PORT + 1;
+      const altServer = app.listen(altPort, () => {
+        console.log(`Server listening on alternative port ${altPort}`);
+      });
+      altServer.on('error', (altErr) => {
+        console.error(`Could not bind to port ${altPort}:`, altErr.message);
+        process.exit(1);
+      });
+    } else {
+      console.error('Server error:', err);
+      process.exit(1);
+    }
+  });
 });
   
