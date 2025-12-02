@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -203,6 +204,29 @@ const ServicesScreen = () => {
     );
 
     const [serviceNote, setServiceNote] = useState(service.note || "");
+
+    // Update local state when service prop changes (e.g., after refetch from useFocusEffect)
+    useEffect(() => {
+      // console.log("Service updated - refreshing local state for service:", service.service_name, "balance:", service.balance);
+      setServiceNameValue(service.service_name || "");
+      setServiceDescription(service.description || "");
+      setServiceTotalAmount(service.total_amount?.toString() || "0");
+      setServiceStatus(service.status || "pending");
+      setServiceCustomerId(service.customer_id?._id || service.customer_id || "");
+      setServiceReceivedDate(
+        service.received_date
+          ? formatDate(new Date(service.received_date))
+          : getCurrentDate()
+      );
+      setServiceReturnDate(
+        service.return_date
+          ? formatDate(new Date(service.return_date))
+          : getCurrentDate()
+      );
+      setServiceAmountInCash(service.amount_in_cash?.toString() || "0");
+      setServiceAmountInEcash(service.amount_in_ecash?.toString() || "0");
+      setServiceNote(service.note || "");
+    }, [service]);
 
     const handleUpdateService = async () => {
       if (!serviceReceivedDate || !isValidDate(serviceReceivedDate)) {
@@ -490,7 +514,7 @@ const ServicesScreen = () => {
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  To:{"\n "}
+                  <Text>To:{"\n "}</Text>
                   <Text style={{ color: primaryColor }}>
                     {service.customer_id?.name || "N/A"}
                   </Text>
@@ -505,7 +529,7 @@ const ServicesScreen = () => {
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  By:{"\n "}
+                  <Text>By:{"\n "}</Text>
                   <Text style={{ color: primaryColor }}>
                     {service.user_id?.username || "N/A"}
                   </Text>
@@ -520,7 +544,7 @@ const ServicesScreen = () => {
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  Shop:{"\n "}
+                  <Text>Shop:{"\n "}</Text>
                   <Text style={{ color: primaryColor }}>
                     {service.shop_id?.name || "N/A"}
                   </Text>
@@ -535,7 +559,7 @@ const ServicesScreen = () => {
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  Balance:{"\n "}
+                  <Text>Balance:{"\n "}</Text>
                   <Text style={{ color: primaryColor }}>
                     ₹{service.balance?.toString() || "0"}
                   </Text>
@@ -591,10 +615,6 @@ const ServicesScreen = () => {
               keyboardType="decimal-pad"
               editable={!isUpdatingService}
             />
-
-            <Text style={{ marginTop: 10, marginBottom: 5, color: "#666" }}>
-              Balance: ₹{balance.toFixed(2)}
-            </Text>
 
             <TextInput
               style={global.input}

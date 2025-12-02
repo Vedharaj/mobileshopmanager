@@ -82,6 +82,7 @@ router.post('/', auth, async (req, res) => {
       user_id,
       customer_id,
       service_id,
+      service_name,
       order_date,
       total_amount,
       paid_amount,
@@ -103,11 +104,26 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Shop not found or you don\'t have access to it' });
     }
 
+    // If service_id provided but no service_name, fetch it from Service model
+    let finalServiceName = service_name;
+    if (service_id && !finalServiceName) {
+      try {
+        const Service = require('../models/Service');
+        const service = await Service.findById(service_id);
+        if (service) {
+          finalServiceName = service.service_name;
+        }
+      } catch (err) {
+        console.warn('Could not fetch service name from service_id:', err.message);
+      }
+    }
+
     const sale = new Sales({
       shop_id,
       user_id: user_id || req.user._id,
       customer_id: customer_id || null,
       service_id: service_id || null,
+      service_name: finalServiceName || null,
       order_date: order_date ? new Date(order_date) : new Date(),
       total_amount: total_amount || 0,
       paid_amount: paid_amount || 0,

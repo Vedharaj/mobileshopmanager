@@ -119,18 +119,6 @@ router.put('/:id', auth, async (req, res) => {
       note
     } = req.body;
 
-    if (!service_name) {
-      return res.status(400).json({ msg: 'Service name is required' });
-    }
-
-    if (!received_date) {
-      return res.status(400).json({ msg: 'Received date is required' });
-    }
-
-    if (!return_date) {
-      return res.status(400).json({ msg: 'Return date is required' });
-    }
-
     const service = await Service.findById(serviceId);
     if (!service) {
       return res.status(404).json({ msg: 'Service not found' });
@@ -142,12 +130,13 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Unauthorized: Not authorized to update this service' });
     }
 
-    service.service_name = service_name;
-    service.customer_id = customer_id || null;
-    service.description = description || '';
-    service.total_amount = total_amount || 0;
-    service.amount_in_cash = amount_in_cash || 0;
-    service.amount_in_ecash = amount_in_ecash || 0;
+    // Update only provided fields (allow partial updates like balance-only changes)
+    if (service_name) service.service_name = service_name;
+    if (customer_id !== undefined) service.customer_id = customer_id || null;
+    if (description !== undefined) service.description = description || '';
+    if (total_amount !== undefined) service.total_amount = total_amount || 0;
+    if (amount_in_cash !== undefined) service.amount_in_cash = amount_in_cash || 0;
+    if (amount_in_ecash !== undefined) service.amount_in_ecash = amount_in_ecash || 0;
     const totalPaid = (amount_in_cash || 0) + (amount_in_ecash || 0);
     service.balance = balance !== undefined ? balance : (service.total_amount - totalPaid);
     service.status = status || 'pending';
