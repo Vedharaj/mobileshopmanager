@@ -16,6 +16,7 @@ import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { fetchSales, deleteSale } from "../store/slices/salesSlice";
+import { updateService, fetchServices } from "../store/slices/serviceSlice";
 import { BAR_HEIGHT } from "../styles/global";
 import Entypo from '@expo/vector-icons/Entypo';
 
@@ -218,6 +219,14 @@ export default function HomeScreen({ navigation }) {
   const renderTransactionItem = ({ item }) => {
     const bgColor = item.type === 'income' ? '#e9f7ef' : '#fff5f5';
     const accent = item.type === 'income' ? '#2ecc71' : '#e74c3c';
+    
+    // Check if this is a split payment (multiple payment methods)
+    const cashAmount = item.sale?.amount_in_cash || 0;
+    const ecashAmount = item.sale?.amount_in_ecash || 0;
+    const isSplitPayment = 
+      (cashAmount > 0 && ecashAmount > 0) || 
+      item.sale?.payment_breakdown ||
+      (item.paymentMethod === 'multiple');
 
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: bgColor, borderRadius: 8, padding: 10 }}>
@@ -229,13 +238,35 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={{ alignItems: 'flex-end' }}>
-          <View style={{ backgroundColor: 'transparent', paddingHorizontal: 6 }}>
-            <Text
-              style={{ color: accent, fontWeight: '700', fontSize: 14 }}
-            >
-              {item.type === 'income' ? '+' : '-'}₹{item.amount}
-            </Text>
-          </View>
+          {isSplitPayment ? (
+            // Show split amounts for mixed payments
+            <View style={{ backgroundColor: 'transparent' }}>
+              {cashAmount > 0 && (
+                <Text style={{ color: accent, fontWeight: '700', fontSize: 13, marginBottom: 2 }}>
+                  {item.type === 'income' ? '+' : '-'}₹{cashAmount.toFixed(2)} 💵
+                </Text>
+              )}
+              {ecashAmount > 0 && (
+                <Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>
+                  {item.type === 'income' ? '+' : '-'}₹{ecashAmount.toFixed(2)} 💳
+                </Text>
+              )}
+              {cashAmount === 0 && ecashAmount === 0 && (
+                <Text style={{ color: accent, fontWeight: '700', fontSize: 14 }}>
+                  {item.type === 'income' ? '+' : '-'}₹{item.amount.toFixed(2)}
+                </Text>
+              )}
+            </View>
+          ) : (
+            // Show combined amount
+            <View style={{ backgroundColor: 'transparent', paddingHorizontal: 6 }}>
+              <Text
+                style={{ color: accent, fontWeight: '700', fontSize: 14 }}
+              >
+                {item.type === 'income' ? '+' : '-'}₹{item.amount.toFixed(2)}
+              </Text>
+            </View>
+          )}
           <View style={{ marginTop: 6 }}>
             <Text style={{ fontSize: 11, color: '#999' }}>{item.timeLabel}</Text>
           </View>
@@ -285,11 +316,49 @@ export default function HomeScreen({ navigation }) {
                     }).start(async () => {
                       try {
                         const id = item.id || item._id;
+                        const serviceId = item.sale?.service_id?._id || item.sale?.service_id;
+                        
+                        // Delete the sale transaction
                         await dispatchLocal(deleteSale(id)).unwrap();
+                        
+                        // If this transaction was linked to a service, update the service balance
+                        if (serviceId) {
+                          try {
+                            // Fetch all sales to recalculate which ones are still linked to this service
+                            await dispatchLocal(fetchSales()).unwrap();
+                            
+                            // Fetch services to get the current service details
+                            const serviceState = await dispatchLocal(fetchServices()).unwrap();
+                            
+                            // Find the service and recalculate its balance
+                            const updatedService = serviceState.find(s => s._id === serviceId);
+                            if (updatedService) {
+                              const totalAmount = updatedService.total_amount || 0;
+                              const cashPaid = updatedService.amount_in_cash || 0;
+                              const ecashPaid = updatedService.amount_in_ecash || 0;
+                              const totalPaid = cashPaid + ecashPaid;
+                              const newBalance = totalAmount - totalPaid;
+                              
+                              // Update service with new balance
+                              await dispatchLocal(
+                                updateService({
+                                  serviceId: serviceId,
+                                  serviceData: {
+                                    ...updatedService,
+                                    balance: newBalance,
+                                  },
+                                })
+                              ).unwrap();
+                            }
+                          } catch (serviceErr) {
+                            console.error('Error updating service balance:', serviceErr);
+                          }
+                        } else {
+                          // No service linked, just refresh sales
+                          dispatchLocal(fetchSales());
+                        }
                       } catch (err) {
                         console.error('Delete sale error:', err);
-                      } finally {
-                        dispatchLocal(fetchSales());
                       }
                     });
                   }
@@ -317,7 +386,7 @@ export default function HomeScreen({ navigation }) {
 
         <Animated.View
           {...pan.panHandlers}
-          style={{ transform: [{ translateX }] }}
+          style={{ transform: [{ translateX }], width: '100%' }}
         >
           {renderTransactionItem({ item })}
         </Animated.View>
@@ -498,9 +567,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               )}
               renderItem={({ item }) => (
-                <View style={{ marginBottom: 6 }}>
-                  <TransactionRow item={item} />
-                </View>
+                <TransactionRow item={item} />
               )}
               contentContainerStyle={{ paddingBottom: Math.round(BAR_HEIGHT + (insets.bottom || 0) + 16) }}
             />

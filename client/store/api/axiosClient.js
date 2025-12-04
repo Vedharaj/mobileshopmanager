@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: process.env.API_BASE_URL || 'http:///192.168.31.67:5000/api',
+  baseURL: process.env.API_BASE_URL || 'https://artistic-retha-barbarously.ngrok-free.dev/api',
   timeout: 10000
 });
 
