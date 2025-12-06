@@ -4,7 +4,7 @@ const ServiceSchema = new mongoose.Schema({
   shop_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
-  service_name: { type: String, required: true },
+  name: { type: String, required: true },
   description: { type: String },
   total_amount: { type: Number, default: 0 },
   amount_in_cash: { type: Number, default: 0 },

@@ -319,10 +319,11 @@ export const global = StyleSheet.create({
   swipeArea: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    // marginBottom: 12,
   },
   dateItem: {
-    width: SCREEN_WIDTH / 7,
+    // account for horizontal padding around the swipe row
+    width: (SCREEN_WIDTH - 16) / 7,
     height: 60,
     borderRadius: 10,
     borderWidth: 1,

@@ -66,6 +66,7 @@ export default function TransactionScreen() {
   const [txTitle, setTxTitle] = useState("");
   const [txDescription, setTxDescription] = useState("");
   const [selectedShopForTx, setSelectedShopForTx] = useState("");
+  const [selectedTransactionType, setSelectedTransactionType] = useState(null);
 
   useEffect(() => {
     if (selectedType?.id === "service") {
@@ -90,7 +91,7 @@ export default function TransactionScreen() {
     const query = searchQuery.toLowerCase();
     return activeServices.filter(
       (s) =>
-        s.service_name.toLowerCase().includes(query) ||
+        s.name.toLowerCase().includes(query) ||
         s.customer_id?.name.toLowerCase().includes(query)
     );
   }, [searchQuery, activeServices]);
@@ -134,7 +135,8 @@ export default function TransactionScreen() {
         user_id: user?._id,
         customer_id: null,
         service_id: null,
-        service_name: txTitle,
+        name: txTitle,
+        type: selectedType?.id,
         order_date: new Date().toISOString(),
         total_amount: totalPaid,
         balance: 0,
@@ -150,6 +152,8 @@ export default function TransactionScreen() {
         await dispatch(createSale({
           ...common,
           paid_amount: cash,
+          cash_paid: cash,
+          online_paid: 0,
           payment_method: isExpense ? 'expense' : 'cash',
         })).unwrap();
       }
@@ -158,6 +162,8 @@ export default function TransactionScreen() {
         await dispatch(createSale({
           ...common,
           paid_amount: ecash,
+          cash_paid: 0,
+          online_paid: ecash,
           payment_method: isExpense ? 'expense' : 'upi',
         })).unwrap();
       }
@@ -242,10 +248,6 @@ export default function TransactionScreen() {
       dispatch(showToast({ message: "This service has no shop assigned", type: "error" }));
       return;
     }
-    if (!selectedService?.customer_id?._id) {
-      dispatch(showToast({ message: "This service has no customer assigned", type: "error" }));
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -266,37 +268,41 @@ export default function TransactionScreen() {
           user_id: user?._id,
           customer_id: selectedService?.customer_id?._id,
           service_id: selectedService?._id,
-          service_name: selectedService?.service_name,
+          name: selectedService?.name,
+          type: 'service',
           order_date: orderDate.toISOString(),
           total_amount: selectedService?.total_amount,
           paid_amount: totalPaid,
+          cash_paid: cash,
+          online_paid: ecash,
           balance: selectedService ? selectedService.balance - totalPaid : 0,
           payment_method: cash > 0 && ecash > 0 ? "multiple" : cash > 0 ? "cash" : "ecash",
           status: "completed",
-          notes: `Payment for service: ${selectedService?.service_name}`,
+          notes: `Payment for service: ${selectedService?.name}`,
           items: []
         })
       ).unwrap();
 
       // 2. Update the service balance
       const newBalance = selectedService ? selectedService.balance - totalPaid : 0;
-      console.log("Updating service balance from", selectedService?.balance, "to", newBalance);
+      // console.log("Updating service balance from", selectedService?.balance, "to", newBalance);
       
       await dispatch(
         updateService({
           serviceId: selectedService?._id,
           serviceData: {
+            name: selectedService?.name,
             balance: newBalance,
           },
         })
       ).unwrap();
 
       // 3. Fetch latest sales and services (to sync balance updates)
-      console.log("Fetching sales and services after payment");
+      // console.log("Fetching sales and services after payment");
       const salesResult = await dispatch(fetchSales());
       const servicesResult = await dispatch(fetchServices());
       
-      console.log("Services after fetch:", servicesResult.payload?.[0]?.balance || "No services");
+      // console.log("Services after fetch:", servicesResult.payload?.[0]?.balance || "No services");
 
       // 4. Show success and reset form
       dispatch(
@@ -525,7 +531,7 @@ export default function TransactionScreen() {
                     onPress={() => handleSelectService(item)}
                   >
                     <Text style={{ fontSize: 15, fontWeight: "500" }}>
-                      {item.service_name}
+                      {item.name}
                     </Text>
                     <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
                       Customer: {item.customer_id?.name || "N/A"} | Balance: ₹{item.balance}
@@ -611,6 +617,7 @@ export default function TransactionScreen() {
               style={{ marginTop: 10, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1.5, borderColor: primaryColor, borderRadius: 6, alignItems: 'center' }}
               onPress={() => {
                 setSelectedType(null);
+                setSelectedTransactionType(null);
                 setTxTitle('');
                 setTxDescription('');
                 setPaidInCash('');
@@ -636,7 +643,7 @@ export default function TransactionScreen() {
               }}
             >
               <Text style={{ fontSize: 15, fontWeight: "600", marginBottom: 8 }}>
-                {selectedService.service_name}
+                {selectedService.name}
               </Text>
               <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Customer: {selectedService.customer_id?.name || "N/A"}

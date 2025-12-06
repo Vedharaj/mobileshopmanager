@@ -53,7 +53,8 @@ const SalesSchema = new mongoose.Schema(
 
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     service_id: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
-    service_name: { type: String }, // Service name for reference
+    name: { type: String }, // Service/transaction name for reference
+    type: { type: String, enum: ['service', 'sales', 'add_money', 'add_expense', 'return_item'], default: 'service' }, // Transaction type
 
     order_date: { type: Date, default: Date.now },
 
@@ -62,6 +63,9 @@ const SalesSchema = new mongoose.Schema(
     total_amount: { type: Number, default: 0 },
     paid_amount: { type: Number, default: 0 },
     balance: { type: Number, default: 0 },
+
+    cash_paid: { type: Number, default: 0 },
+    online_paid: { type: Number, default: 0 },
 
     payment_method: { type: String, default: "cash" },
     payment_breakdown: { type: Object },
@@ -77,20 +81,22 @@ const SalesSchema = new mongoose.Schema(
 // AUTO-CALCULATE TOTALS FOR ENTIRE SALE
 // -------------------------------------------
 SalesSchema.pre("validate", function (next) {
-  // Calculate total_amount from all items
+  // Calculate total_amount from all items ONLY if items exist
   if (this.items && this.items.length > 0) {
     this.total_amount = this.items.reduce((sum, item) => {
       return sum + (item.total_price || 0);
     }, 0);
-  } else {
-    this.total_amount = 0;
+    
+    // Auto calculate balance for item-based sales
+    this.balance = this.total_amount - (this.paid_amount || 0);
   }
+  // For service transactions or transactions without items, keep the manually set values
+  // Don't override total_amount or balance
 
   // Ensure valid numbers for payment fields
   this.paid_amount = Math.max(0, this.paid_amount || 0);
-
-  // Auto calculate balance
-  this.balance = this.total_amount - this.paid_amount;
+  this.cash_paid = Math.max(0, this.cash_paid || 0);
+  this.online_paid = Math.max(0, this.online_paid || 0);
 
   next();
 });

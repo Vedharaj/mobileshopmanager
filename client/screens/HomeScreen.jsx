@@ -5,20 +5,17 @@ import {
   Text,
   TouchableOpacity,
   StatusBar,
-  Alert,
   PanResponder,
-  Dimensions,
   SectionList,
-  Animated,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
-import { fetchSales, deleteSale } from "../store/slices/salesSlice";
-import { updateService, fetchServices } from "../store/slices/serviceSlice";
+import { fetchSales } from "../store/slices/salesSlice";
 import { BAR_HEIGHT } from "../styles/global";
 import Entypo from '@expo/vector-icons/Entypo';
+import TransactionRow from "../components/TransactionRow";
 
 const getWeekDates = (weekOffset = 0) => {
   const startOfWeek = moment().startOf('week').add(weekOffset, 'weeks');
@@ -34,11 +31,9 @@ export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
   const insets = useSafeAreaInsets();
-
-  const SCREEN_WIDTH = Dimensions.get('window').width;
   const SWIPE_THRESHOLD = 50;
 
-  const today = useMemo(() => moment().startOf('day'), []);
+  const today = useMemo(() => moment(), []);
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -102,11 +97,11 @@ export default function HomeScreen({ navigation }) {
       onPanResponderRelease: (evt, gestureState) => {
         if (Math.abs(gestureState.dx) > SWIPE_THRESHOLD) {
           if (gestureState.dx > 0) {
-            // Swipe right - previous week
-            setWeekOffset(prev => prev - 1);
-          } else {
-            // Swipe left - next week
+            // Swipe right - next week
             setWeekOffset(prev => prev + 1);
+          } else {
+            // Swipe left - previous week
+            setWeekOffset(prev => prev - 1);
           }
         }
       },
@@ -189,8 +184,20 @@ export default function HomeScreen({ navigation }) {
 
       const tDate = moment(t.date, 'YYYY-MM-DD');
       if (tDate.isSameOrBefore(selectedDate, 'day')) {
-        // Only add CASH income (not e-cash/upi)
-        if (t.type === 'income' && !t.isECash) balance += t.amount;
+        if (t.type === 'income') {
+          // Use the dedicated cash_paid and online_paid fields
+          const cashAmount = t.sale?.cash_paid || 0;
+          const onlineAmount = t.sale?.online_paid || 0;
+          
+          if (cashAmount > 0) {
+            // Add cash portion
+            balance += cashAmount;
+          } else if (t.paymentMethod === 'cash' && cashAmount === 0) {
+            // Legacy: Pure cash payment without split fields
+            balance += t.amount;
+          }
+          // For UPI/other non-cash methods, don't add to cash balance
+        }
         if (t.type === 'expense') balance -= t.amount;
       }
     });
@@ -205,194 +212,25 @@ export default function HomeScreen({ navigation }) {
       if (filterShopId && t.shopId !== filterShopId) return;
 
       // Only count income from non-cash payment methods
-      if (t.type === 'income' && t.isECash) {
+      if (t.type === 'income') {
         const tDate = moment(t.date, 'YYYY-MM-DD');
         if (tDate.isSameOrBefore(selectedDate, 'day')) {
-          eCashBalance += t.amount;
+          // Use the dedicated online_paid field
+          const onlineAmount = t.sale?.online_paid || 0;
+          
+          if (onlineAmount > 0) {
+            // Add online portion
+            eCashBalance += onlineAmount;
+          } else if ((t.paymentMethod === 'upi' || t.isECash) && onlineAmount === 0) {
+            // Legacy: Pure online payment without split fields
+            eCashBalance += t.amount;
+          }
+          // For cash-only payments, don't add to e-cash balance
         }
       }
     });
     return eCashBalance;
   }, [selectedDate, transactions, filterShopId]);
-
-
-  const renderTransactionItem = ({ item }) => {
-    const bgColor = item.type === 'income' ? '#e9f7ef' : '#fff5f5';
-    const accent = item.type === 'income' ? '#2ecc71' : '#e74c3c';
-    
-    // Check if this is a split payment (multiple payment methods)
-    const cashAmount = item.sale?.amount_in_cash || 0;
-    const ecashAmount = item.sale?.amount_in_ecash || 0;
-    const isSplitPayment = 
-      (cashAmount > 0 && ecashAmount > 0) || 
-      item.sale?.payment_breakdown ||
-      (item.paymentMethod === 'multiple');
-
-    return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: bgColor, borderRadius: 8, padding: 10 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={[global.txnTitle, { marginBottom: 4 }]}>{item.description}</Text>
-          <Text style={[global.txnSubtitle, { color: '#666' }]}>
-            {item.category} · {item.type === 'income' ? 'Income' : 'Expense'}
-          </Text>
-        </View>
-
-        <View style={{ alignItems: 'flex-end' }}>
-          {isSplitPayment ? (
-            // Show split amounts for mixed payments
-            <View style={{ backgroundColor: 'transparent' }}>
-              {cashAmount > 0 && (
-                <Text style={{ color: accent, fontWeight: '700', fontSize: 13, marginBottom: 2 }}>
-                  {item.type === 'income' ? '+' : '-'}₹{cashAmount.toFixed(2)} 💵
-                </Text>
-              )}
-              {ecashAmount > 0 && (
-                <Text style={{ color: accent, fontWeight: '700', fontSize: 13 }}>
-                  {item.type === 'income' ? '+' : '-'}₹{ecashAmount.toFixed(2)} 💳
-                </Text>
-              )}
-              {cashAmount === 0 && ecashAmount === 0 && (
-                <Text style={{ color: accent, fontWeight: '700', fontSize: 14 }}>
-                  {item.type === 'income' ? '+' : '-'}₹{item.amount.toFixed(2)}
-                </Text>
-              )}
-            </View>
-          ) : (
-            // Show combined amount
-            <View style={{ backgroundColor: 'transparent', paddingHorizontal: 6 }}>
-              <Text
-                style={{ color: accent, fontWeight: '700', fontSize: 14 }}
-              >
-                {item.type === 'income' ? '+' : '-'}₹{item.amount.toFixed(2)}
-              </Text>
-            </View>
-          )}
-          <View style={{ marginTop: 6 }}>
-            <Text style={{ fontSize: 11, color: '#999' }}>{item.timeLabel}</Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  // TransactionRow: Animated swipe-left to delete
-  const TransactionRow = ({ item }) => {
-    const dispatchLocal = useDispatch();
-    const translateX = useRef(new Animated.Value(0)).current;
-    const swipedRef = useRef(false);
-
-    const pan = useRef(
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
-        },
-        onPanResponderMove: (evt, gestureState) => {
-          // only allow left swipe (negative dx)
-          if (gestureState.dx < 0) {
-            translateX.setValue(gestureState.dx);
-          }
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          const dx = gestureState.dx;
-          if (dx < -SWIPE_THRESHOLD) {
-            // Ask for confirmation before deleting
-            Alert.alert(
-              'Delete Transaction',
-              'Do you want delete?',
-              [
-                {
-                  text: 'Cancel', style: 'cancel', onPress: () => {
-                    // snap back
-                    Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-                  }
-                },
-                {
-                  text: 'Delete', style: 'destructive', onPress: () => {
-                    // animate item offscreen to left then delete
-                    Animated.timing(translateX, {
-                      toValue: -SCREEN_WIDTH,
-                      duration: 200,
-                      useNativeDriver: true,
-                    }).start(async () => {
-                      try {
-                        const id = item.id || item._id;
-                        const serviceId = item.sale?.service_id?._id || item.sale?.service_id;
-                        
-                        // Delete the sale transaction
-                        await dispatchLocal(deleteSale(id)).unwrap();
-                        
-                        // If this transaction was linked to a service, update the service balance
-                        if (serviceId) {
-                          try {
-                            // Fetch all sales to recalculate which ones are still linked to this service
-                            await dispatchLocal(fetchSales()).unwrap();
-                            
-                            // Fetch services to get the current service details
-                            const serviceState = await dispatchLocal(fetchServices()).unwrap();
-                            
-                            // Find the service and recalculate its balance
-                            const updatedService = serviceState.find(s => s._id === serviceId);
-                            if (updatedService) {
-                              const totalAmount = updatedService.total_amount || 0;
-                              const cashPaid = updatedService.amount_in_cash || 0;
-                              const ecashPaid = updatedService.amount_in_ecash || 0;
-                              const totalPaid = cashPaid + ecashPaid;
-                              const newBalance = totalAmount - totalPaid;
-                              
-                              // Update service with new balance
-                              await dispatchLocal(
-                                updateService({
-                                  serviceId: serviceId,
-                                  serviceData: {
-                                    ...updatedService,
-                                    balance: newBalance,
-                                  },
-                                })
-                              ).unwrap();
-                            }
-                          } catch (serviceErr) {
-                            console.error('Error updating service balance:', serviceErr);
-                          }
-                        } else {
-                          // No service linked, just refresh sales
-                          dispatchLocal(fetchSales());
-                        }
-                      } catch (err) {
-                        console.error('Delete sale error:', err);
-                      }
-                    });
-                  }
-                }
-              ],
-              { cancelable: true }
-            );
-          } else {
-            // snap back
-            Animated.spring(translateX, {
-              toValue: 0,
-              useNativeDriver: true,
-            }).start();
-          }
-        },
-      })
-    ).current;
-
-    return (
-      <View style={{ marginVertical: 6, marginHorizontal: 4, borderRadius: 8, overflow: 'hidden' }}>
-        {/* Delete background */}
-        <View style={{ position: 'absolute', right: 0, left: 0, top: 0, bottom: 0,  borderRadius: 8, backgroundColor: '#ffecec', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 20 }}>
-          <Text style={{ color: '', fontWeight: '600' }}>Delete</Text>
-        </View>
-
-        <Animated.View
-          {...pan.panHandlers}
-          style={{ transform: [{ translateX }], width: '100%' }}
-        >
-          {renderTransactionItem({ item })}
-        </Animated.View>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={global.safeArea}>
@@ -432,16 +270,16 @@ export default function HomeScreen({ navigation }) {
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
           <View style={[global.summaryBox, global.summaryCash, { flex: 1 }]}>
             <Text style={global.summaryLabel}>Cash on Hand</Text>
-            <Text style={global.summaryValue}>₹{cashOnHand}</Text>
+            <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
           </View>
-          <View style={[global.summaryBox, { borderLeftWidth: 4, borderLeftColor: '#3498db', flex: 1 }]}>
+          <View style={[global.summaryBox, { flex: 1 }]}>
             <Text style={global.summaryLabel}>E-Cash</Text>
-            <Text style={global.summaryValue}>₹{eCash}</Text>
+            <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
           </View>
         </View>
 
         {/* Week date row (swipeable) */}
-        <View style={global.swipeArea} {...panResponder.panHandlers}>
+        <View style={[global.swipeArea, { padding: 8, justifyContent: 'center' }]} {...panResponder.panHandlers}>
           {weekDates.map((day) => {
             const isFuture = day.isAfter(today, 'day');
             const isSelected = selectedDate.isSame(day, 'day');

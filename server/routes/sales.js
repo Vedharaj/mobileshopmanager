@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     res.json({ sales: sales || [] });
@@ -35,7 +35,7 @@ router.get('/service/:serviceId', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     res.json({ sales: sales || [] });
@@ -54,7 +54,7 @@ router.get('/:id', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     if (!sale) {
@@ -82,11 +82,14 @@ router.post('/', auth, async (req, res) => {
       user_id,
       customer_id,
       service_id,
-      service_name,
+      name,
+      type,
       order_date,
       total_amount,
       paid_amount,
       balance,
+      cash_paid,
+      online_paid,
       payment_method,
       payment_breakdown,
       status,
@@ -104,17 +107,17 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Shop not found or you don\'t have access to it' });
     }
 
-    // If service_id provided but no service_name, fetch it from Service model
-    let finalServiceName = service_name;
-    if (service_id && !finalServiceName) {
+    // If service_id provided but no name, fetch it from Service model
+    let finalName = name;
+    if (service_id && !finalName) {
       try {
         const Service = require('../models/Service');
         const service = await Service.findById(service_id);
         if (service) {
-          finalServiceName = service.service_name;
+          finalName = service.name;
         }
       } catch (err) {
-        console.warn('Could not fetch service name from service_id:', err.message);
+        console.warn('Could not fetch name from service_id:', err.message);
       }
     }
 
@@ -123,11 +126,14 @@ router.post('/', auth, async (req, res) => {
       user_id: user_id || req.user._id,
       customer_id: customer_id || null,
       service_id: service_id || null,
-      service_name: finalServiceName || null,
+      name: finalName || null,
+      type: type || 'service',
       order_date: order_date ? new Date(order_date) : new Date(),
       total_amount: total_amount || 0,
       paid_amount: paid_amount || 0,
       balance: balance || 0,
+      cash_paid: cash_paid || 0,
+      online_paid: online_paid || 0,
       payment_method: payment_method || 'cash',
       payment_breakdown: payment_breakdown || {},
       status: status || 'completed',
@@ -146,7 +152,7 @@ router.post('/', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     res.status(201).json({ msg: 'Sale created successfully', sales });
@@ -167,6 +173,8 @@ router.put('/:id', auth, async (req, res) => {
       total_amount,
       paid_amount,
       balance,
+      cash_paid,
+      online_paid,
       payment_method,
       payment_breakdown,
       status,
@@ -191,6 +199,8 @@ router.put('/:id', auth, async (req, res) => {
     if (total_amount !== undefined) sale.total_amount = total_amount;
     if (paid_amount !== undefined) sale.paid_amount = paid_amount;
     if (balance !== undefined) sale.balance = balance;
+    if (cash_paid !== undefined) sale.cash_paid = cash_paid;
+    if (online_paid !== undefined) sale.online_paid = online_paid;
     if (payment_method) sale.payment_method = payment_method;
     if (payment_breakdown) sale.payment_breakdown = payment_breakdown;
     if (status) sale.status = status;
@@ -208,7 +218,7 @@ router.put('/:id', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     res.status(200).json({ msg: 'Sale updated successfully', sales });
@@ -245,7 +255,7 @@ router.delete('/:id', auth, async (req, res) => {
       .populate('shop_id', 'name')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
-      .populate('service_id', 'service_name')
+      .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price');
 
     res.status(200).json({ msg: 'Sale deleted successfully', sales });

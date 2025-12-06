@@ -28,7 +28,7 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const {
-      service_name,
+      name,
       shop_id,
       user_id,
       customer_id,
@@ -43,7 +43,7 @@ router.post('/', auth, async (req, res) => {
       note
     } = req.body;
 
-    if (!service_name || !shop_id) {
+    if (!name || !shop_id) {
       return res.status(400).json({ msg: 'Service name and shop_id are required' });
     }
 
@@ -67,7 +67,7 @@ router.post('/', auth, async (req, res) => {
     const calculatedBalance = (total_amount || 0) - totalPaid;
 
     const service = new Service({
-      service_name,
+      name,
       shop_id,
       user_id: user_id || req.user._id,
       customer_id: customer_id || null,
@@ -106,7 +106,7 @@ router.put('/:id', auth, async (req, res) => {
   try {
     const serviceId = req.params.id;
     const {
-      service_name,
+      name,
       customer_id,
       description,
       total_amount,
@@ -131,7 +131,11 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     // Update only provided fields (allow partial updates like balance-only changes)
-    if (service_name) service.service_name = service_name;
+    if (name) service.name = name;
+    // name is required, so ensure it's always set
+    if (!service.name) {
+      return res.status(400).json({ msg: 'Service name is required' });
+    }
     if (customer_id !== undefined) service.customer_id = customer_id || null;
     if (description !== undefined) service.description = description || '';
     if (total_amount !== undefined) service.total_amount = total_amount || 0;
