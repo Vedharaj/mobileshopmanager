@@ -350,17 +350,6 @@ export default function HomeScreen({ navigation }) {
 
   const isLoading = salesStatus === "loading";
   const totalItems = sections.length;
-
-  const chipBaseStyle = {
-    marginRight: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 99,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-  };
   return (
     <SafeAreaView style={global.safeArea}>
       <StatusBar
@@ -502,7 +491,7 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity
                 onPress={() => setFilterShopId("")}
                 style={[
-                  chipBaseStyle,
+                  global.chipBaseStyle,
                   {
                     borderColor: filterShopId === "" ? primaryColor : "#ccc",
                     backgroundColor:
@@ -528,7 +517,7 @@ export default function HomeScreen({ navigation }) {
                     key={id}
                     onPress={() => setFilterShopId(id)}
                     style={[
-                      chipBaseStyle,
+                      global.chipBaseStyle,
                       {
                         borderColor: isActive ? primaryColor : "#ccc",
                         backgroundColor: isActive ? primaryColor : "#fff",

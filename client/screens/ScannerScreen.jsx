@@ -20,15 +20,12 @@ export default function ScannerScreen({ navigation, route }) {
   
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  
-  // Check if we came from Transaction screen (sales form)
-  const fromScreen = route?.params?.from || null;
 
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
 
-  // Reset scanning state every time this screen is focused
+  // ✅ Reset scanning state every time this screen is focused
   useFocusEffect(
     React.useCallback(() => {
       setScanned(false);
@@ -99,7 +96,7 @@ export default function ScannerScreen({ navigation, route }) {
     setScanned(true);
     const { data, type } = scanningResult;
 
-    console.log(`Scanned barcode with data: ${data} and type: ${type}`);
+    // console.log(`Scanned barcode with data: ${data} and type: ${type}`);
 
     // Find product by barcode or ID
     const matchedProduct = products.find(
@@ -107,27 +104,18 @@ export default function ScannerScreen({ navigation, route }) {
     );
 
     if (matchedProduct) {
-      console.log('Product matched:', matchedProduct);
-      console.log('From screen:', fromScreen);
+      // console.log('Product matched:', matchedProduct);
+      // console.log('From screen:', fromScreen);
       
-      if (fromScreen === 'Transaction') {
-        // Already on Transaction screen, just go back with the product
-        navigation.navigate('Transaction', {
-          scannedProduct: matchedProduct,
-          openSalesForm: true,
-          scannedAt: Date.now(),
-        });
-      } else {
-        // Coming from navbar/elsewhere, navigate to Transaction
-        navigation.navigate('Transaction', {
-          scannedProduct: matchedProduct,
-          openSalesForm: true,
-          scannedAt: Date.now(),
-        });
-      }
+      // Navigate to Transaction with scanned product
+      navigation.navigate('Transaction', {
+        scannedProduct: matchedProduct,
+        openSalesForm: true,
+        scannedAt: Date.now(), // Unique timestamp ensures useEffect triggers
+      });
       
-      // Reset immediately to allow continuous scanning
-      setTimeout(() => setScanned(false), 500);
+      // Reset after navigation to allow going back to scan again
+      setTimeout(() => setScanned(false), 300);
     } else {
       console.log('No product found for barcode:', data);
       Alert.alert(

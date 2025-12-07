@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { global, useThemeColors } from "../styles/global";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices, updateService } from "../store/slices/serviceSlice";
@@ -102,37 +102,44 @@ export default function TransactionScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  // Handle scanned product from navigation params (direct, reliable)
+  // Handle scanned product from navigation params
   const params = route?.params || {};
 
-  useEffect(() => {
-    const scanned = params?.scannedProduct;
-    const openSalesForm = params?.openSalesForm;
+  useFocusEffect(
+    React.useCallback(() => {
+      const scanned = params?.scannedProduct;
+      const openSalesForm = params?.openSalesForm;
 
-    if (scanned && openSalesForm) {
-      console.log("Received scanned product:", scanned);
+      if (scanned && openSalesForm) {
+        // console.log("Received scanned product:", scanned);
 
-      setSelectedType({ id: "sales", label: "Sales" });
-      setScannedProduct(scanned);
+        // Make sure Sales tab is active
+        if (selectedType?.id !== "sales") {
+          setSelectedType({ id: "sales", label: "Sales" });
+        }
 
-      if (!products || products.length === 0) {
-        dispatch(fetchProducts());
+        // Pass product to SalesForm
+        setScannedProduct(scanned);
+
+        // Ensure data
+        if (!products || products.length === 0) {
+          dispatch(fetchProducts());
+        }
+        if (!customers || customers.length === 0) {
+          dispatch(fetchCustomers());
+        }
+
+        // Clear params so next scan (even same product) works again
+        navigation.setParams({
+          ...params,
+          scannedProduct: undefined,
+          openSalesForm: undefined,
+        });
       }
-      if (!customers || customers.length === 0) {
-        dispatch(fetchCustomers());
-      }
 
-      setTimeout(() => {
-        setScannedProduct(null);
-      }, 300);
-
-      navigation.setParams({
-        ...params,
-        scannedProduct: null,
-        openSalesForm: false,
-      });
-    }
-  }, [params?.scannedProduct, params?.openSalesForm, dispatch, customers, products, navigation, params]);
+      // no cleanup needed
+    }, [])
+  );
 
   useEffect(() => {
     if (selectedType?.id === "service") {
@@ -424,6 +431,12 @@ export default function TransactionScreen() {
     setPaidInCash("");
     setPaidInEcash("");
     setSubtractReturn(true);
+  };
+
+  // Callback triggered when SalesForm completes processing a scanned product
+  const handleScanComplete = () => {
+    // Clear the scanned product after it has been processed
+    setScannedProduct(null);
   };
 
   const handleSearchAgain = () => {
@@ -774,7 +787,7 @@ export default function TransactionScreen() {
     <SafeAreaView style={global.safeArea}>
       <ScrollView
         style={global.container}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -930,6 +943,7 @@ export default function TransactionScreen() {
               setScannedProduct(null);
             }}
             scannedProduct={scannedProduct}
+            onScanComplete={handleScanComplete}
           />
         )}
 

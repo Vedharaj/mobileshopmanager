@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -27,9 +27,11 @@ export default function SalesForm({
   onCancel,
   scannedProduct = null,
   onScanPress = null,
+  onScanComplete = null,
 }) {
   const navigation = useNavigation();
-  const [items, setItems] = useState([
+
+  const [items, setItems] = useState(() => [
     {
       id: Date.now(),
       product_id: "",
@@ -46,47 +48,8 @@ export default function SalesForm({
   const [modalVisible, setModalVisible] = useState(false);
   const [currentItemId, setCurrentItemId] = useState(null);
 
-  // Handle scanned product
-  useEffect(() => {
-    if (scannedProduct && scannedProduct._id) {
-      console.log("SalesForm received scanned product:", scannedProduct);
-
-      setItems((prevItems) => {
-        // Filter out empty items (no product selected)
-        const filledItems = prevItems.filter((item) => item.product_id);
-
-        // Check if product already exists in items
-        const existingItemIndex = filledItems.findIndex(
-          (item) => item.product_id === scannedProduct._id
-        );
-
-        if (existingItemIndex > -1) {
-          // Product exists - increment quantity
-          const updatedItems = [...filledItems];
-          const existingItem = updatedItems[existingItemIndex];
-          const currentQty = parseFloat(existingItem.quantity) || 1;
-          const newQty = String(currentQty + 1);
-          existingItem.quantity = newQty;
-          existingItem.subtotal =
-            parseFloat(newQty) * parseFloat(existingItem.unit_price);
-          console.log("Incremented existing product quantity to:", newQty);
-          return updatedItems;
-        } else {
-          // New product - add it
-          const newItem = {
-            id: Date.now(),
-            product_id: scannedProduct._id,
-            product_name: scannedProduct.name,
-            quantity: "1",
-            unit_price: String(scannedProduct.selling_price || 0),
-            subtotal: scannedProduct.selling_price || 0,
-          };
-          console.log("Added new product to items:", newItem);
-          return [...filledItems, newItem];
-        }
-      });
-    }
-  }, [scannedProduct]);
+  // 🔒 Prevent processing same scanned product twice
+  const lastScannedProductIdRef = useRef(null);
 
   // Calculate subtotal for an item
   const calculateSubtotal = (qty, price) => {
@@ -95,14 +58,70 @@ export default function SalesForm({
     return q * p;
   };
 
-  // Update total whenever items change
+  // Handle scanned product (with duplicate scan protection)
+  useEffect(() => {
+    console.log(items);
+    if (!scannedProduct || !scannedProduct._id || products.length === 0) {
+      return;
+    }
+
+    // If the same product id comes again (due to double render / double effect),
+    // ignore it to prevent "double add" / "double log"
+    if (lastScannedProductIdRef.current === scannedProduct._id) {
+      return;
+    }
+
+    lastScannedProductIdRef.current = scannedProduct._id;
+
+    setItems((prevItems) => {
+      const updatedItems = [...prevItems];
+
+      const existingIdx = updatedItems.findIndex(
+        (item) => item.product_id === scannedProduct._id
+      );
+
+      if (existingIdx > -1) {
+        const existingItem = { ...updatedItems[existingIdx] };
+        const currentQty = parseFloat(existingItem.quantity) || 0;
+        const newQty = String(currentQty + 1);
+        existingItem.quantity = newQty;
+        existingItem.subtotal =
+          (parseFloat(existingItem.unit_price) || 0) * parseFloat(newQty);
+        updatedItems[existingIdx] = existingItem;
+        return updatedItems;
+      }
+
+      const emptyIdx = updatedItems.findIndex((item) => !item.product_id);
+      const newItem = {
+        id: Date.now(),
+        product_id: scannedProduct._id,
+        product_name: scannedProduct.name,
+        quantity: "1",
+        unit_price: String(scannedProduct.selling_price || 0),
+        subtotal: scannedProduct.selling_price || 0,
+      };
+
+      if (emptyIdx > -1) {
+        updatedItems[emptyIdx] = { ...updatedItems[emptyIdx], ...newItem };
+        return updatedItems;
+      }
+
+      return [...updatedItems, newItem];
+    });
+
+    // Trigger callback after scan is processed
+    if (onScanComplete) {
+      onScanComplete();
+    }
+  }, [scannedProduct, products.length, onScanComplete]);
+
+  // Update total whenever items change (log removed to avoid double logs)
   useEffect(() => {
     const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
     setTotalAmount(total);
   }, [items]);
 
   const handleAddItem = () => {
-    // Only add new item if the last item has a product selected
     const lastItem = items[items.length - 1];
     if (!lastItem.product_id) {
       Alert.alert(
@@ -130,41 +149,42 @@ export default function SalesForm({
     setModalVisible(true);
   };
 
+  // ✅ selectProduct logic with merge
   const selectProduct = (product) => {
     if (!currentItemId) return;
 
     setItems((prevItems) => {
-      return prevItems.map((item) => {
-        if (item.id === currentItemId) {
-          // Check if this product is already in the cart (excluding current item)
-          const productExists = prevItems.some(
-            (i) => i.product_id === product._id && i.id !== currentItemId
-          );
+      const productExists = prevItems.some(
+        (i) => i.product_id === product._id && i.id !== currentItemId
+      );
 
-          if (productExists) {
-            // Find the existing item and increment its quantity
-            const updatedItems = prevItems.map((existingItem) => {
-              if (
-                existingItem.product_id === product._id &&
-                existingItem.id !== currentItemId
-              ) {
-                const newQty = String(
-                  parseFloat(existingItem.quantity) +
-                    parseFloat(item.quantity || 1)
-                );
-                return {
-                  ...existingItem,
-                  quantity: newQty,
-                  subtotal:
-                    parseFloat(newQty) * parseFloat(existingItem.unit_price),
-                };
-              }
-              return existingItem;
-            });
-            // Remove the current item since we merged it
-            return updatedItems.filter((i) => i.id !== currentItemId);
-          } else {
-            // New product - just update the current item
+      if (productExists) {
+        // Merge quantities with existing item and remove the current row
+        const updatedItems = prevItems.map((item) => {
+          if (item.product_id === product._id && item.id !== currentItemId) {
+            const currentRow = prevItems.find((i) => i.id === currentItemId);
+            const currentQty = parseFloat(currentRow?.quantity || "1") || 1;
+            const newQty = String(
+              (parseFloat(item.quantity) || 0) + currentQty
+            );
+
+            return {
+              ...item,
+              quantity: newQty,
+              subtotal:
+                (parseFloat(newQty) || 0) *
+                (parseFloat(item.unit_price) || 0),
+            };
+          }
+          return item;
+        });
+
+        // Remove the current item row after merge
+        return updatedItems.filter((i) => i.id !== currentItemId);
+      } else {
+        // Just update the current row with selected product
+        return prevItems.map((item) => {
+          if (item.id === currentItemId) {
             const updated = {
               ...item,
               product_id: product._id,
@@ -177,9 +197,9 @@ export default function SalesForm({
             );
             return updated;
           }
-        }
-        return item;
-      });
+          return item;
+        });
+      }
     });
 
     setModalVisible(false);
@@ -248,7 +268,6 @@ export default function SalesForm({
       return;
     }
 
-    // Validate filled items have all required details
     const invalidItems = filledItems.filter(
       (item) => !item.product_id || !item.quantity || !item.unit_price
     );
@@ -260,7 +279,6 @@ export default function SalesForm({
       return;
     }
 
-    // Validate quantities are positive
     const invalidQty = filledItems.filter(
       (item) => parseFloat(item.quantity) <= 0
     );
@@ -269,7 +287,6 @@ export default function SalesForm({
       return;
     }
 
-    // Validate prices are non-negative
     const invalidPrice = filledItems.filter(
       (item) => parseFloat(item.unit_price) < 0
     );
@@ -300,7 +317,6 @@ export default function SalesForm({
       return;
     }
 
-    // Prepare sale data with only filled items
     const saleData = {
       items: filledItems.map((item) => ({
         product_id: item.product_id,
@@ -637,7 +653,12 @@ export default function SalesForm({
         >
           <TouchableOpacity
             style={{
-              ...global.button, minWidth: 110, backgroundColor: "#fff", borderWidth: 1.5, borderColor: primaryColor, alignItems: "center",
+              ...global.button,
+              minWidth: 110,
+              backgroundColor: "#fff",
+              borderWidth: 1.5,
+              borderColor: primaryColor,
+              alignItems: "center",
             }}
             onPress={onCancel}
             disabled={isSubmitting}
@@ -648,6 +669,7 @@ export default function SalesForm({
               Cancel
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               { ...global.button, minWidth: 110, backgroundColor: "#666" },
@@ -683,8 +705,9 @@ export default function SalesForm({
           onSelectProduct={selectProduct}
         />
 
-        {/* Floating Scanner Button */}
-        {/* <TouchableOpacity
+        {/* Floating Scanner Button (optional) */}
+        {/*
+        <TouchableOpacity
           style={{
             position: "absolute",
             bottom: 20,
@@ -705,7 +728,8 @@ export default function SalesForm({
           onPress={() => navigation.navigate("Scanner")}
         >
           <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
-        </TouchableOpacity> */}
+        </TouchableOpacity>
+        */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
