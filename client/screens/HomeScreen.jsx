@@ -7,11 +7,12 @@ import {
   StatusBar,
   PanResponder,
   SectionList,
+<<<<<<< HEAD
+=======
   Animated,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  Dimensions,
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
 } from "react-native";
 import {
   SafeAreaView,
@@ -20,10 +21,14 @@ import {
 import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
-import { fetchSales, deleteSale } from "../store/slices/salesSlice";
-import { fetchServices, updateService } from "../store/slices/serviceSlice";
+import { fetchSales } from "../store/slices/salesSlice";
 import { BAR_HEIGHT } from "../styles/global";
+<<<<<<< HEAD
+import Entypo from '@expo/vector-icons/Entypo';
+import TransactionRow from "../components/TransactionRow";
+=======
 import Entypo from "@expo/vector-icons/Entypo";
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
 
 const getWeekDates = (weekOffset = 0) => {
   const startOfWeek = moment().startOf("week").add(weekOffset, "weeks");
@@ -40,11 +45,17 @@ export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
   const insets = useSafeAreaInsets();
+<<<<<<< HEAD
+  const SWIPE_THRESHOLD = 50;
+
+  const today = useMemo(() => moment(), []);
+=======
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
   const SWIPE_THRESHOLD = 50;
 
   const today = useMemo(() => moment().startOf("day"), []);
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -180,9 +191,17 @@ export default function HomeScreen({ navigation }) {
       onPanResponderRelease: (evt, gestureState) => {
         if (Math.abs(gestureState.dx) > SWIPE_THRESHOLD) {
           if (gestureState.dx > 0) {
+<<<<<<< HEAD
+            // Swipe right - next week
+            setWeekOffset(prev => prev + 1);
+          } else {
+            // Swipe left - previous week
+            setWeekOffset(prev => prev - 1);
+=======
             setWeekOffset((prev) => prev - 1);
           } else {
             setWeekOffset((prev) => prev + 1);
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
           }
         }
       },
@@ -254,10 +273,30 @@ export default function HomeScreen({ navigation }) {
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
 
+<<<<<<< HEAD
+      const tDate = moment(t.date, 'YYYY-MM-DD');
+      if (tDate.isSameOrBefore(selectedDate, 'day')) {
+        if (t.type === 'income') {
+          // Use the dedicated cash_paid and online_paid fields
+          const cashAmount = t.sale?.cash_paid || 0;
+          const onlineAmount = t.sale?.online_paid || 0;
+          
+          if (cashAmount > 0) {
+            // Add cash portion
+            balance += cashAmount;
+          } else if (t.paymentMethod === 'cash' && cashAmount === 0) {
+            // Legacy: Pure cash payment without split fields
+            balance += t.amount;
+          }
+          // For UPI/other non-cash methods, don't add to cash balance
+        }
+        if (t.type === 'expense') balance -= t.amount;
+=======
       const tDate = moment(t.date, "YYYY-MM-DD");
       if (tDate.isSameOrBefore(selectedDate, "day")) {
         if (t.type === "income" && !t.isECash) balance += t.amount;
         if (t.type === "expense") balance -= t.amount;
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
       }
     });
     return balance;
@@ -268,47 +307,38 @@ export default function HomeScreen({ navigation }) {
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
 
+<<<<<<< HEAD
+      // Only count income from non-cash payment methods
+      if (t.type === 'income') {
+        const tDate = moment(t.date, 'YYYY-MM-DD');
+        if (tDate.isSameOrBefore(selectedDate, 'day')) {
+          // Use the dedicated online_paid field
+          const onlineAmount = t.sale?.online_paid || 0;
+          
+          if (onlineAmount > 0) {
+            // Add online portion
+            eCashBalance += onlineAmount;
+          } else if ((t.paymentMethod === 'upi' || t.isECash) && onlineAmount === 0) {
+            // Legacy: Pure online payment without split fields
+            eCashBalance += t.amount;
+          }
+          // For cash-only payments, don't add to e-cash balance
+=======
       if (t.type === "income" && t.isECash) {
         const tDate = moment(t.date, "YYYY-MM-DD");
         if (tDate.isSameOrBefore(selectedDate, "day")) {
           eCashBalance += t.amount;
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
         }
       }
     });
     return eCashBalance;
   }, [selectedDate, transactions, filterShopId]);
 
+<<<<<<< HEAD
+=======
   const isLoading = salesStatus === "loading";
   const totalItems = sections.length;
-
-  const computeSplitAmounts = (sale) => {
-    let cash = 0;
-    let ecash = 0;
-
-    const breakdown = sale?.payment_breakdown;
-    if (Array.isArray(breakdown) && breakdown.length > 0) {
-      breakdown.forEach((entry) => {
-        const amt = Number(entry?.amount) || 0;
-        const method = String(entry?.method || "").toLowerCase();
-        if (method === "cash") cash += amt;
-        else ecash += amt;
-      });
-    } else {
-      if (
-        sale?.amount_in_cash !== undefined ||
-        sale?.amount_in_ecash !== undefined
-      ) {
-        cash = Number(sale?.amount_in_cash) || 0;
-        ecash = Number(sale?.amount_in_ecash) || 0;
-      } else {
-        const amt = Number(sale?.paid_amount || sale?.total_amount || 0);
-        if (sale?.payment_method === "cash") cash = amt;
-        else ecash = amt;
-      }
-    }
-
-    return { cash, ecash };
-  };
 
   const renderTransactionItem = ({ item }) => {
     const bgColor = item.type === "income" ? "#e9f7ef" : "#fff5f5";
@@ -532,7 +562,7 @@ export default function HomeScreen({ navigation }) {
             paddingRight: 20,
           }}
         >
-          <Text style={{ color: "#e74c3c", fontWeight: "600" }}>Delete</Text>
+          <Text style={{ color: "", fontWeight: "600" }}>Delete</Text>
         </View>
 
         <Animated.View
@@ -555,6 +585,8 @@ export default function HomeScreen({ navigation }) {
     alignItems: "center",
     borderWidth: 1,
   };
+
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
   return (
     <SafeAreaView style={global.safeArea}>
       <StatusBar
@@ -594,7 +626,16 @@ export default function HomeScreen({ navigation }) {
             <Text style={global.summaryLabel}>Cash on Hand</Text>
             <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
           </View>
+<<<<<<< HEAD
           <View style={[global.summaryBox, { flex: 1 }]}>
+=======
+          <View
+            style={[
+              global.summaryBox,
+              { borderLeftWidth: 4, borderLeftColor: "#3498db", flex: 1 },
+            ]}
+          >
+>>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
             <Text style={global.summaryLabel}>E-Cash</Text>
             <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
           </View>
@@ -749,6 +790,29 @@ export default function HomeScreen({ navigation }) {
                 </Text>
               </View>
             )}
+            // renderSectionFooter={({ section }) => (
+            //   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9f9f9', padding: 8, marginHorizontal: 4, marginBottom: 10, borderRadius: 8 }}>
+            //     <Text style={{ fontSize: 12, color: '#666', fontWeight: '600' }}>Total</Text>
+            //     <View style={{ flexDirection: 'row', gap: 10 }}>
+            //       {section.totalCash > 0 && (
+            //         <View style={{ alignItems: 'center' }}>
+            //           <Text style={{ color: '#2ecc71', fontWeight: '700', fontSize: 13 }}>
+            //             ₹{section.totalCash.toFixed(2)}
+            //           </Text>
+            //           <Text style={{ color: '#888', fontSize: 11 }}>Cash</Text>
+            //         </View>
+            //       )}
+            //       {section.totalECash > 0 && (
+            //         <View style={{ alignItems: 'center' }}>
+            //           <Text style={{ color: '#2ecc71', fontWeight: '700', fontSize: 13 }}>
+            //             ₹{section.totalECash.toFixed(2)}
+            //           </Text>
+            //           <Text style={{ color: '#888', fontSize: 11 }}>E-Cash</Text>
+            //         </View>
+            //       )}
+            //     </View>
+            //   </View>
+            // )}
             renderItem={({ item }) => <TransactionRow item={item} />}
             contentContainerStyle={{
               paddingBottom: Math.round(BAR_HEIGHT + (insets.bottom || 0) + 16),
