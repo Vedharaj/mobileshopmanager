@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Modal, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, Modal, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 const TransactionDetailModal = ({ visible, onClose, item }) => {
@@ -18,8 +18,10 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%" }}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%" }}>
           {/* Modal Header */}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" }}>
             <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>Transaction Details</Text>
@@ -126,7 +128,9 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
             </View>
           </ScrollView>
         </View>
-      </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

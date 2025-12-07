@@ -83,6 +83,9 @@ const ProductScreen = () => {
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // track collapsed state per category in product list
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
   // when user picks an existing product from suggestions
   const [selectedExistingProduct, setSelectedExistingProduct] = useState(null);
 
@@ -1573,6 +1576,9 @@ const ProductScreen = () => {
                     .localeCompare((b.name || "").toLowerCase())
                 );
 
+                // Default to collapsed if not yet toggled
+                const isCollapsed = collapsedCategories[key] !== false;
+
                 return (
                   <View
                     key={key}
@@ -1582,27 +1588,51 @@ const ProductScreen = () => {
                       marginTop: 15,
                     }}
                   >
-                    <Text
+                    <View
                       style={{
-                        fontSize: 16,
-                        fontWeight: "bold",
-                        color: primaryColor,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                         marginBottom: 10,
                         paddingBottom: 5,
                         borderBottomWidth: 1,
                         borderBottomColor: "#ddd",
                       }}
                     >
-                      {group.label}
-                    </Text>
-                    {items.map((product, index) => (
-                      <ProductContainer
-                        key={product._id}
-                        product={product}
-                        index={index}
-                        data={items}
-                      />
-                    ))}
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "bold",
+                          color: primaryColor,
+                        }}
+                      >
+                        {group.label}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          setCollapsedCategories((prev) => ({
+                            ...prev,
+                            [key]: !isCollapsed,
+                          }))
+                        }
+                        style={{ paddingHorizontal: 6, paddingVertical: 4 }}
+                      >
+                        <MaterialIcons
+                          name={isCollapsed ? "keyboard-arrow-down" : "keyboard-arrow-up"}
+                          size={22}
+                          color={primaryColor}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {!isCollapsed &&
+                      items.map((product, index) => (
+                        <ProductContainer
+                          key={product._id}
+                          product={product}
+                          index={index}
+                          data={items}
+                        />
+                      ))}
                   </View>
                 );
               });

@@ -45,7 +45,7 @@ export default function HomeScreen({ navigation }) {
 
   // Shop filter
   const [filterShopId, setFilterShopId] = useState("");
-  
+
   // Summary visibility
   const [showSummary, setShowSummary] = useState(false);
 
@@ -78,7 +78,7 @@ export default function HomeScreen({ navigation }) {
   // }, [role, shops, staffShops]);
 
   // Transform sales data into transaction format (include timestamp for grouping)
- const transactions = useMemo(() => {
+  const transactions = useMemo(() => {
     if (!sales || sales.length === 0) return [];
 
     return sales.map((sale) => {
@@ -105,7 +105,10 @@ export default function HomeScreen({ navigation }) {
       const saleType = sale.type || "service";
       const paymentBreakdown = sale.payment_breakdown || {};
       const subtractReturn = Boolean(paymentBreakdown?.subtract);
-      const isECash = paymentMethod === "upi" || paymentMethod === "ecash" || paymentMethod === "e";
+      const isECash =
+        paymentMethod === "upi" ||
+        paymentMethod === "ecash" ||
+        paymentMethod === "e";
       let type = saleType === "add_expense" ? "expense" : "income";
       let amount = Number(sale.paid_amount || sale.total_amount || 0);
 
@@ -163,7 +166,7 @@ export default function HomeScreen({ navigation }) {
         sale,
       };
     });
-}, [sales]);
+  }, [sales]);
 
   const computeSplitAmounts = (sale) => {
     let cash = 0;
@@ -317,7 +320,10 @@ export default function HomeScreen({ navigation }) {
           if (ecash > 0) {
             eCashBalance += ecash;
           } else if (
-            (t.paymentMethod === "upi" || t.paymentMethod === "e" || t.paymentMethod === "ecash" || t.isECash) &&
+            (t.paymentMethod === "upi" ||
+              t.paymentMethod === "e" ||
+              t.paymentMethod === "ecash" ||
+              t.isECash) &&
             ecash === 0
           ) {
             eCashBalance += t.amount;
@@ -328,7 +334,10 @@ export default function HomeScreen({ navigation }) {
           if (ecash > 0) {
             eCashBalance -= ecash;
           } else if (
-            (t.paymentMethod === "upi" || t.paymentMethod === "e" || t.paymentMethod === "ecash" || t.isECash) &&
+            (t.paymentMethod === "upi" ||
+              t.paymentMethod === "e" ||
+              t.paymentMethod === "ecash" ||
+              t.isECash) &&
             ecash === 0
           ) {
             eCashBalance -= t.amount;
@@ -386,13 +395,20 @@ export default function HomeScreen({ navigation }) {
             borderRadius: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: "600", color: "#666", marginRight: 6 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: "#666",
+              marginRight: 6,
+            }}
+          >
             {showSummary ? "Hide" : "Show"} Summary
           </Text>
-          <Entypo 
-            name={showSummary ? "chevron-up" : "chevron-down"} 
-            size={18} 
-            color="#666" 
+          <Entypo
+            name={showSummary ? "chevron-up" : "chevron-down"}
+            size={18}
+            color="#666"
           />
         </TouchableOpacity>
 
@@ -400,11 +416,15 @@ export default function HomeScreen({ navigation }) {
           <>
             {/* Income / Expense summary - Row 1 */}
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-              <View style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}>
+              <View
+                style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}
+              >
                 <Text style={global.summaryLabel}>Income</Text>
                 <Text style={global.summaryValue}>₹{totalIncome}</Text>
               </View>
-              <View style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}>
+              <View
+                style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}
+              >
                 <Text style={global.summaryLabel}>Expense</Text>
                 <Text style={global.summaryValue}>₹{totalExpense}</Text>
               </View>
@@ -412,9 +432,13 @@ export default function HomeScreen({ navigation }) {
 
             {/* Cash on Hand / E-Cash summary - Row 2 */}
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-              <View style={[global.summaryBox, global.summaryCash, { flex: 1 }]}>
+              <View
+                style={[global.summaryBox, global.summaryCash, { flex: 1 }]}
+              >
                 <Text style={global.summaryLabel}>Cash on Hand</Text>
-                <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
+                <Text style={global.summaryValue}>
+                  ₹{cashOnHand.toFixed(2)}
+                </Text>
               </View>
               <View style={[global.summaryBox, { flex: 1 }]}>
                 <Text style={global.summaryLabel}>E-Cash</Text>
