@@ -4,15 +4,28 @@ import {
   Text,
   TouchableOpacity,
   Animated,
-  StyleSheet
+  StyleSheet,
+  Alert
 } from 'react-native';
 
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { global } from '../styles/global';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../store/slices/productSlice';
 
-export default function ScannerScreen({ navigation }) {
+export default function ScannerScreen({ navigation, route }) {
+  const dispatch = useDispatch();
+  const { products = [] } = useSelector((state) => state.products || {});
+  
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  
+  // Check if we came from Transaction screen (sales form)
+  const fromScreen = route?.params?.from || null;
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   // animation for scanning line
   const lineAnim = useRef(new Animated.Value(0)).current;
@@ -79,11 +92,48 @@ export default function ScannerScreen({ navigation }) {
 
     console.log(`Scanned barcode with data: ${data} and type: ${type}`);
 
-    // Navigate with scanned value
-    // navigation.navigate('Result', { value: data, type });
+    // Find product by barcode or ID
+    const matchedProduct = products.find(
+      (p) => p.barcode === data || p.barcode === data.toLowerCase() || p._id === data
+    );
 
-    // if you want to allow scanning again after back to this screen:
-    setTimeout(() => setScanned(false), 1000);
+    if (matchedProduct) {
+      console.log('Product matched:', matchedProduct);
+      console.log('From screen:', fromScreen);
+      
+      if (fromScreen === 'Transaction') {
+        // Already on Transaction screen, just go back with the product
+        navigation.navigate('Transaction', {
+          scannedProduct: matchedProduct,
+          openSalesForm: true,
+        });
+      } else {
+        // Coming from navbar/elsewhere, navigate to Transaction
+        navigation.navigate('Transaction', {
+          scannedProduct: matchedProduct,
+          openSalesForm: true,
+        });
+      }
+      
+      // Reset immediately to allow continuous scanning
+      setTimeout(() => setScanned(false), 500);
+    } else {
+      console.log('No product found for barcode:', data);
+      Alert.alert(
+        'Product Not Found',
+        `No product found with barcode: ${data}`,
+        [
+          {
+            text: 'Scan Again',
+            onPress: () => setScanned(false),
+          },
+          {
+            text: 'Cancel',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    }
   };
 
   return (

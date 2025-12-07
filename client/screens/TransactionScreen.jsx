@@ -6,18 +6,23 @@ import {
   ScrollView,
   FlatList,
   Alert,
-  TextInput,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { global, useThemeColors } from "../styles/global";
 import { useNavigation } from "@react-navigation/native";
-import { Picker } from "@react-native-picker/picker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices, updateService } from "../store/slices/serviceSlice";
 import { createSale, fetchSales } from "../store/slices/salesSlice";
+import { fetchProducts } from "../store/slices/productSlice";
+import { fetchCustomers } from "../store/slices/customerSlice";
 import { showToast } from "../store/slices/toastSlice";
+import ServiceSearch from "../components/ServiceSearch";
+import ServicePaymentForm from "../components/ServicePaymentForm";
+import ReturnItemSearch from "../components/ReturnItemSearch";
+import ReturnItemForm from "../components/ReturnItemForm";
+import MoneyExpenseForm from "../components/MoneyExpenseForm";
+import SalesForm from "../components/SalesForm";
 
 const TRANSACTION_TYPES = [
   {
@@ -50,8 +55,13 @@ export default function TransactionScreen() {
   const { services, status: servicesStatus } = useSelector(
     (state) => state.services
   );
+  const { sales = [], status: salesStatus } = useSelector(
+    (state) => state.sales || {}
+  );
   const { shops } = useSelector((state) => state.shops);
   const { user } = useSelector((state) => state.auth);
+  const { products = [] } = useSelector((state) => state.products || {});
+  const { customers = [] } = useSelector((state) => state.customers || {});
 
   const [selectedType, setSelectedType] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -67,10 +77,75 @@ export default function TransactionScreen() {
   const [txDescription, setTxDescription] = useState("");
   const [selectedShopForTx, setSelectedShopForTx] = useState("");
   const [selectedTransactionType, setSelectedTransactionType] = useState(null);
+  const [returnSearchQuery, setReturnSearchQuery] = useState("");
+  const [selectedReturnItem, setSelectedReturnItem] = useState(null);
+  const [returnQty, setReturnQty] = useState("1");
+  const [subtractReturn, setSubtractReturn] = useState(true);
+  const [scannedProduct, setScannedProduct] = useState(null);
+
+  // Preload sales so return search has data even before switching tabs
+  useEffect(() => {
+    dispatch(fetchSales());
+  }, [dispatch]);
+
+  // Handle back button - navigate to Home screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Prevent default behavior
+      e.preventDefault();
+      
+      // Navigate to Home screen instead
+      navigation.navigate('Home');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  // Handle scanned product from navigation params
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const params = navigation
+        .getState()
+        ?.routes?.find((r) => r.name === "Transaction")?.params;
+      
+      if (params?.scannedProduct && params?.openSalesForm) {
+        const product = params.scannedProduct;
+        console.log('Received scanned product:', product);
+        
+        setScannedProduct(product);
+        setSelectedType({ id: "sales", label: "Sales" });
+        
+        // Ensure products and customers are loaded
+        if (!products || products.length === 0) {
+          dispatch(fetchProducts());
+        }
+        if (!customers || customers.length === 0) {
+          dispatch(fetchCustomers());
+        }
+        
+        // Reset scannedProduct after giving SalesForm time to process
+        setTimeout(() => {
+          setScannedProduct(null);
+        }, 300);
+        
+        // Clear params to allow next scan
+        navigation.setParams({ scannedProduct: null, openSalesForm: false });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, dispatch, products, customers]);
 
   useEffect(() => {
     if (selectedType?.id === "service") {
       dispatch(fetchServices());
+    }
+    if (selectedType?.id === "return_item") {
+      dispatch(fetchSales());
+    }
+    if (selectedType?.id === "sales") {
+      dispatch(fetchProducts());
+      dispatch(fetchCustomers());
     }
     // default shop for non-service transactions
     if (shops && shops.length > 0 && !selectedShopForTx) {
@@ -96,6 +171,56 @@ export default function TransactionScreen() {
     );
   }, [searchQuery, activeServices]);
 
+  const returnableItems = useMemo(() => {
+    if (!Array.isArray(sales)) return [];
+    return sales
+      .filter((sale) => sale.type === "sales")
+      .flatMap((sale, saleIdx) => {
+        const baseItems =
+          Array.isArray(sale.items) && sale.items.length > 0
+            ? sale.items
+            : [
+                {
+                  product_id: { name: sale.name || "Sale" },
+                  quantity: 1,
+                  unit_price: sale.total_amount || sale.paid_amount || 0,
+                  total_price: sale.total_amount || sale.paid_amount || 0,
+                },
+              ];
+
+        return baseItems.map((item, idx) => {
+          const productName = item.product_id?.name || "Item";
+          const unitPrice = item.unit_price || item.total_price || 0;
+          return {
+            key: `${sale._id || sale.id || saleIdx}-${
+              item.product_id?._id || idx
+            }`,
+            sale,
+            item,
+            productName,
+            customerName: sale.customer_id?.name || "Walk-in",
+            shopName: sale.shop_id?.name || "",
+            shopId: sale.shop_id?._id || sale.shop_id,
+            quantity: item.quantity || 1,
+            unitPrice,
+            saleName: sale.name || "Sale",
+          };
+        });
+      });
+  }, [sales]);
+
+  const filteredReturnItems = useMemo(() => {
+    if (!returnSearchQuery) return returnableItems;
+    const query = returnSearchQuery.toLowerCase();
+    return returnableItems.filter((entry) => {
+      return (
+        entry.productName.toLowerCase().includes(query) ||
+        entry.customerName.toLowerCase().includes(query) ||
+        entry.saleName.toLowerCase().includes(query)
+      );
+    });
+  }, [returnSearchQuery, returnableItems]);
+
   const handleTransactionTypeSelect = (type) => {
     setSelectedType(type);
     setShowDropdown(false);
@@ -103,7 +228,67 @@ export default function TransactionScreen() {
     setSearchQuery("");
     setPaidInCash("");
     setPaidInEcash("");
+    setSelectedReturnItem(null);
+    setReturnSearchQuery("");
+    setReturnQty("1");
+    setSubtractReturn(true);
     // for non-service types we'll render a local form below
+  };
+
+  const handleSubmitSales = async (saleData) => {
+    if (!selectedShopForTx) {
+      dispatch(showToast({ message: "Please select a shop", type: "error" }));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const balance = saleData.total_amount - saleData.paid_amount;
+      const paymentMethod =
+        saleData.cash_paid > 0 && saleData.online_paid > 0
+          ? "both"
+          : saleData.online_paid > 0
+          ? "online"
+          : "cash";
+
+      await dispatch(
+        createSale({
+          shop_id: selectedShopForTx,
+          user_id: user?._id,
+          customer_id: saleData.customer_id,
+          service_id: null,
+          name: "Sale",
+          type: "sales",
+          order_date: new Date().toISOString(),
+          total_amount: saleData.total_amount,
+          paid_amount: saleData.paid_amount,
+          cash_paid: saleData.cash_paid,
+          online_paid: saleData.online_paid,
+          balance: balance,
+          payment_method: paymentMethod,
+          status: balance > 0 ? "pending" : "completed",
+          notes: "Sales transaction",
+          items: saleData.items,
+        })
+      ).unwrap();
+
+      dispatch(fetchSales());
+      dispatch(
+        showToast({ message: "Sale recorded successfully!", type: "success" })
+      );
+      setSelectedType(null);
+      navigation.navigate("Home");
+    } catch (err) {
+      console.error("Sales submission error:", err);
+      dispatch(
+        showToast({
+          message: err?.payload || err?.message || "Failed to submit sale",
+          type: "error",
+        })
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmitOther = async () => {
@@ -118,7 +303,9 @@ export default function TransactionScreen() {
     const totalPaid = cash + ecash;
 
     if (totalPaid <= 0) {
-      dispatch(showToast({ message: "Please enter a positive amount", type: "error" }));
+      dispatch(
+        showToast({ message: "Please enter a positive amount", type: "error" })
+      );
       return;
     }
 
@@ -139,62 +326,70 @@ export default function TransactionScreen() {
         type: selectedType?.id,
         order_date: new Date().toISOString(),
         total_amount: totalPaid,
-        paid_amount: totalPaid, 
+        paid_amount: totalPaid,
         balance: 0,
-        status: 'completed',
+        status: "completed",
         notes: txDescription || txTitle,
         items: [],
       };
 
       // Determine whether this is an expense
-      const isExpense = selectedType?.id === 'add_expense';
-
+      const isExpense = selectedType?.id === "add_expense";
 
       if (cash > 0 && ecash > 0) {
-        await dispatch(createSale({
-          ...common,
-          cash_paid: cash,
-          online_paid: ecash,
-          payment_method: 'multiple',
-        })).unwrap();
-      }
-
-      else if (cash > 0) {
-        await dispatch(createSale({
-          ...common,
-          cash_paid: cash,
-          online_paid: 0,
-          payment_method: 'cash',
-        })).unwrap();
-      }
-
-      else if (ecash > 0) {
-        await dispatch(createSale({
-          ...common,
-          cash_paid: 0,
-          online_paid: ecash,
-          payment_method: 'e',
-        })).unwrap();
+        await dispatch(
+          createSale({
+            ...common,
+            cash_paid: cash,
+            online_paid: ecash,
+            payment_method: "multiple",
+          })
+        ).unwrap();
+      } else if (cash > 0) {
+        await dispatch(
+          createSale({
+            ...common,
+            cash_paid: cash,
+            online_paid: 0,
+            payment_method: "cash",
+          })
+        ).unwrap();
+      } else if (ecash > 0) {
+        await dispatch(
+          createSale({
+            ...common,
+            cash_paid: 0,
+            online_paid: ecash,
+            payment_method: "e",
+          })
+        ).unwrap();
       }
 
       // Refresh sales (and services just in case)
       dispatch(fetchSales());
       dispatch(fetchServices());
 
-      dispatch(showToast({ message: isExpense ? 'Expense recorded' : 'Amount added', type: 'success' }));
+      dispatch(
+        showToast({
+          message: isExpense ? "Expense recorded" : "Amount added",
+          type: "success",
+        })
+      );
 
       // reset
-      setTxTitle('');
-      setTxDescription('');
-      setPaidInCash('');
-      setPaidInEcash('');
+      setTxTitle("");
+      setTxDescription("");
+      setPaidInCash("");
+      setPaidInEcash("");
       setSelectedType(null);
 
       // Navigate to Home after successful submit
       navigation.navigate("Home");
     } catch (err) {
-      console.error('Submit transaction error:', err);
-      dispatch(showToast({ message: 'Failed to submit transaction', type: 'error' }));
+      console.error("Submit transaction error:", err);
+      dispatch(
+        showToast({ message: "Failed to submit transaction", type: "error" })
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -203,6 +398,34 @@ export default function TransactionScreen() {
   const handleSelectService = (service) => {
     setSelectedService(service);
     setSearchQuery("");
+  };
+
+  const handleSelectReturnItem = (entry) => {
+    setSelectedReturnItem(entry);
+    setReturnSearchQuery("");
+    const estimated = (entry.unitPrice || 0) * (parseFloat(returnQty) || 1);
+    setPaidInCash(estimated ? String(estimated) : "");
+    setPaidInEcash("");
+  };
+
+  useEffect(() => {
+    if (selectedType?.id !== "return_item") return;
+    if (!selectedReturnItem) return;
+    if (paidInCash || paidInEcash) return;
+    const estimated =
+      (selectedReturnItem.unitPrice || 0) * (parseFloat(returnQty) || 0);
+    if (estimated > 0) {
+      setPaidInCash(String(estimated));
+    }
+  }, [selectedType, selectedReturnItem, returnQty, paidInCash, paidInEcash]);
+
+  const handleCancelReturn = () => {
+    setSelectedReturnItem(null);
+    setReturnSearchQuery("");
+    setReturnQty("1");
+    setPaidInCash("");
+    setPaidInEcash("");
+    setSubtractReturn(true);
   };
 
   const handleSearchAgain = () => {
@@ -214,17 +437,26 @@ export default function TransactionScreen() {
 
   const handleSubmit = async () => {
     if (!selectedService) {
-      dispatch(showToast({ message: "Please select a service", type: "error" }));
+      dispatch(
+        showToast({ message: "Please select a service", type: "error" })
+      );
       return;
     }
 
     if (!paidInCash.trim() && !paidInEcash.trim()) {
-      dispatch(showToast({ message: "Please enter cash or e-cash amount", type: "error" }));
+      dispatch(
+        showToast({
+          message: "Please enter cash or e-cash amount",
+          type: "error",
+        })
+      );
       return;
     }
 
     if (!transactionDate.trim()) {
-      dispatch(showToast({ message: "Please enter transaction date", type: "error" }));
+      dispatch(
+        showToast({ message: "Please enter transaction date", type: "error" })
+      );
       return;
     }
 
@@ -233,12 +465,19 @@ export default function TransactionScreen() {
     const totalPaid = cash + ecash;
 
     if (isNaN(cash) || isNaN(ecash)) {
-      dispatch(showToast({ message: "Please enter valid amounts", type: "error" }));
+      dispatch(
+        showToast({ message: "Please enter valid amounts", type: "error" })
+      );
       return;
     }
 
     if (totalPaid <= 0) {
-      dispatch(showToast({ message: "Total paid amount must be greater than 0", type: "error" }));
+      dispatch(
+        showToast({
+          message: "Total paid amount must be greater than 0",
+          type: "error",
+        })
+      );
       return;
     }
 
@@ -254,7 +493,12 @@ export default function TransactionScreen() {
 
     // Safety: ensure related relations exist before submitting
     if (!selectedService?.shop_id?._id) {
-      dispatch(showToast({ message: "This service has no shop assigned", type: "error" }));
+      dispatch(
+        showToast({
+          message: "This service has no shop assigned",
+          type: "error",
+        })
+      );
       return;
     }
 
@@ -262,10 +506,17 @@ export default function TransactionScreen() {
     try {
       // Convert date to proper format - ensure it's a valid date
       const dateParts = transactionDate.split("-");
-      const orderDate = new Date(`${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00Z`);
-      
+      const orderDate = new Date(
+        `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00Z`
+      );
+
       if (isNaN(orderDate.getTime())) {
-        dispatch(showToast({ message: "Invalid date format. Use YYYY-MM-DD", type: "error" }));
+        dispatch(
+          showToast({
+            message: "Invalid date format. Use YYYY-MM-DD",
+            type: "error",
+          })
+        );
         setIsSubmitting(false);
         return;
       }
@@ -278,24 +529,27 @@ export default function TransactionScreen() {
           customer_id: selectedService?.customer_id?._id,
           service_id: selectedService?._id,
           name: selectedService?.name,
-          type: 'service',
+          type: "service",
           order_date: orderDate.toISOString(),
           total_amount: selectedService?.total_amount,
           paid_amount: totalPaid,
           cash_paid: cash,
           online_paid: ecash,
           balance: selectedService ? selectedService.balance - totalPaid : 0,
-          payment_method: cash > 0 && ecash > 0 ? "multiple" : cash > 0 ? "cash" : "ecash",
+          payment_method:
+            cash > 0 && ecash > 0 ? "multiple" : cash > 0 ? "cash" : "ecash",
           status: "completed",
           notes: `Payment for service: ${selectedService?.name}`,
-          items: []
+          items: [],
         })
       ).unwrap();
 
       // 2. Update the service balance
-      const newBalance = selectedService ? selectedService.balance - totalPaid : 0;
+      const newBalance = selectedService
+        ? selectedService.balance - totalPaid
+        : 0;
       // console.log("Updating service balance from", selectedService?.balance, "to", newBalance);
-      
+
       await dispatch(
         updateService({
           serviceId: selectedService?._id,
@@ -310,12 +564,15 @@ export default function TransactionScreen() {
       // console.log("Fetching sales and services after payment");
       const salesResult = await dispatch(fetchSales());
       const servicesResult = await dispatch(fetchServices());
-      
+
       // console.log("Services after fetch:", servicesResult.payload?.[0]?.balance || "No services");
 
       // 4. Show success and reset form
       dispatch(
-        showToast({ message: "Payment submitted successfully!", type: "success" })
+        showToast({
+          message: "Payment submitted successfully!",
+          type: "success",
+        })
       );
 
       // Reset form state
@@ -332,15 +589,149 @@ export default function TransactionScreen() {
       }, 1500);
     } catch (err) {
       console.error("Payment submission error:", err);
-      const errorMessage = 
-        err?.payload?.msg || 
-        err?.payload?.message || 
-        err?.message || 
+      const errorMessage =
+        err?.payload?.msg ||
+        err?.payload?.message ||
+        err?.message ||
         "Failed to submit payment";
-      
+
       dispatch(
         showToast({
           message: errorMessage,
+          type: "error",
+        })
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitReturn = async () => {
+    if (!selectedReturnItem) {
+      dispatch(
+        showToast({ message: "Please select an item to return", type: "error" })
+      );
+      return;
+    }
+
+    const qtyNumber = parseFloat(returnQty) || 0;
+    if (qtyNumber <= 0) {
+      dispatch(
+        showToast({ message: "Quantity must be greater than 0", type: "error" })
+      );
+      return;
+    }
+
+    if (qtyNumber > (selectedReturnItem.quantity || 0)) {
+      dispatch(
+        showToast({
+          message: "Return quantity cannot exceed sold quantity",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    let cash = parseFloat(paidInCash) || 0;
+    let ecash = parseFloat(paidInEcash) || 0;
+    const userEnteredTotal = cash + ecash;
+    const estimatedTotal = qtyNumber * (selectedReturnItem.unitPrice || 0);
+    const finalTotal = userEnteredTotal > 0 ? userEnteredTotal : estimatedTotal;
+
+    if (finalTotal <= 0) {
+      dispatch(
+        showToast({
+          message: "Please enter a valid refund amount",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (!selectedReturnItem.shopId && !selectedShopForTx) {
+      dispatch(
+        showToast({
+          message: "Please select a shop for this return",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (cash + ecash <= 0 && estimatedTotal > 0) {
+      cash = estimatedTotal;
+    }
+
+    const paymentMethod =
+      cash > 0 && ecash > 0 ? "multiple" : cash > 0 ? "cash" : "e";
+
+    setIsSubmitting(true);
+    try {
+      await dispatch(
+        createSale({
+          shop_id: selectedReturnItem.shopId || selectedShopForTx,
+          user_id: user?._id,
+          customer_id:
+            selectedReturnItem.sale?.customer_id?._id ||
+            selectedReturnItem.sale?.customer_id ||
+            null,
+          service_id: null,
+          name: `Return - ${selectedReturnItem.productName}`,
+          type: "return_item",
+          order_date: new Date().toISOString(),
+          total_amount: finalTotal,
+          paid_amount: finalTotal,
+          cash_paid: cash,
+          online_paid: ecash,
+          balance: 0,
+          payment_method: paymentMethod,
+          payment_breakdown: {
+            subtract: subtractReturn,
+            quantity: qtyNumber,
+            original_sale_id:
+              selectedReturnItem.sale?._id || selectedReturnItem.sale?.id,
+            product_id:
+              selectedReturnItem.item?.product_id?._id ||
+              selectedReturnItem.item?.product_id,
+          },
+          status: "completed",
+          notes: `Return ${qtyNumber} x ${selectedReturnItem.productName}${
+            subtractReturn ? " (subtract)" : ""
+          }`,
+          items: [
+            {
+              product_id:
+                selectedReturnItem.item?.product_id?._id ||
+                selectedReturnItem.item?.product_id,
+              quantity: qtyNumber,
+              unit_price: selectedReturnItem.unitPrice || 0,
+              total_price: qtyNumber * (selectedReturnItem.unitPrice || 0),
+              notes: "Returned item",
+            },
+          ],
+        })
+      ).unwrap();
+
+      dispatch(fetchSales());
+
+      dispatch(
+        showToast({
+          message: subtractReturn
+            ? "Return recorded & subtracted"
+            : "Return recorded",
+          type: "success",
+        })
+      );
+
+      handleCancelReturn();
+      setSelectedType(null);
+
+      navigation.navigate("Home");
+    } catch (err) {
+      console.error("Return submission error:", err);
+      dispatch(
+        showToast({
+          message: err?.payload || err?.message || "Failed to submit return",
           type: "error",
         })
       );
@@ -356,6 +747,12 @@ export default function TransactionScreen() {
   const previewRemaining = selectedService
     ? Math.max(0, selectedService.balance - previewTotalPaid)
     : 0;
+  const returnQtyNumber = parseFloat(returnQty) || 0;
+  const estimatedReturnValue = selectedReturnItem
+    ? (selectedReturnItem.unitPrice || 0) * returnQtyNumber
+    : 0;
+  const previewReturnTotal =
+    previewTotalPaid > 0 ? previewTotalPaid : estimatedReturnValue;
 
   const navigationMapping = {
     service: () => {},
@@ -377,14 +774,12 @@ export default function TransactionScreen() {
 
   return (
     <SafeAreaView style={global.safeArea}>
-
       <ScrollView
         style={global.container}
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-
         {/* Dropdown Section */}
         <View style={{ marginBottom: 20 }}>
           <Text
@@ -460,14 +855,17 @@ export default function TransactionScreen() {
                     style={{
                       paddingVertical: 12,
                       paddingHorizontal: 14,
-                      borderBottomWidth: index !== TRANSACTION_TYPES.length - 1 ? 1 : 0,
+                      borderBottomWidth:
+                        index !== TRANSACTION_TYPES.length - 1 ? 1 : 0,
                       borderBottomColor: "#f0f0f0",
                       backgroundColor:
                         selectedType?.id === item.id ? "#f5f5f5" : "#fff",
                     }}
                     onPress={() => handleTransactionTypeSelect(item)}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
                       {selectedType?.id === item.id && (
                         <MaterialIcons
                           name="check"
@@ -479,8 +877,12 @@ export default function TransactionScreen() {
                       <Text
                         style={{
                           fontSize: 15,
-                          color: selectedType?.id === item.id ? primaryColor : "#333",
-                          fontWeight: selectedType?.id === item.id ? "600" : "500",
+                          color:
+                            selectedType?.id === item.id
+                              ? primaryColor
+                              : "#333",
+                          fontWeight:
+                            selectedType?.id === item.id ? "600" : "500",
                         }}
                       >
                         {item.label}
@@ -493,248 +895,139 @@ export default function TransactionScreen() {
           )}
         </View>
 
-        {/* Service Search Section */}
         {selectedType?.id === "service" && !selectedService && (
-          <View style={{ marginTop: 20 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: "#333",
-                marginBottom: 10,
-              }}
-            >
-              Find a Service
-            </Text>
-            <TextInput
-              style={global.input}
-              placeholder="Search by service or customer name..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
-
-            {/* Service Results List */}
-            {servicesStatus === "loading" ? (
-              <ActivityIndicator
-                size="large"
-                color={primaryColor}
-                style={{ marginTop: 20 }}
-              />
-            ) : filteredServices.length > 0 ? (
-              <FlatList
-                data={filteredServices}
-                keyExtractor={(item, index) => item._id ? item._id.toString() : `service-${index}`}
-                scrollEnabled={false}
-                style={{ marginTop: 10 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={{
-                      padding: 12,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
-                      backgroundColor: "#fff",
-                      marginBottom: 8,
-                      borderRadius: 6,
-                    }}
-                    onPress={() => handleSelectService(item)}
-                  >
-                    <Text style={{ fontSize: 15, fontWeight: "500" }}>
-                      {item.name}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      Customer: {item.customer_id?.name || "N/A"} | Balance: ₹{item.balance}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
-                      Status: {item.status}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            ) : searchQuery ? (
-              <Text style={{ textAlign: "center", color: "#999", marginTop: 20 }}>
-                No services found.
-              </Text>
-            ) : (
-              <Text style={{ textAlign: "center", color: "#999", marginTop: 20 }}>
-                Start typing to search for services.
-              </Text>
-            )}
-          </View>
+          <ServiceSearch
+            primaryColor={primaryColor}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            servicesStatus={servicesStatus}
+            filteredServices={filteredServices}
+            onSelectService={handleSelectService}
+          />
         )}
 
-        {/* Add Money / Add Expense Form */}
-        {selectedType?.id && (selectedType.id === 'add_money' || selectedType.id === 'add_expense') && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 10 }}>{selectedType.label}</Text>
+        {selectedType?.id === "return_item" && !selectedReturnItem && (
+          <ReturnItemSearch
+            primaryColor={primaryColor}
+            returnSearchQuery={returnSearchQuery}
+            setReturnSearchQuery={setReturnSearchQuery}
+            salesStatus={salesStatus}
+            filteredReturnItems={filteredReturnItems}
+            onSelectReturnItem={handleSelectReturnItem}
+          />
+        )}
 
-            <TextInput
-              style={global.input}
-              placeholder="Title *"
-              value={txTitle}
-              onChangeText={setTxTitle}
-            />
+        {selectedType?.id === "sales" && (
+          <SalesForm
+            primaryColor={primaryColor}
+            products={products}
+            shops={shops}
+            customers={customers}
+            selectedShopForTx={selectedShopForTx}
+            setSelectedShopForTx={setSelectedShopForTx}
+            isSubmitting={isSubmitting}
+            onSubmitSales={handleSubmitSales}
+            onCancel={() => {
+              setSelectedType(null);
+              setScannedProduct(null);
+            }}
+            scannedProduct={scannedProduct}
+          />
+        )}
 
-            <TextInput
-              style={global.input}
-              placeholder="Description"
-              value={txDescription}
-              onChangeText={setTxDescription}
-              multiline
-            />
-
-            {shops && shops.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
-                <Picker
-                  selectedValue={selectedShopForTx}
-                  onValueChange={(val) => setSelectedShopForTx(val)}
-                >
-                  {shops.map((s) => (
-                    <Picker.Item key={s._id} label={s.name} value={s._id} />
-                  ))}
-                </Picker>
-              </View>
-            )}
-
-            <TextInput
-              style={global.input}
-              placeholder="Amount in Cash"
-              value={paidInCash}
-              onChangeText={setPaidInCash}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-
-            <TextInput
-              style={global.input}
-              placeholder="Amount in E-Cash"
-              value={paidInEcash}
-              onChangeText={setPaidInEcash}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-
-            <TouchableOpacity
-              style={[global.button, isSubmitting && { opacity: 0.6 }]}
-              onPress={handleSubmitOther}
-              disabled={isSubmitting}
-            >
-              <Text style={global.btnText}>{isSubmitting ? 'Submitting...' : (selectedType.id === 'add_expense' ? 'Add Expense' : 'Add Money')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ marginTop: 10, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1.5, borderColor: primaryColor, borderRadius: 6, alignItems: 'center' }}
-              onPress={() => {
+        {selectedType?.id &&
+          (selectedType.id === "add_money" ||
+            selectedType.id === "add_expense") && (
+            <MoneyExpenseForm
+              primaryColor={primaryColor}
+              selectedType={selectedType}
+              txTitle={txTitle}
+              setTxTitle={setTxTitle}
+              txDescription={txDescription}
+              setTxDescription={setTxDescription}
+              shops={shops}
+              selectedShopForTx={selectedShopForTx}
+              setSelectedShopForTx={setSelectedShopForTx}
+              paidInCash={paidInCash}
+              setPaidInCash={setPaidInCash}
+              paidInEcash={paidInEcash}
+              setPaidInEcash={setPaidInEcash}
+              isSubmitting={isSubmitting}
+              onSubmitOther={handleSubmitOther}
+              onCancel={() => {
                 setSelectedType(null);
                 setSelectedTransactionType(null);
-                setTxTitle('');
-                setTxDescription('');
-                setPaidInCash('');
-                setPaidInEcash('');
+                setTxTitle("");
+                setTxDescription("");
+                setPaidInCash("");
+                setPaidInEcash("");
               }}
-            >
-              <Text style={{ fontSize: 15, fontWeight: '600', color: primaryColor }}>{'Cancel'}</Text>
-            </TouchableOpacity>
-          </View>
+            />
+          )}
+
+        {selectedType?.id === "return_item" && selectedReturnItem && (
+          <ReturnItemForm
+            primaryColor={primaryColor}
+            selectedReturnItem={selectedReturnItem}
+            returnQty={returnQty}
+            setReturnQty={setReturnQty}
+            paidInCash={paidInCash}
+            setPaidInCash={setPaidInCash}
+            paidInEcash={paidInEcash}
+            setPaidInEcash={setPaidInEcash}
+            subtractReturn={subtractReturn}
+            setSubtractReturn={setSubtractReturn}
+            previewReturnTotal={previewReturnTotal}
+            isSubmitting={isSubmitting}
+            onSubmitReturn={handleSubmitReturn}
+            onCancel={handleCancelReturn}
+          />
         )}
 
-        {/* Service Details & Payment Form */}
         {selectedType?.id === "service" && selectedService && (
-          <View>
-            <View
-              style={{
-                padding: 14,
-                backgroundColor: "#f0f9ff",
-                borderLeftWidth: 4,
-                borderLeftColor: primaryColor,
-                borderRadius: 6,
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontSize: 15, fontWeight: "600", marginBottom: 8 }}>
-                {selectedService.name}
-              </Text>
-              <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Customer: {selectedService.customer_id?.name || "N/A"}
-              </Text>
-              <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Total Amount: ₹{selectedService.total_amount}
-              </Text>
-              <Text style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Current Balance: ₹{selectedService.balance}
-              </Text>
-              {previewTotalPaid > 0 && (
-                <Text style={{ fontSize: 14, fontWeight: "600", color: primaryColor }}>
-                  Remaining After Payment: ₹{previewRemaining.toFixed(2)}
-                </Text>
-              )}
-            </View>
-
-            <Text style={{ fontSize: 14, fontWeight: "600", marginBottom: 10 }}>
-              Add Payment
-            </Text>
-            <TextInput
-              style={global.input}
-              placeholder="Paid in Cash"
-              value={paidInCash}
-              onChangeText={setPaidInCash}
-              keyboardType="numeric"
-              returnKeyType="next"
-              maxLength={10}
-            />
-            <TextInput
-              style={global.input}
-              placeholder="Paid in E-Cash"
-              value={paidInEcash}
-              onChangeText={setPaidInEcash}
-              keyboardType="numeric"
-              returnKeyType="next"
-              maxLength={10}
-            />
-            <TextInput
-              style={global.input}
-              placeholder="Transaction Date (YYYY-MM-DD)"
-              value={transactionDate}
-              onChangeText={setTransactionDate}
-              returnKeyType="done"
-              maxLength={10}
-            />
-
-            <TouchableOpacity
-              style={[global.button, isSubmitting && { opacity: 0.6 }]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              <Text style={global.btnText}>
-                {isSubmitting ? "Submitting..." : "Submit Payment"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                marginTop: 10,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderWidth: 1.5,
-                borderColor: primaryColor,
-                borderRadius: 6,
-                alignItems: "center",
-              }}
-              onPress={handleSearchAgain}
-            >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: "600",
-                  color: primaryColor,
-                }}
-              >
-                Search Again
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <ServicePaymentForm
+            primaryColor={primaryColor}
+            selectedService={selectedService}
+            paidInCash={paidInCash}
+            setPaidInCash={setPaidInCash}
+            paidInEcash={paidInEcash}
+            setPaidInEcash={setPaidInEcash}
+            transactionDate={transactionDate}
+            setTransactionDate={setTransactionDate}
+            isSubmitting={isSubmitting}
+            onSubmit={handleSubmit}
+            onSearchAgain={handleSearchAgain}
+            previewRemaining={previewRemaining}
+            previewTotalPaid={previewTotalPaid}
+          />
         )}
       </ScrollView>
+
+      {/* Floating Scanner Button */}
+      {selectedType?.id === "sales" && (
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            bottom: 20,
+            right: 20,
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: primaryColor,
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+            zIndex: 10,
+          }}
+          onPress={() => navigation.navigate("Scanner", { from: "Transaction" })}
+        >
+          <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }

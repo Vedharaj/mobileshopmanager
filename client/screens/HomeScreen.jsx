@@ -45,6 +45,9 @@ export default function HomeScreen({ navigation }) {
 
   // Shop filter
   const [filterShopId, setFilterShopId] = useState("");
+  
+  // Summary visibility
+  const [showSummary, setShowSummary] = useState(false);
 
   const staffShops = user?.shops || [];
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
@@ -100,9 +103,11 @@ export default function HomeScreen({ navigation }) {
       const paymentMethod = sale.payment_method || "cash";
       const saleShopId = sale.shop_id?._id || sale.shop_id;
       const saleType = sale.type || "service";
+      const paymentBreakdown = sale.payment_breakdown || {};
+      const subtractReturn = Boolean(paymentBreakdown?.subtract);
       const isECash = paymentMethod === "upi" || paymentMethod === "ecash" || paymentMethod === "e";
-      const type = saleType === "add_expense" ? "expense" : "income";
-      const amount = Number(sale.paid_amount || sale.total_amount || 0);
+      let type = saleType === "add_expense" ? "expense" : "income";
+      let amount = Number(sale.paid_amount || sale.total_amount || 0);
 
       // Determine title & subtitle for better row labeling
       let title = "Sale";
@@ -124,6 +129,10 @@ export default function HomeScreen({ navigation }) {
       } else if (saleType === "return_item") {
         title = "Return";
         subtitle = sale.notes || sale.name || "Item Returned";
+        if (subtractReturn) {
+          type = "expense";
+          amount = -Math.abs(amount);
+        }
       }
 
       // If sale has explicit notes, prefer them as subtitle
@@ -364,29 +373,56 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
       <View style={global.container}>
-        {/* Income / Expense summary - Row 1 */}
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-          <View style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}>
-            <Text style={global.summaryLabel}>Income</Text>
-            <Text style={global.summaryValue}>₹{totalIncome}</Text>
-          </View>
-          <View style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}>
-            <Text style={global.summaryLabel}>Expense</Text>
-            <Text style={global.summaryValue}>₹{totalExpense}</Text>
-          </View>
-        </View>
+        {/* Toggle Summary Button */}
+        <TouchableOpacity
+          onPress={() => setShowSummary(!showSummary)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 8,
+            marginBottom: 10,
+            backgroundColor: "#f0f0f0",
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: "#666", marginRight: 6 }}>
+            {showSummary ? "Hide" : "Show"} Summary
+          </Text>
+          <Entypo 
+            name={showSummary ? "chevron-up" : "chevron-down"} 
+            size={18} 
+            color="#666" 
+          />
+        </TouchableOpacity>
 
-        {/* Cash on Hand / E-Cash summary - Row 2 */}
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-          <View style={[global.summaryBox, global.summaryCash, { flex: 1 }]}>
-            <Text style={global.summaryLabel}>Cash on Hand</Text>
-            <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
-          </View>
-          <View style={[global.summaryBox, { flex: 1 }]}>
-            <Text style={global.summaryLabel}>E-Cash</Text>
-            <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
-          </View>
-        </View>
+        {showSummary && (
+          <>
+            {/* Income / Expense summary - Row 1 */}
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+              <View style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}>
+                <Text style={global.summaryLabel}>Income</Text>
+                <Text style={global.summaryValue}>₹{totalIncome}</Text>
+              </View>
+              <View style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}>
+                <Text style={global.summaryLabel}>Expense</Text>
+                <Text style={global.summaryValue}>₹{totalExpense}</Text>
+              </View>
+            </View>
+
+            {/* Cash on Hand / E-Cash summary - Row 2 */}
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+              <View style={[global.summaryBox, global.summaryCash, { flex: 1 }]}>
+                <Text style={global.summaryLabel}>Cash on Hand</Text>
+                <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
+              </View>
+              <View style={[global.summaryBox, { flex: 1 }]}>
+                <Text style={global.summaryLabel}>E-Cash</Text>
+                <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
+              </View>
+            </View>
+          </>
+        )}
 
         {/* Week date row (swipeable) */}
         <View
@@ -543,6 +579,7 @@ export default function HomeScreen({ navigation }) {
               ).toString();
               return `${base}-${index}`;
             }}
+            showsVerticalScrollIndicator={false}
             renderSectionHeader={({ section }) => (
               <View style={{ alignItems: "center", marginVertical: 6 }}>
                 <Text style={{ color: primaryColor, fontWeight: "600" }}>

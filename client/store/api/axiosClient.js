@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: process.env.API_BASE_URL || ' https://artistic-retha-barbarously.ngrok-free.dev/api',
+  baseURL: process.env.API_BASE_URL || ' http://10.40.5.238:5000/api',
   timeout: 10000
 });
 
@@ -12,4 +12,4 @@ export const setAuthToken = async(token) => {
   else await AsyncStorage.removeItem("token");
 };
 
-export default api;
+export default api

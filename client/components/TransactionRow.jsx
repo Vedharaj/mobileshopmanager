@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   PanResponder,
   Dimensions,
   Animated,
+  TouchableOpacity,
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { global } from "../styles/global";
 import { deleteSale, fetchSales } from "../store/slices/salesSlice";
+import TransactionDetailModal from "./TransactionDetailModal";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SWIPE_THRESHOLD = 50;
@@ -17,6 +19,7 @@ const SWIPE_THRESHOLD = 50;
 const TransactionRow = ({ item }) => {
   const dispatch = useDispatch();
   const translateX = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
 
   const pan = useRef(
     PanResponder.create({
@@ -86,13 +89,31 @@ const TransactionRow = ({ item }) => {
     })
   ).current;
 
-  const bgColor = item.type === "income" ? "#e9f7ef" : "#ffe5e5";
-  const accent = item.type === "income" ? "#2ecc71" : "#e74c3c";
+  const isPending = item.sale?.status === "pending" || item.sale?.balance > 0;
+  
+  const bgColor = isPending 
+    ? "#fff9e6" 
+    : item.type === "income" 
+    ? "#e9f7ef" 
+    : "#ffe5e5";
+  
+  const accent = isPending
+    ? "#f39c12"
+    : item.type === "income" 
+    ? "#2ecc71" 
+    : "#e74c3c";
 
   const cashAmount = item.sale?.cash_paid || 0;
   const onlineAmount = item.sale?.online_paid || 0;
 
   const isSplitPayment = cashAmount > 0 && onlineAmount > 0;
+
+  const isService = item.sale?.type === "service";
+  const customerName = item.sale?.customer_id?.name || "Walk-in";
+  const incomeLabel = item.type === "income" ? "Income" : "Expense";
+  const subtitleLabel = isService
+    ? `${customerName} · ${item.category} · ${incomeLabel}`
+    : `${item.category} · ${incomeLabel}`;
 
   return (
     <View
@@ -125,15 +146,19 @@ const TransactionRow = ({ item }) => {
         {...pan.panHandlers}
         style={{ transform: [{ translateX }], width: "100%" }}
       >
-        <View
-          style={{
-            flexDirection: "column",
-            alignItems: "flex-start",
-            backgroundColor: bgColor,
-            borderRadius: 8,
-            padding: 10,
-          }}
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.7}
         >
+          <View
+            style={{
+              flexDirection: "column",
+              alignItems: "flex-start",
+              backgroundColor: bgColor,
+              borderRadius: 8,
+              padding: 10,
+            }}
+          >
           <Text style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>
             {item.timeLabel}
           </Text>
@@ -147,7 +172,7 @@ const TransactionRow = ({ item }) => {
             }}
           >
             <Text style={[global.txnTitle, { marginBottom: 4 }]}>
-              {item.title} - {item.name}
+              {item.title}{item.title !== "Sale" && ` - ${item.name}`}
             </Text>
             <Text style={{ color: accent, fontWeight: "700", fontSize: 14 }}>
               {item.type === "income" ? "+" : "-"}₹
@@ -164,7 +189,7 @@ const TransactionRow = ({ item }) => {
             }}
           >
             <Text style={[global.txnSubtitle, { color: "#666" }]}>
-              {item.category} · {item.type === "income" ? "Income" : "Expense"}
+              {subtitleLabel}
             </Text>
             <View
               style={{
@@ -190,7 +215,15 @@ const TransactionRow = ({ item }) => {
             </View>
           </View>
         </View>
+        </TouchableOpacity>
       </Animated.View>
+
+      {/* Details Modal */}
+      <TransactionDetailModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        item={item}
+      />
     </View>
   );
 };
