@@ -1,28 +1,64 @@
-import React from "react";
-import { View, Text, ActivityIndicator, StyleSheet, Image } from "react-native";
-import { useThemeColors, PRIMARY_COLOR_DEFAULT } from "../styles/global";
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Image,
+  Animated,
+} from "react-native";
+import {
+  useThemeColors,
+  PRIMARY_COLOR_DEFAULT,
+} from "../styles/global";
 
 const SplashScreen = () => {
   const { primaryColor } = useThemeColors();
   const color = primaryColor || PRIMARY_COLOR_DEFAULT;
 
+  const bounceValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.spring(bounceValue, {
+          toValue: -20,
+          useNativeDriver: true,
+          friction: 6,
+        }),
+        Animated.spring(bounceValue, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 6,
+        }),
+      ])
+    ).start();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Image
+        {/* <Image
           source={require("../assets/splash-icon.png")}
           style={styles.logo}
           resizeMode="contain"
-        />
-        <Text style={[styles.title, { color: color }]}>
+        /> */}
+
+        {/* ONLY BOUNCE */}
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              transform: [{ translateY: bounceValue }],
+              color,
+            },
+          ]}
+        >
           MobX
-        </Text>
-        <ActivityIndicator
-          size="large"
-          color={color}
-          style={styles.loader}
-        />
-        <Text style={styles.loadingText}>Loading...</Text>
+        </Animated.Text>
+
+        <ActivityIndicator size="large" color={color} style={styles.loader} />
+        {/* <Text style={styles.loadingText}>Loading...</Text> */}
       </View>
     </View>
   );
@@ -45,7 +81,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 42,
     fontWeight: "bold",
     marginBottom: 30,
   },
@@ -59,4 +95,3 @@ const styles = StyleSheet.create({
 });
 
 export default SplashScreen;
-

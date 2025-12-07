@@ -110,9 +110,11 @@ const TransactionRow = ({ item }) => {
 
   const isService = item.sale?.type === "service";
   const customerName = item.sale?.customer_id?.name || "Walk-in";
+  const shortCustomerName =
+    customerName.length > 8 ? `${customerName.slice(0, 8)}..` : customerName;
   const incomeLabel = item.type === "income" ? "Income" : "Expense";
   const subtitleLabel = isService
-    ? `${customerName} · ${item.category} · ${incomeLabel}`
+    ? `${shortCustomerName} · ${item.category} · ${incomeLabel}`
     : `${item.category} · ${incomeLabel}`;
 
   return (

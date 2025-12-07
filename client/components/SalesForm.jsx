@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { global } from "../styles/global";
@@ -21,7 +30,14 @@ export default function SalesForm({
 }) {
   const navigation = useNavigation();
   const [items, setItems] = useState([
-    { id: Date.now(), product_id: "", product_name: "", quantity: "1", unit_price: "", subtotal: 0 },
+    {
+      id: Date.now(),
+      product_id: "",
+      product_name: "",
+      quantity: "1",
+      unit_price: "",
+      subtotal: 0,
+    },
   ]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
@@ -33,8 +49,8 @@ export default function SalesForm({
   // Handle scanned product
   useEffect(() => {
     if (scannedProduct && scannedProduct._id) {
-      console.log('SalesForm received scanned product:', scannedProduct);
-      
+      console.log("SalesForm received scanned product:", scannedProduct);
+
       setItems((prevItems) => {
         // Filter out empty items (no product selected)
         const filledItems = prevItems.filter((item) => item.product_id);
@@ -51,8 +67,9 @@ export default function SalesForm({
           const currentQty = parseFloat(existingItem.quantity) || 1;
           const newQty = String(currentQty + 1);
           existingItem.quantity = newQty;
-          existingItem.subtotal = parseFloat(newQty) * parseFloat(existingItem.unit_price);
-          console.log('Incremented existing product quantity to:', newQty);
+          existingItem.subtotal =
+            parseFloat(newQty) * parseFloat(existingItem.unit_price);
+          console.log("Incremented existing product quantity to:", newQty);
           return updatedItems;
         } else {
           // New product - add it
@@ -64,7 +81,7 @@ export default function SalesForm({
             unit_price: String(scannedProduct.selling_price || 0),
             subtotal: scannedProduct.selling_price || 0,
           };
-          console.log('Added new product to items:', newItem);
+          console.log("Added new product to items:", newItem);
           return [...filledItems, newItem];
         }
       });
@@ -88,13 +105,23 @@ export default function SalesForm({
     // Only add new item if the last item has a product selected
     const lastItem = items[items.length - 1];
     if (!lastItem.product_id) {
-      Alert.alert("Incomplete Item", "Please select a product for the current item first");
+      Alert.alert(
+        "Incomplete Item",
+        "Please select a product for the current item first"
+      );
       return;
     }
 
     setItems([
       ...items,
-      { id: Date.now(), product_id: "", product_name: "", quantity: "1", unit_price: "", subtotal: 0 },
+      {
+        id: Date.now(),
+        product_id: "",
+        product_name: "",
+        quantity: "1",
+        unit_price: "",
+        subtotal: 0,
+      },
     ]);
   };
 
@@ -117,12 +144,19 @@ export default function SalesForm({
           if (productExists) {
             // Find the existing item and increment its quantity
             const updatedItems = prevItems.map((existingItem) => {
-              if (existingItem.product_id === product._id && existingItem.id !== currentItemId) {
-                const newQty = String(parseFloat(existingItem.quantity) + parseFloat(item.quantity || 1));
+              if (
+                existingItem.product_id === product._id &&
+                existingItem.id !== currentItemId
+              ) {
+                const newQty = String(
+                  parseFloat(existingItem.quantity) +
+                    parseFloat(item.quantity || 1)
+                );
                 return {
                   ...existingItem,
                   quantity: newQty,
-                  subtotal: parseFloat(newQty) * parseFloat(existingItem.unit_price),
+                  subtotal:
+                    parseFloat(newQty) * parseFloat(existingItem.unit_price),
                 };
               }
               return existingItem;
@@ -137,7 +171,10 @@ export default function SalesForm({
               product_name: product.name,
               unit_price: String(product.selling_price || 0),
             };
-            updated.subtotal = calculateSubtotal(updated.quantity, updated.unit_price);
+            updated.subtotal = calculateSubtotal(
+              updated.quantity,
+              updated.unit_price
+            );
             return updated;
           }
         }
@@ -172,7 +209,10 @@ export default function SalesForm({
           }
 
           // Recalculate subtotal
-          updated.subtotal = calculateSubtotal(updated.quantity, updated.unit_price);
+          updated.subtotal = calculateSubtotal(
+            updated.quantity,
+            updated.unit_price
+          );
           return updated;
         }
         return item;
@@ -182,7 +222,14 @@ export default function SalesForm({
 
   const handleClear = () => {
     setItems([
-      { id: Date.now(), product_id: "", product_name: "", quantity: "1", unit_price: "", subtotal: 0 },
+      {
+        id: Date.now(),
+        product_id: "",
+        product_name: "",
+        quantity: "1",
+        unit_price: "",
+        subtotal: 0,
+      },
     ]);
     setSelectedCustomer("");
     setCashPaid("");
@@ -194,7 +241,10 @@ export default function SalesForm({
     const filledItems = items.filter((item) => item.product_id);
 
     if (filledItems.length === 0) {
-      Alert.alert("Validation Error", "Please add at least one item with a product");
+      Alert.alert(
+        "Validation Error",
+        "Please add at least one item with a product"
+      );
       return;
     }
 
@@ -203,7 +253,10 @@ export default function SalesForm({
       (item) => !item.product_id || !item.quantity || !item.unit_price
     );
     if (invalidItems.length > 0) {
-      Alert.alert("Validation Error", "Please fill in all item details (Product, Qty, Price)");
+      Alert.alert(
+        "Validation Error",
+        "Please fill in all item details (Product, Qty, Price)"
+      );
       return;
     }
 
@@ -240,7 +293,10 @@ export default function SalesForm({
     }
 
     if (paidAmount < totalAmount) {
-      Alert.alert("Validation Error", "Paid amount must be equal to total amount. Pending payments are not allowed.");
+      Alert.alert(
+        "Validation Error",
+        "Paid amount must be equal to total amount. Pending payments are not allowed."
+      );
       return;
     }
 
@@ -268,269 +324,355 @@ export default function SalesForm({
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
       keyboardVerticalOffset={150}
     >
-      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 10 }}>Sales Entry</Text>
-
-      {/* Shop and Customer Selection Row */}
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
-        {/* Shop Selection */}
-        {shops && shops.length > 0 && (
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: "#666", marginBottom: 6 }}>
-              Shop *
-            </Text>
-            <View style={{ ...global.input, padding: 0 }}>
-              <Picker selectedValue={selectedShopForTx} onValueChange={setSelectedShopForTx}>
-                {shops.map((s) => (
-                  <Picker.Item key={s._id} label={s.name} value={s._id} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-        )}
-
-        {/* Customer Selection (Optional) */}
-        {customers && customers.length > 0 && (
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: "#666", marginBottom: 6 }}>
-              Customer (Optional)
-            </Text>
-            <View style={{ ...global.input, padding: 0 }}>
-              <Picker selectedValue={selectedCustomer} onValueChange={setSelectedCustomer}>
-                <Picker.Item label="Walk-in" value="" />
-                {customers.map((c) => (
-                  <Picker.Item key={c._id} label={c.name} value={c._id} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Items Section */}
-      <View style={{ marginBottom: 15 }}>
-        <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>
-          Items
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 10 }}>
+          Sales Entry
         </Text>
 
-        <ScrollView style={{ maxHeight: 400 }}>
-          {items.map((item, index) => (
-            <View
-              key={item.id}
-              style={{
-                backgroundColor: "#f9f9f9",
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 10,
-                borderWidth: 1,
-                borderColor: "#e0e0e0",
-              }}
-            >
-              {/* Item Selection */}
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
-                  Item {index + 1} *
-                </Text>
-                <TouchableOpacity
+        {/* Shop and Customer Selection Row */}
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
+          {/* Shop Selection */}
+          {shops && shops.length > 0 && (
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: "#666",
+                  marginBottom: 6,
+                }}
+              >
+                Shop *
+              </Text>
+              <View style={{ ...global.input, padding: 0 }}>
+                <Picker
+                  selectedValue={selectedShopForTx}
+                  onValueChange={setSelectedShopForTx}
+                >
+                  {shops.map((s) => (
+                    <Picker.Item key={s._id} label={s.name} value={s._id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+          )}
+
+          {/* Customer Selection (Optional) */}
+          {customers && customers.length > 0 && (
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: "#666",
+                  marginBottom: 6,
+                }}
+              >
+                Customer (Optional)
+              </Text>
+              <View style={{ ...global.input, padding: 0 }}>
+                <Picker
+                  selectedValue={selectedCustomer}
+                  onValueChange={setSelectedCustomer}
+                >
+                  <Picker.Item label="Walk-in" value="" />
+                  {customers.map((c) => (
+                    <Picker.Item key={c._id} label={c.name} value={c._id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Items Section */}
+        <View style={{ marginBottom: 15 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: "#333",
+              marginBottom: 10,
+            }}
+          >
+            Items
+          </Text>
+
+          <ScrollView style={{ maxHeight: 400 }}>
+            {items.map((item, index) => (
+              <View
+                key={item.id}
+                style={{
+                  backgroundColor: "#f9f9f9",
+                  padding: 12,
+                  borderRadius: 8,
+                  marginBottom: 10,
+                  borderWidth: 1,
+                  borderColor: "#e0e0e0",
+                }}
+              >
+                {/* Item Selection */}
+                <View style={{ marginBottom: 10 }}>
+                  <Text
+                    style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                  >
+                    Item {index + 1} *
+                  </Text>
+                  <TouchableOpacity
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#ddd",
+                      borderRadius: 8,
+                      padding: 12,
+                      backgroundColor: "#fff",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                    onPress={() => openProductModal(item.id)}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: item.product_name ? "#333" : "#999",
+                      }}
+                    >
+                      {item.product_name || "Select Item"}
+                    </Text>
+                    <MaterialIcons name="search" size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Qty and Price Row */}
+                <View
                   style={{
-                    borderWidth: 1,
-                    borderColor: "#ddd",
-                    borderRadius: 8,
-                    padding: 12,
-                    backgroundColor: "#fff",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 8,
+                  }}
+                >
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text
+                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                    >
+                      Qty *
+                    </Text>
+                    <TextInput
+                      style={[global.input, { marginBottom: 0 }]}
+                      placeholder="Qty"
+                      value={item.quantity}
+                      onChangeText={(value) =>
+                        handleItemChange(item.id, "quantity", value)
+                      }
+                      keyboardType="numeric"
+                      maxLength={6}
+                    />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                    >
+                      Price *
+                    </Text>
+                    <TextInput
+                      style={[global.input, { marginBottom: 0 }]}
+                      placeholder="Price"
+                      value={item.unit_price}
+                      onChangeText={(value) =>
+                        handleItemChange(item.id, "unit_price", value)
+                      }
+                      keyboardType="numeric"
+                      maxLength={8}
+                    />
+                  </View>
+                </View>
+
+                {/* Subtotal and Remove */}
+                <View
+                  style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTopWidth: 1,
+                    borderTopColor: "#e0e0e0",
                   }}
-                  onPress={() => openProductModal(item.id)}
                 >
-                  <Text style={{ fontSize: 14, color: item.product_name ? "#333" : "#999" }}>
-                    {item.product_name || "Select Item"}
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: primaryColor,
+                    }}
+                  >
+                    Subtotal: ₹{item.subtotal.toFixed(2)}
                   </Text>
-                  <MaterialIcons name="search" size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Qty and Price Row */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Qty *</Text>
-                  <TextInput
-                    style={[global.input, { marginBottom: 0 }]}
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChangeText={(value) => handleItemChange(item.id, "quantity", value)}
-                    keyboardType="numeric"
-                    maxLength={6}
-                  />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Price *</Text>
-                  <TextInput
-                    style={[global.input, { marginBottom: 0 }]}
-                    placeholder="Price"
-                    value={item.unit_price}
-                    onChangeText={(value) => handleItemChange(item.id, "unit_price", value)}
-                    keyboardType="numeric"
-                    maxLength={8}
-                  />
+                  {items.length > 1 && (
+                    <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
+                      <MaterialIcons name="close" size={24} color="#e74c3c" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
+            ))}
+          </ScrollView>
 
-              {/* Subtotal and Remove */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: 8,
-                  paddingTop: 8,
-                  borderTopWidth: 1,
-                  borderTopColor: "#e0e0e0",
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "700", color: primaryColor }}>
-                  Subtotal: ₹{item.subtotal.toFixed(2)}
-                </Text>
-                {items.length > 1 && (
-                  <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                    <MaterialIcons name="close" size={24} color="#e74c3c" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+          {/* Add Item Button */}
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 10,
+              borderWidth: 1.5,
+              borderColor: primaryColor,
+              borderRadius: 8,
+              borderStyle: "dashed",
+              marginTop: 10,
+            }}
+            onPress={handleAddItem}
+          >
+            <MaterialIcons name="add" size={20} color={primaryColor} />
+            <Text
+              style={{
+                marginLeft: 6,
+                fontSize: 14,
+                fontWeight: "600",
+                color: primaryColor,
+              }}
+            >
+              Add Item
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Add Item Button */}
-        <TouchableOpacity
+        {/* Total Section */}
+        <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 10,
-            borderWidth: 1.5,
-            borderColor: primaryColor,
+            backgroundColor: "#f0f9ff",
+            padding: 14,
             borderRadius: 8,
-            borderStyle: "dashed",
-            marginTop: 10,
+            borderLeftWidth: 4,
+            borderLeftColor: primaryColor,
+            marginBottom: 15,
           }}
-          onPress={handleAddItem}
         >
-          <MaterialIcons name="add" size={20} color={primaryColor} />
-          <Text style={{ marginLeft: 6, fontSize: 14, fontWeight: "600", color: primaryColor }}>
-            Add Item
+          <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>
+            TOTAL: ₹{totalAmount.toFixed(2)}
           </Text>
-        </TouchableOpacity>
-      </View>
+        </View>
 
-      {/* Total Section */}
-      <View
-        style={{
-          backgroundColor: "#f0f9ff",
-          padding: 14,
-          borderRadius: 8,
-          borderLeftWidth: 4,
-          borderLeftColor: primaryColor,
-          marginBottom: 15,
-        }}
-      >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>
-          TOTAL: ₹{totalAmount.toFixed(2)}
-        </Text>
-      </View>
-
-      {/* Payment Fields */}
-      <View style={{ marginBottom: 15 }}>
-        <Text style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: "#333" }}>
-          Payment Details
-        </Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, marginBottom: 5, color: "#666" }}>Cash</Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 14,
-                backgroundColor: "#fff",
-              }}
-              placeholder="0"
-              keyboardType="numeric"
-              value={cashPaid}
-              onChangeText={setCashPaid}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, marginBottom: 5, color: "#666" }}>E-Cash</Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 14,
-                backgroundColor: "#fff",
-              }}
-              placeholder="0"
-              keyboardType="numeric"
-              value={eCashPaid}
-              onChangeText={setECashPaid}
-            />
+        {/* Payment Fields */}
+        <View style={{ marginBottom: 15 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              marginBottom: 8,
+              color: "#333",
+            }}
+          >
+            Payment Details
+          </Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, marginBottom: 5, color: "#666" }}>
+                Cash
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                  backgroundColor: "#fff",
+                }}
+                placeholder="0"
+                keyboardType="numeric"
+                value={cashPaid}
+                onChangeText={setCashPaid}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, marginBottom: 5, color: "#666" }}>
+                E-Cash
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                  backgroundColor: "#fff",
+                }}
+                placeholder="0"
+                keyboardType="numeric"
+                value={eCashPaid}
+                onChangeText={setECashPaid}
+              />
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Action Buttons */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-        <TouchableOpacity
-          style={[
-            global.button,
-            { flex: 1, marginRight: 8, backgroundColor: "#666" },
-            isSubmitting && { opacity: 0.6 },
-          ]}
-          onPress={handleClear}
-          disabled={isSubmitting}
+        {/* Action Buttons */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginBottom: 10,
+          }}
         >
-          <Text style={global.btnText}>Clear</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              ...global.button, minWidth: 110, backgroundColor: "#fff", borderWidth: 1.5, borderColor: primaryColor, alignItems: "center",
+            }}
+            onPress={onCancel}
+            disabled={isSubmitting}
+          >
+            <Text
+              style={{ fontSize: 15, fontWeight: "600", color: primaryColor }}
+            >
+              Cancel
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { ...global.button, minWidth: 110, backgroundColor: "#666" },
+              isSubmitting && { opacity: 0.6 },
+            ]}
+            onPress={handleClear}
+            disabled={isSubmitting}
+          >
+            <Text style={global.btnText}>Clear</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[global.button, { flex: 1 }, isSubmitting && { opacity: 0.6 }]}
-          onPress={handleSave}
-          disabled={isSubmitting}
-        >
-          <Text style={global.btnText}>{isSubmitting ? "Saving..." : "Save"}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={{
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderWidth: 1.5,
-          borderColor: primaryColor,
-          borderRadius: 6,
-          alignItems: "center",
-        }}
-        onPress={onCancel}
-      >
-        <Text style={{ fontSize: 15, fontWeight: "600", color: primaryColor }}>Cancel</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              global.button,
+              { minWidth: 110 },
+              isSubmitting && { opacity: 0.6 },
+            ]}
+            onPress={handleSave}
+            disabled={isSubmitting}
+          >
+            <Text style={global.btnText}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Product Search Modal */}
         <ProductSearchModal
