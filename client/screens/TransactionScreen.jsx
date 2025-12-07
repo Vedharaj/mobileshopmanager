@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { global, useThemeColors } from "../styles/global";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices, updateService } from "../store/slices/serviceSlice";
@@ -49,6 +49,7 @@ const TRANSACTION_TYPES = [
 
 export default function TransactionScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { primaryColor } = useThemeColors();
   const dispatch = useDispatch();
 
@@ -101,40 +102,37 @@ export default function TransactionScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  // Handle scanned product from navigation params
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      const params = navigation
-        .getState()
-        ?.routes?.find((r) => r.name === "Transaction")?.params;
-      
-      if (params?.scannedProduct && params?.openSalesForm) {
-        const product = params.scannedProduct;
-        console.log('Received scanned product:', product);
-        
-        setScannedProduct(product);
-        setSelectedType({ id: "sales", label: "Sales" });
-        
-        // Ensure products and customers are loaded
-        if (!products || products.length === 0) {
-          dispatch(fetchProducts());
-        }
-        if (!customers || customers.length === 0) {
-          dispatch(fetchCustomers());
-        }
-        
-        // Reset scannedProduct after giving SalesForm time to process
-        setTimeout(() => {
-          setScannedProduct(null);
-        }, 300);
-        
-        // Clear params to allow next scan
-        navigation.setParams({ scannedProduct: null, openSalesForm: false });
-      }
-    });
+  // Handle scanned product from navigation params (direct, reliable)
+  const params = route?.params || {};
 
-    return unsubscribe;
-  }, [navigation, dispatch, products, customers]);
+  useEffect(() => {
+    const scanned = params?.scannedProduct;
+    const openSalesForm = params?.openSalesForm;
+
+    if (scanned && openSalesForm) {
+      console.log("Received scanned product:", scanned);
+
+      setSelectedType({ id: "sales", label: "Sales" });
+      setScannedProduct(scanned);
+
+      if (!products || products.length === 0) {
+        dispatch(fetchProducts());
+      }
+      if (!customers || customers.length === 0) {
+        dispatch(fetchCustomers());
+      }
+
+      setTimeout(() => {
+        setScannedProduct(null);
+      }, 300);
+
+      navigation.setParams({
+        ...params,
+        scannedProduct: null,
+        openSalesForm: false,
+      });
+    }
+  }, [params?.scannedProduct, params?.openSalesForm, dispatch, customers, products, navigation, params]);
 
   useEffect(() => {
     if (selectedType?.id === "service") {

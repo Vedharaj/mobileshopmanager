@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useFocusEffect } from '@react-navigation/native';
 import { global } from '../styles/global';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/slices/productSlice';
@@ -26,6 +27,14 @@ export default function ScannerScreen({ navigation, route }) {
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
+
+  // Reset scanning state every time this screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setScanned(false);
+      return () => setScanned(false);
+    }, [])
+  );
 
   // animation for scanning line
   const lineAnim = useRef(new Animated.Value(0)).current;
@@ -106,12 +115,14 @@ export default function ScannerScreen({ navigation, route }) {
         navigation.navigate('Transaction', {
           scannedProduct: matchedProduct,
           openSalesForm: true,
+          scannedAt: Date.now(),
         });
       } else {
         // Coming from navbar/elsewhere, navigate to Transaction
         navigation.navigate('Transaction', {
           scannedProduct: matchedProduct,
           openSalesForm: true,
+          scannedAt: Date.now(),
         });
       }
       
