@@ -244,6 +244,21 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Unauthorized: Not authorized to delete this sale' });
     }
 
+    // If this sale is linked to a service, add the paid amount back to the service balance
+    if (sale.service_id) {
+      try {
+        const Service = require('../models/Service');
+        const service = await Service.findById(sale.service_id);
+        if (service) {
+          const paidAmount = sale.paid_amount || 0;
+          service.balance = (service.balance || 0) + paidAmount;
+          await service.save();
+        }
+      } catch (err) {
+        console.error('Error updating service balance:', err);
+      }
+    }
+
     await sale.deleteOne();
 
     // Return all sales for user's shops

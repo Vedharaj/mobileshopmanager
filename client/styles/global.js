@@ -388,7 +388,7 @@ export const global = StyleSheet.create({
   txnSubtitle: {
     fontSize: 14,
     color: '#777',
-    marginTop: 2,
+    // marginTop: 2,
   },
   txnAmount: {
     fontSize: 16,

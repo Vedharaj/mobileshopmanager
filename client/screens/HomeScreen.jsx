@@ -19,7 +19,7 @@ import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
 import { BAR_HEIGHT } from "../styles/global";
 
-import Entypo from '@expo/vector-icons/Entypo';
+import Entypo from "@expo/vector-icons/Entypo";
 import TransactionRow from "../components/TransactionRow";
 
 const getWeekDates = (weekOffset = 0) => {
@@ -39,7 +39,7 @@ export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const SWIPE_THRESHOLD = 50;
 
-  const today = useMemo(() => moment(), []);
+  const today = moment();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -54,60 +54,80 @@ export default function HomeScreen({ navigation }) {
     dispatch(fetchSales());
   }, [dispatch]);
 
-  // Initialize shop filter based on role
+  // Fetch transactions when date changes
   useEffect(() => {
-    if (role === "staff" && staffShops.length > 0) {
-      const staffShopId = staffShops[0]?._id || staffShops[0];
-      setFilterShopId(staffShopId);
-    } else if (shops.length > 0) {
-      setFilterShopId(""); // owner default: all shops
-    }
-  }, [role, shops, staffShops]);
+    dispatch(fetchSales());
+  }, [selectedDate, dispatch]);
+
+  // Fetch transactions when shop filter changes
+  useEffect(() => {
+    dispatch(fetchSales());
+  }, [filterShopId, dispatch]);
+
+  // Initialize shop filter based on role
+  // useEffect(() => {
+  //   if (role === "staff" && staffShops.length > 0) {
+  //     const staffShopId = staffShops[0]?._id || staffShops[0];
+  //     setFilterShopId(staffShopId);
+  //   } else if (shops.length > 0) {
+  //     setFilterShopId(""); // owner default: all shops
+  //   }
+  // }, [role, shops, staffShops]);
 
   // Transform sales data into transaction format (include timestamp for grouping)
-  const transactions = useMemo(() => {
+ const transactions = useMemo(() => {
     if (!sales || sales.length === 0) return [];
 
     return sales.map((sale) => {
-      const createdAtRaw = sale?.created_at;
+      const createdAtRaw = sale?.createdAt || sale?.created_at;
       const orderDateRaw = sale?.order_date;
 
       const createdAt = createdAtRaw ? moment(createdAtRaw) : null;
       const orderDate = orderDateRaw ? moment(orderDateRaw) : null;
 
-      const dateForGrouping = (orderDate && orderDate.isValid())
-        ? orderDate
-        : (createdAt && createdAt.isValid() ? createdAt : moment());
+      const dateForGrouping =
+        orderDate && orderDate.isValid()
+          ? orderDate
+          : createdAt && createdAt.isValid()
+          ? createdAt
+          : moment();
 
-      const timeForDisplay = (createdAt && createdAt.isValid())
-        ? createdAt
-        : dateForGrouping;
+      const timeForDisplay =
+        createdAt && createdAt.isValid() ? createdAt : dateForGrouping;
 
-      const customerName = sale.customer_id?.name || 'Walk-in';
-      const paymentMethod = sale.payment_method || 'cash';
+      const name = sale?.name || "";
+      const customerName = sale.customer_id?.name || "Walk-in";
+      const paymentMethod = sale.payment_method || "cash";
       const saleShopId = sale.shop_id?._id || sale.shop_id;
-      const isECash = paymentMethod === 'upi';
-      const type = paymentMethod === 'expense' ? 'expense' : 'income';
+      const saleType = sale.type || "service";
+      const isECash = paymentMethod === "upi" || paymentMethod === "ecash" || paymentMethod === "e";
+      const type = saleType === "add_expense" ? "expense" : "income";
       const amount = Number(sale.paid_amount || sale.total_amount || 0);
 
       // Determine title & subtitle for better row labeling
-      let title = 'Sale';
+      let title = "Sale";
       let subtitle = customerName;
 
-      // If sale is linked to a service, show service title
-      if (sale?.service_name) {
-        title = 'Service';
-        subtitle = sale.service_name;
+      // Determine title based on sale type
+      if (saleType === "service") {
+        title = "Service";
+        subtitle = sale.name || customerName;
+      } else if (saleType === "sales") {
+        title = "Sale";
+        subtitle = customerName;
+      } else if (saleType === "add_money") {
+        title = "Add Money";
+        subtitle = sale.notes || sale.name || "Money Added";
+      } else if (saleType === "add_expense") {
+        title = "Expense";
+        subtitle = sale.notes || sale.name || "Expense";
+      } else if (saleType === "return_item") {
+        title = "Return";
+        subtitle = sale.notes || sale.name || "Item Returned";
       }
 
-      // If it's an explicit expense, prefer showing notes or description
-      if (paymentMethod === 'expense') {
-        title = 'Expense';
-        subtitle = sale.notes || sale.service_name || sale.customer_id?.name || 'Expense';
-      }
-
-      // If sale has explicit notes and no service_name, use them as subtitle
-      if (!sale?.service_name && sale?.notes) {
+      // If sale has explicit notes, prefer them as subtitle
+      if (sale?.notes && saleType !== "service") {
         subtitle = sale.notes;
       }
 
@@ -116,23 +136,25 @@ export default function HomeScreen({ navigation }) {
 
       return {
         id: sale._id || sale.id,
-        date: dateForGrouping.format('YYYY-MM-DD'),
+        date: dateForGrouping.format("YYYY-MM-DD"),
         datetime: timeForDisplay.toISOString(),
         timestamp: timeForDisplay.valueOf(),
-        timeLabel: timeForDisplay.format('h:mm A'),
+        timeLabel: timeForDisplay.format("h:mm A"),
+        name,
         type,
         amount,
         title,
         subtitle,
         description,
-        category: paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1),
+        category:
+          paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1),
         shopId: saleShopId,
         paymentMethod,
         isECash,
         sale,
       };
     });
-  }, [sales]);
+}, [sales]);
 
   const computeSplitAmounts = (sale) => {
     let cash = 0;
@@ -175,11 +197,11 @@ export default function HomeScreen({ navigation }) {
       onPanResponderRelease: (evt, gestureState) => {
         if (Math.abs(gestureState.dx) > SWIPE_THRESHOLD) {
           if (gestureState.dx > 0) {
-            // Swipe right - next week
-            setWeekOffset(prev => prev + 1);
+            // Swipe right - go to PAST week
+            setWeekOffset((prev) => prev - 1);
           } else {
-            // Swipe left - previous week
-            setWeekOffset(prev => prev - 1);
+            // Swipe left - go to NEXT week
+            setWeekOffset((prev) => prev + 1);
           }
         }
       },
@@ -250,23 +272,25 @@ export default function HomeScreen({ navigation }) {
     let balance = 0;
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
-      const tDate = moment(t.date, 'YYYY-MM-DD');
-      if (tDate.isSameOrBefore(selectedDate, 'day')) {
-        if (t.type === 'income') {
-          // Use the dedicated cash_paid and online_paid fields
-          const cashAmount = t.sale?.cash_paid || 0;
-          const onlineAmount = t.sale?.online_paid || 0;
-          
-          if (cashAmount > 0) {
-            // Add cash portion
-            balance += cashAmount;
-          } else if (t.paymentMethod === 'cash' && cashAmount === 0) {
-            // Legacy: Pure cash payment without split fields
+      const tDate = moment(t.date, "YYYY-MM-DD");
+      if (tDate.isSameOrBefore(selectedDate, "day")) {
+        const { cash } = computeSplitAmounts(t.sale);
+
+        if (t.type === "income") {
+          if (cash > 0) {
+            balance += cash;
+          } else if (t.paymentMethod === "cash" && cash === 0) {
             balance += t.amount;
           }
-          // For UPI/other non-cash methods, don't add to cash balance
         }
-        if (t.type === 'expense') balance -= t.amount;
+
+        if (t.type === "expense") {
+          if (cash > 0) {
+            balance -= cash;
+          } else if (t.paymentMethod === "cash" && cash === 0) {
+            balance -= t.amount;
+          }
+        }
       }
     });
     return balance;
@@ -276,21 +300,30 @@ export default function HomeScreen({ navigation }) {
     let eCashBalance = 0;
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
-      // Only count income from non-cash payment methods
-      if (t.type === 'income') {
-        const tDate = moment(t.date, 'YYYY-MM-DD');
-        if (tDate.isSameOrBefore(selectedDate, 'day')) {
-          // Use the dedicated online_paid field
-          const onlineAmount = t.sale?.online_paid || 0;
-          
-          if (onlineAmount > 0) {
-            // Add online portion
-            eCashBalance += onlineAmount;
-          } else if ((t.paymentMethod === 'upi' || t.isECash) && onlineAmount === 0) {
-            // Legacy: Pure online payment without split fields
+      const tDate = moment(t.date, "YYYY-MM-DD");
+      if (tDate.isSameOrBefore(selectedDate, "day")) {
+        const { ecash } = computeSplitAmounts(t.sale);
+
+        if (t.type === "income") {
+          if (ecash > 0) {
+            eCashBalance += ecash;
+          } else if (
+            (t.paymentMethod === "upi" || t.paymentMethod === "e" || t.paymentMethod === "ecash" || t.isECash) &&
+            ecash === 0
+          ) {
             eCashBalance += t.amount;
           }
-          // For cash-only payments, don't add to e-cash balance
+        }
+
+        if (t.type === "expense") {
+          if (ecash > 0) {
+            eCashBalance -= ecash;
+          } else if (
+            (t.paymentMethod === "upi" || t.paymentMethod === "e" || t.paymentMethod === "ecash" || t.isECash) &&
+            ecash === 0
+          ) {
+            eCashBalance -= t.amount;
+          }
         }
       }
     });
@@ -356,27 +389,40 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Week date row (swipeable) */}
-        <View style={[global.swipeArea, { padding: 8, justifyContent: 'center' }]} {...panResponder.panHandlers}>
-          {weekDates.map((day) => {
-            const isFuture = day.isAfter(today, "day");
-            const isSelected = selectedDate.isSame(day, "day");
+        <View
+          style={[
+            global.swipeArea,
+            {
+              padding: 8,
+              justifyContent: "center",
+              flexDirection: "row-reverse",
+            },
+          ]}
+          {...panResponder.panHandlers}
+        >
+          {weekDates
+            .slice()
+            .reverse()
+            .map((day) => {
+              const isFuture = day.isAfter(today, "day");
+              const isSelected = selectedDate.isSame(day, "day");
 
-            return (
-              <TouchableOpacity
-                key={day.format("YYYY-MM-DD")}
-                style={[
-                  global.dateItem,
-                  isSelected && !isFuture && global.selectedDateItem,
-                  isFuture && global.disabledDateItem,
-                ]}
-                disabled={isFuture}
-                onPress={() => !isFuture && setSelectedDate(day)}
-              >
-                <Text style={global.dayLabel}>{day.format("ddd")}</Text>
-                <Text style={global.dateLabel}>{day.format("DD")}</Text>
-              </TouchableOpacity>
-            );
-          })}
+              return (
+                <TouchableOpacity
+                  key={day.format("YYYY-MM-DD")}
+                  style={[
+                    global.dateItem,
+                    isSelected && global.selectedDateItem,
+                    isFuture && global.disabledDateItem,
+                  ]}
+                  disabled={isFuture}
+                  onPress={() => setSelectedDate(day)}
+                >
+                  <Text style={global.dayLabel}>{day.format("ddd")}</Text>
+                  <Text style={global.dateLabel}>{day.format("DD")}</Text>
+                </TouchableOpacity>
+              );
+            })}
         </View>
 
         {/* Shop filter chips */}

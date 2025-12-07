@@ -139,6 +139,7 @@ export default function TransactionScreen() {
         type: selectedType?.id,
         order_date: new Date().toISOString(),
         total_amount: totalPaid,
+        paid_amount: totalPaid, 
         balance: 0,
         status: 'completed',
         notes: txDescription || txTitle,
@@ -148,29 +149,37 @@ export default function TransactionScreen() {
       // Determine whether this is an expense
       const isExpense = selectedType?.id === 'add_expense';
 
-      if (cash > 0) {
+
+      if (cash > 0 && ecash > 0) {
         await dispatch(createSale({
           ...common,
-          paid_amount: cash,
           cash_paid: cash,
-          online_paid: 0,
-          payment_method: isExpense ? 'expense' : 'cash',
+          online_paid: ecash,
+          payment_method: 'multiple',
         })).unwrap();
       }
 
-      if (ecash > 0) {
+      else if (cash > 0) {
         await dispatch(createSale({
           ...common,
-          paid_amount: ecash,
+          cash_paid: cash,
+          online_paid: 0,
+          payment_method: 'cash',
+        })).unwrap();
+      }
+
+      else if (ecash > 0) {
+        await dispatch(createSale({
+          ...common,
           cash_paid: 0,
           online_paid: ecash,
-          payment_method: isExpense ? 'expense' : 'upi',
+          payment_method: 'e',
         })).unwrap();
       }
 
       // Refresh sales (and services just in case)
-      await dispatch(fetchSales());
-      await dispatch(fetchServices());
+      dispatch(fetchSales());
+      dispatch(fetchServices());
 
       dispatch(showToast({ message: isExpense ? 'Expense recorded' : 'Amount added', type: 'success' }));
 
@@ -631,7 +640,7 @@ export default function TransactionScreen() {
 
         {/* Service Details & Payment Form */}
         {selectedType?.id === "service" && selectedService && (
-          <View style={{ marginTop: 20 }}>
+          <View>
             <View
               style={{
                 padding: 14,
