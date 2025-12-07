@@ -1,4 +1,3 @@
-// HomeScreen.jsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   View,
@@ -7,12 +6,8 @@ import {
   StatusBar,
   PanResponder,
   SectionList,
-<<<<<<< HEAD
-=======
-  Animated,
   ScrollView,
   ActivityIndicator,
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
 } from "react-native";
 import {
   SafeAreaView,
@@ -23,12 +18,9 @@ import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
 import { BAR_HEIGHT } from "../styles/global";
-<<<<<<< HEAD
+
 import Entypo from '@expo/vector-icons/Entypo';
 import TransactionRow from "../components/TransactionRow";
-=======
-import Entypo from "@expo/vector-icons/Entypo";
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
 
 const getWeekDates = (weekOffset = 0) => {
   const startOfWeek = moment().startOf("week").add(weekOffset, "weeks");
@@ -45,17 +37,9 @@ export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
   const insets = useSafeAreaInsets();
-<<<<<<< HEAD
   const SWIPE_THRESHOLD = 50;
 
   const today = useMemo(() => moment(), []);
-=======
-
-  const SCREEN_WIDTH = Dimensions.get("window").width;
-  const SWIPE_THRESHOLD = 50;
-
-  const today = useMemo(() => moment().startOf("day"), []);
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -191,17 +175,11 @@ export default function HomeScreen({ navigation }) {
       onPanResponderRelease: (evt, gestureState) => {
         if (Math.abs(gestureState.dx) > SWIPE_THRESHOLD) {
           if (gestureState.dx > 0) {
-<<<<<<< HEAD
             // Swipe right - next week
             setWeekOffset(prev => prev + 1);
           } else {
             // Swipe left - previous week
             setWeekOffset(prev => prev - 1);
-=======
-            setWeekOffset((prev) => prev - 1);
-          } else {
-            setWeekOffset((prev) => prev + 1);
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
           }
         }
       },
@@ -272,8 +250,6 @@ export default function HomeScreen({ navigation }) {
     let balance = 0;
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
-
-<<<<<<< HEAD
       const tDate = moment(t.date, 'YYYY-MM-DD');
       if (tDate.isSameOrBefore(selectedDate, 'day')) {
         if (t.type === 'income') {
@@ -291,12 +267,6 @@ export default function HomeScreen({ navigation }) {
           // For UPI/other non-cash methods, don't add to cash balance
         }
         if (t.type === 'expense') balance -= t.amount;
-=======
-      const tDate = moment(t.date, "YYYY-MM-DD");
-      if (tDate.isSameOrBefore(selectedDate, "day")) {
-        if (t.type === "income" && !t.isECash) balance += t.amount;
-        if (t.type === "expense") balance -= t.amount;
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
       }
     });
     return balance;
@@ -306,8 +276,6 @@ export default function HomeScreen({ navigation }) {
     let eCashBalance = 0;
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
-
-<<<<<<< HEAD
       // Only count income from non-cash payment methods
       if (t.type === 'income') {
         const tDate = moment(t.date, 'YYYY-MM-DD');
@@ -323,257 +291,14 @@ export default function HomeScreen({ navigation }) {
             eCashBalance += t.amount;
           }
           // For cash-only payments, don't add to e-cash balance
-=======
-      if (t.type === "income" && t.isECash) {
-        const tDate = moment(t.date, "YYYY-MM-DD");
-        if (tDate.isSameOrBefore(selectedDate, "day")) {
-          eCashBalance += t.amount;
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
         }
       }
     });
     return eCashBalance;
   }, [selectedDate, transactions, filterShopId]);
 
-<<<<<<< HEAD
-=======
   const isLoading = salesStatus === "loading";
   const totalItems = sections.length;
-
-  const renderTransactionItem = ({ item }) => {
-    const bgColor = item.type === "income" ? "#e9f7ef" : "#fff5f5";
-    const accent = item.type === "income" ? "#2ecc71" : "#e74c3c";
-    const { cash: cashAmount, ecash: ecashAmount } = computeSplitAmounts(
-      item.sale
-    );
-    const isSplitPayment =
-      (cashAmount > 0 && ecashAmount > 0) ||
-      (Array.isArray(item.sale?.payment_breakdown) &&
-        item.sale?.payment_breakdown.length > 1);
-    const sign = item.type === "income" ? "+" : "-";
-
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: bgColor,
-          borderRadius: 8,
-          padding: 10,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>
-            {item.timeLabel}
-          </Text>
-          <Text style={[global.txnTitle, { marginBottom: 4 }]}>
-            {item.description}
-          </Text>
-          <Text style={[global.txnSubtitle, { color: "#666" }]}>
-            {item.category} · {item.type === "income" ? "Income" : "Expense"}
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "center", minWidth: 90 }}>
-          {isSplitPayment ? (
-            <View
-              style={{
-                backgroundColor: "transparent",
-                flexDirection: "row",
-                gap: 10,
-              }}
-            >
-              {cashAmount > 0 && (
-                <View style={{ alignItems: "center", marginBottom: 6 }}>
-                  <Text
-                    style={{ color: accent, fontWeight: "700", fontSize: 13 }}
-                  >
-                    {sign}₹{cashAmount.toFixed(2)}
-                  </Text>
-                  <Text style={{ color: "#888", fontSize: 11, marginTop: 2 }}>
-                    Cash
-                  </Text>
-                </View>
-              )}
-              {ecashAmount > 0 && (
-                <View style={{ alignItems: "center", marginBottom: 6 }}>
-                  <Text
-                    style={{ color: accent, fontWeight: "700", fontSize: 13 }}
-                  >
-                    {sign}₹{ecashAmount.toFixed(2)}
-                  </Text>
-                  <Text style={{ color: "#888", fontSize: 11, marginTop: 2 }}>
-                    E-Cash
-                  </Text>
-                </View>
-              )}
-            </View>
-          ) : (
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: "transparent",
-                paddingHorizontal: 6,
-              }}
-            >
-              <Text style={{ color: accent, fontWeight: "700", fontSize: 14 }}>
-                {sign}₹{item.amount.toFixed(2)}
-              </Text>
-              <Text style={{ color: "#888", fontSize: 11, marginTop: 2 }}>
-                {item.paymentMethod === "cash"
-                  ? "Cash"
-                  : item.paymentMethod === "upi"
-                  ? "E-Cash"
-                  : item.paymentMethod}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  const TransactionRow = ({ item }) => {
-    const dispatchLocal = useDispatch();
-    const translateX = useRef(new Animated.Value(0)).current;
-
-    const pan = useRef(
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          return (
-            Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-            Math.abs(gestureState.dx) > 5
-          );
-        },
-        onPanResponderMove: (evt, gestureState) => {
-          if (gestureState.dx < 0) {
-            translateX.setValue(gestureState.dx);
-          }
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          const dx = gestureState.dx;
-          if (dx < -SWIPE_THRESHOLD) {
-            Alert.alert(
-              "Delete Transaction",
-              "Do you want delete?",
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                  onPress: () => {
-                    Animated.spring(translateX, {
-                      toValue: 0,
-                      useNativeDriver: true,
-                    }).start();
-                  },
-                },
-                {
-                  text: "Delete",
-                  style: "destructive",
-                  onPress: () => {
-                    Animated.timing(translateX, {
-                      toValue: -SCREEN_WIDTH,
-                      duration: 200,
-                      useNativeDriver: true,
-                    }).start(async () => {
-                      try {
-                        const id = item.id || item._id;
-                        const serviceId =
-                          item.sale?.service_id?._id || item.sale?.service_id;
-
-                        await dispatchLocal(deleteSale(id)).unwrap();
-
-                        if (serviceId) {
-                          try {
-                            await dispatchLocal(fetchSales()).unwrap();
-                            const serviceState = await dispatchLocal(
-                              fetchServices()
-                            ).unwrap();
-                            const updatedService = serviceState.find(
-                              (s) => s._id === serviceId
-                            );
-                            if (updatedService) {
-                              const totalAmount =
-                                updatedService.total_amount || 0;
-                              const cashPaid =
-                                updatedService.amount_in_cash || 0;
-                              const ecashPaid =
-                                updatedService.amount_in_ecash || 0;
-                              const totalPaid = cashPaid + ecashPaid;
-                              const newBalance = totalAmount - totalPaid;
-                              await dispatchLocal(
-                                updateService({
-                                  serviceId: serviceId,
-                                  serviceData: {
-                                    ...updatedService,
-                                    balance: newBalance,
-                                  },
-                                })
-                              ).unwrap();
-                            }
-                          } catch (serviceErr) {
-                            console.error(
-                              "Error updating service balance:",
-                              serviceErr
-                            );
-                          }
-                        } else {
-                          dispatchLocal(fetchSales());
-                        }
-                      } catch (err) {
-                        console.error("Delete sale error:", err);
-                      }
-                    });
-                  },
-                },
-              ],
-              { cancelable: true }
-            );
-          } else {
-            Animated.spring(translateX, {
-              toValue: 0,
-              useNativeDriver: true,
-            }).start();
-          }
-        },
-      })
-    ).current;
-
-    return (
-      <View
-        style={{
-          marginVertical: 6,
-          marginHorizontal: 4,
-          borderRadius: 8,
-          overflow: "hidden",
-        }}
-      >
-        <View
-          style={{
-            position: "absolute",
-            right: 0,
-            left: 0,
-            top: 0,
-            bottom: 0,
-            borderRadius: 8,
-            backgroundColor: "#ffecec",
-            justifyContent: "center",
-            alignItems: "flex-end",
-            paddingRight: 20,
-          }}
-        >
-          <Text style={{ color: "", fontWeight: "600" }}>Delete</Text>
-        </View>
-
-        <Animated.View
-          {...pan.panHandlers}
-          style={{ transform: [{ translateX }], width: "100%" }}
-        >
-          {renderTransactionItem({ item })}
-        </Animated.View>
-      </View>
-    );
-  };
 
   const chipBaseStyle = {
     marginRight: 8,
@@ -585,8 +310,6 @@ export default function HomeScreen({ navigation }) {
     alignItems: "center",
     borderWidth: 1,
   };
-
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
   return (
     <SafeAreaView style={global.safeArea}>
       <StatusBar
@@ -626,16 +349,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={global.summaryLabel}>Cash on Hand</Text>
             <Text style={global.summaryValue}>₹{cashOnHand.toFixed(2)}</Text>
           </View>
-<<<<<<< HEAD
           <View style={[global.summaryBox, { flex: 1 }]}>
-=======
-          <View
-            style={[
-              global.summaryBox,
-              { borderLeftWidth: 4, borderLeftColor: "#3498db", flex: 1 },
-            ]}
-          >
->>>>>>> eb4702742df7bbf3424b24535bc27aa5e4e9d7fd
             <Text style={global.summaryLabel}>E-Cash</Text>
             <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
           </View>
