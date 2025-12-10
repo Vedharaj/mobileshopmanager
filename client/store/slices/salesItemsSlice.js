@@ -190,7 +190,7 @@ const salesItemsSlice = createSlice({
       const existingIdx = state.cartItems.findIndex((item) => item.product_id === product_id);
 
       if (existingIdx > -1) {
-        // Item already in cart - mark as duplicate but don't increment
+        // Item already in cart - set duplicate flag (will be cleared by scanner after alert)
         state.lastScanId = scanId || null;
         state.duplicateScan = true;
       } else {
