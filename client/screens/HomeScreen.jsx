@@ -13,10 +13,12 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
+import { clearCart } from "../store/slices/salesItemsSlice";
 import { BAR_HEIGHT } from "../styles/global";
 
 import Entypo from "@expo/vector-icons/Entypo";
@@ -51,6 +53,13 @@ export default function HomeScreen({ navigation }) {
 
   const staffShops = user?.shops || [];
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+
+  // Clear cart items when HomeScreen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(clearCart());
+    }, [dispatch])
+  );
 
   // Fetch sales on component mount
   useEffect(() => {

@@ -128,7 +128,6 @@ export default function ScannerScreen({ navigation, route }) {
 
     // Also skip if this is the exact same barcode we just scanned
     if (lastScannedData.current === data) {
-      console.log('⏭️ Ignoring duplicate barcode scan:', data);
       return;
     }
 
@@ -145,13 +144,14 @@ export default function ScannerScreen({ navigation, route }) {
     );
 
     if (!matchedProduct) {
-      console.log('No product found for barcode:', data);
-      setLocalToast({
-        visible: true,
-        message: `Product not found: ${data}`,
-        type: 'error',
-      });
-      setTimeout(() => setLocalToast({ visible: false, message: '', type: '' }), 2000);
+      setTimeout(() => {
+        setLocalToast({
+          visible: true,
+          message: `Product not found: ${data}`,
+          type: 'error',
+        });
+        setTimeout(() => setLocalToast({ visible: false, message: '', type: '' }), 2000);
+      }, 500);
 
       // allow next scan after short delay
       setTimeout(resetScanState, 500);
@@ -159,17 +159,6 @@ export default function ScannerScreen({ navigation, route }) {
     }
 
     // 🔍 DEBUG: Log what we're comparing
-    console.log('🔍 matchedProduct._id:', matchedProduct._id);
-    console.log(
-      '🧺 cartItems structure:',
-      cartItems.map((i) => ({
-        product_id: i.product_id,
-        productId: i.productId,
-        _id: i._id,
-        barcode: i.barcode,
-      }))
-    );
-
     // ✅ Check if product already in cart (duplicate) - only check filled items
     const isDuplicate = cartItems.some(
       (item) =>
@@ -178,17 +167,16 @@ export default function ScannerScreen({ navigation, route }) {
           item.product_id === matchedProduct.id ||
           item._id === matchedProduct._id)
     );
-
-    console.log('isDuplicate result:', isDuplicate);
-
     if (isDuplicate) {
       // 👉 Duplicate: show toast, stay on scanner, DO NOT navigate
-      setLocalToast({
-        visible: true,
-        message: 'Item already added to cart',
-        type: 'error',
-      });
-      setTimeout(() => setLocalToast({ visible: false, message: '', type: '' }), 2000);
+      setTimeout(() => {
+        setLocalToast({
+          visible: true,
+          message: 'Item already added to cart',
+          type: 'error',
+        });
+        setTimeout(() => setLocalToast({ visible: false, message: '', type: '' }), 2000);
+      }, 500);
 
       // after a small delay, allow another scan
       setTimeout(resetScanState, 600);
