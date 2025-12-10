@@ -97,6 +97,9 @@ router.post('/', auth, async (req, res) => {
       items
     } = req.body;
 
+    console.log('=== SALES POST REQUEST ===');
+    console.log('Received body:', JSON.stringify(req.body, null, 2));
+
     if (!shop_id) {
       return res.status(400).json({ msg: 'shop_id is required' });
     }
@@ -105,6 +108,21 @@ router.post('/', auth, async (req, res) => {
     const shop = await Shop.findById(shop_id);
     if (!shop || !req.user.shops.some(userShopId => userShopId.toString() === shop_id)) {
       return res.status(404).json({ msg: 'Shop not found or you don\'t have access to it' });
+    }
+
+    // Validate items if present
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        if (!item.product_id) {
+          return res.status(400).json({ msg: 'Each item must have a product_id' });
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          return res.status(400).json({ msg: 'Each item must have quantity > 0' });
+        }
+        if (item.unit_price === undefined || item.unit_price === null) {
+          return res.status(400).json({ msg: 'Each item must have unit_price' });
+        }
+      }
     }
 
     // If service_id provided but no name, fetch it from Service model
@@ -126,7 +144,7 @@ router.post('/', auth, async (req, res) => {
       user_id: user_id || req.user._id,
       customer_id: customer_id || null,
       service_id: service_id || null,
-      name: finalName || null,
+      name: finalName || "Sale",
       type: type || 'service',
       order_date: order_date ? new Date(order_date) : new Date(),
       total_amount: total_amount || 0,
@@ -140,6 +158,8 @@ router.post('/', auth, async (req, res) => {
       notes: notes || '',
       items: items || []
     });
+
+    console.log('Creating sale with data:', JSON.stringify(sale, null, 2));
 
     await sale.save();
 
@@ -157,8 +177,15 @@ router.post('/', auth, async (req, res) => {
 
     res.status(201).json({ msg: 'Sale created successfully', sales });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Server error' });
+    console.error('Sales creation error:', err);
+    
+    // Check if it's a Mongoose validation error
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ msg: messages.join(', ') });
+    }
+    
+    res.status(500).json({ msg: err.message || 'Server error' });
   }
 });
 

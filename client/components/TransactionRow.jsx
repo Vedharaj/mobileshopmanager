@@ -8,9 +8,10 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { global } from "../styles/global";
 import { deleteSale, fetchSales } from "../store/slices/salesSlice";
+import { fetchProducts, updateProduct } from "../store/slices/productSlice";
 import TransactionDetailModal from "./TransactionDetailModal";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -18,6 +19,7 @@ const SWIPE_THRESHOLD = 50;
 
 const TransactionRow = ({ item }) => {
   const dispatch = useDispatch();
+  const { products = [] } = useSelector((state) => state.products || {});
   const translateX = useRef(new Animated.Value(0)).current;
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -66,10 +68,41 @@ const TransactionRow = ({ item }) => {
                   }).start(async () => {
                     try {
                       const id = item.id || item._id;
+
+                      // Restore product quantities for sale items
+                      if (
+                        item.sale?.type === "sales" &&
+                        Array.isArray(item.sale?.items)
+                      ) {
+                        for (const saleItem of item.sale.items) {
+                          const productId =
+                            saleItem.product_id?._id ||
+                            saleItem.product_id?.id ||
+                            saleItem.product_id;
+                          if (productId) {
+                            const product = products.find(
+                              (p) => p._id === productId || p.id === productId
+                            );
+                            if (product) {
+                              const currentQty = product.quantity || 0;
+                              const newQty =
+                                currentQty + (saleItem.quantity || 0);
+                              await dispatch(
+                                updateProduct({
+                                  productId: product._id || product.id,
+                                  productData: { quantity: newQty },
+                                })
+                              ).unwrap();
+                            }
+                          }
+                        }
+                      }
+
                       await dispatch(deleteSale(id)).unwrap();
                     } catch (err) {
                       console.error("Delete sale error:", err);
                     } finally {
+                      dispatch(fetchProducts());
                       dispatch(fetchSales());
                     }
                   });

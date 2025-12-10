@@ -14,7 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices, updateService } from "../store/slices/serviceSlice";
 import { createSale, fetchSales } from "../store/slices/salesSlice";
-import { fetchProducts } from "../store/slices/productSlice";
+import { fetchProducts, updateProduct } from "../store/slices/productSlice";
 import { fetchCustomers } from "../store/slices/customerSlice";
 import {
   addOrUpdateFromScan,
@@ -310,6 +310,25 @@ export default function TransactionScreen() {
           ? "online"
           : "cash";
 
+      // Reduce product quantities for each sold item
+      if (Array.isArray(saleData.items)) {
+        for (const item of saleData.items) {
+          const product = products.find(
+            (p) => p._id === item.product_id || p.id === item.product_id
+          );
+          if (product) {
+            const currentQty = product.quantity || 0;
+            const newQty = Math.max(0, currentQty - (item.quantity || 0));
+            await dispatch(
+              updateProduct({
+                productId: product._id || product.id,
+                productData: { quantity: newQty },
+              })
+            ).unwrap();
+          }
+        }
+      }
+
       await dispatch(
         createSale({
           shop_id: selectedShopForTx,
@@ -331,6 +350,7 @@ export default function TransactionScreen() {
         })
       ).unwrap();
 
+      dispatch(fetchProducts());
       dispatch(fetchSales());
       dispatch(
         showToast({ message: "Sale recorded successfully!", type: "success" })
@@ -345,9 +365,10 @@ export default function TransactionScreen() {
       navigation.navigate("Home");
     } catch (err) {
       console.error("Sales submission error:", err);
+      const errorMsg = typeof err === 'string' ? err : err?.payload || err?.message || "Failed to submit sale";
       dispatch(
         showToast({
-          message: err?.payload || err?.message || "Failed to submit sale",
+          message: errorMsg,
           type: "error",
         })
       );
@@ -808,9 +829,10 @@ export default function TransactionScreen() {
     <SafeAreaView style={global.safeArea}>
       <ScrollView
         style={global.container}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
       >
         {/* Dropdown Section */}
         <View style={{ marginBottom: 20 }}>
@@ -875,14 +897,13 @@ export default function TransactionScreen() {
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.15,
                 shadowRadius: 3,
+                maxHeight: 300,
               }}
             >
-              <FlatList
-                data={TRANSACTION_TYPES}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                renderItem={({ item, index }) => (
+              <ScrollView scrollEnabled={true} nestedScrollEnabled={true}>
+                {TRANSACTION_TYPES.map((item, index) => (
                   <TouchableOpacity
+                    key={item.id}
                     style={{
                       paddingVertical: 12,
                       paddingHorizontal: 14,
@@ -920,8 +941,8 @@ export default function TransactionScreen() {
                       </Text>
                     </View>
                   </TouchableOpacity>
-                )}
-              />
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>

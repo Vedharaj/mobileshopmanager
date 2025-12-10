@@ -34,7 +34,6 @@ export default function SalesForm({
   isSubmitting,
   onSubmitSales,
   onCancel,
-  scannedProduct = null,
 }) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -222,12 +221,19 @@ export default function SalesForm({
     }
 
     const saleData = {
-      items: filledItems.map((item) => ({
-        product_id: item.product_id,
-        quantity: parseFloat(item.quantity),
-        unit_price: parseFloat(item.unit_price),
-        total_price: item.subtotal,
-      })),
+      name: "Sales",
+      type: "sales",
+      shop_id: selectedShopForTx,
+      items: filledItems.map((item) => {
+        const qty = parseFloat(item.quantity) || 0;
+        const price = parseFloat(item.unit_price) || 0;
+        return {
+          product_id: item.product_id,
+          quantity: qty,
+          unit_price: price,
+          total_price: qty * price,
+        };
+      }),
       customer_id: selectedCustomer || null,
       total_amount: totalAmount,
       paid_amount: paidAmount,
@@ -247,6 +253,7 @@ export default function SalesForm({
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
       >
         <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 10 }}>
           Sales Entry
@@ -329,7 +336,7 @@ export default function SalesForm({
             Items
           </Text>
 
-          <ScrollView style={{ maxHeight: 400 }}>
+          <View style={{ maxHeight: 500 }}>
             {items.map((item, index) => (
               <View
                 key={item.id}
@@ -448,7 +455,7 @@ export default function SalesForm({
                 </View>
               </View>
             ))}
-          </ScrollView>
+          </View>
 
           {/* Add Item Button */}
           <TouchableOpacity
@@ -478,6 +485,72 @@ export default function SalesForm({
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Items Summary Section */}
+        {items.filter((item) => item.product_id).length > 0 && (
+          <View
+            style={{
+              backgroundColor: "#fff9e6",
+              padding: 14,
+              borderRadius: 8,
+              marginBottom: 15,
+              borderWidth: 1,
+              borderColor: "#ffe680",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "700",
+                color: "#333",
+                marginBottom: 10,
+              }}
+            >
+              Items Summary
+            </Text>
+            {items.map((item) => {
+              if (!item.product_id) return null;
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 6,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#ffe680",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "600",
+                        color: "#333",
+                      }}
+                    >
+                      {item.product_name}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                      {item.quantity} × ₹{parseFloat(item.unit_price).toFixed(2)}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#333",
+                      marginLeft: 10,
+                    }}
+                  >
+                    ₹{item.subtotal.toFixed(2)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* Total Section */}
         <View

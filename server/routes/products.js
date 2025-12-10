@@ -99,6 +99,7 @@ router.put('/:id', auth, async (req, res) => {
       category_id,
       customer_id,
       qty,
+      quantity,
       cost_price,
       selling_price,
       cgst,
@@ -107,10 +108,6 @@ router.put('/:id', auth, async (req, res) => {
       date,
       note
     } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ msg: 'Name is required' });
-    }
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -123,19 +120,22 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Unauthorized: Not authorized to update this product' });
     }
 
-    product.name = name;
-    product.category_id = category_id || null;
-    product.customer_id = customer_id || null;
-    product.qty = qty || 0;
-    product.cost_price = cost_price || 0;
-    product.selling_price = selling_price || 0;
-    product.cgst = cgst || 0;
-    product.sgst = sgst || 0;
-    product.minimum_stock = minimum_stock || 0;
-    if (date) {
+    // Allow partial updates - only update provided fields
+    if (name !== undefined) product.name = name;
+    if (category_id !== undefined) product.category_id = category_id || null;
+    if (customer_id !== undefined) product.customer_id = customer_id || null;
+    if (qty !== undefined) product.qty = qty || 0;
+    if (quantity !== undefined) product.quantity = quantity || 0;
+    if (cost_price !== undefined) product.cost_price = cost_price || 0;
+    if (selling_price !== undefined) product.selling_price = selling_price || 0;
+    if (cgst !== undefined) product.cgst = cgst || 0;
+    if (sgst !== undefined) product.sgst = sgst || 0;
+    if (minimum_stock !== undefined) product.minimum_stock = minimum_stock || 0;
+    if (date !== undefined && date) {
       product.date = new Date(date);
     }
-    product.note = note || '';
+    if (note !== undefined) product.note = note || '';
+    
     await product.save();
 
     // Return all products for user's shops

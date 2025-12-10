@@ -21,17 +21,17 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%" }}>
-          {/* Modal Header */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" }}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>Transaction Details</Text>
-            <TouchableOpacity onPress={onClose}>
-              <MaterialIcons name="close" size={28} color="#666" />
-            </TouchableOpacity>
-          </View>
+            <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, height: "90%" }}>
+              {/* Modal Header */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" }}>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>Transaction Details</Text>
+                <TouchableOpacity onPress={onClose}>
+                  <MaterialIcons name="close" size={28} color="#666" />
+                </TouchableOpacity>
+              </View>
 
-          {/* Modal Content */}
-          <ScrollView style={{ maxHeight: "80%" }}>
+              {/* Modal Content */}
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
             <View style={{ padding: 20 }}>
               {/* Header */}
               <View style={{ marginBottom: 20, borderBottomWidth: 1, borderBottomColor: "#eee", paddingBottom: 15 }}>
@@ -126,8 +126,8 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
                 </View>
               )}
             </View>
-          </ScrollView>
-        </View>
+              </ScrollView>
+            </View>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
