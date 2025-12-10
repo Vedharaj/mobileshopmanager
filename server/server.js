@@ -5,6 +5,18 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 
+// Register all models upfront
+require('./models/Counter');
+require('./models/Product');
+require('./models/Shop');
+require('./models/User');
+require('./models/Auth');
+require('./models/Category');
+require('./models/Customer');
+require('./models/Service');
+require('./models/Sales');
+require('./models/SalesItem');
+
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const shopsRoutes = require('./routes/shops');

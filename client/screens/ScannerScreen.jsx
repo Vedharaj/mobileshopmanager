@@ -135,19 +135,19 @@ export default function ScannerScreen({ navigation, route }) {
     lastScannedData.current = data;
     setScanned(true);
 
-    // Find product by barcode or ID
+    // STRICT: Only match by barcode value (case-insensitive)
     const matchedProduct = products.find(
       (p) =>
         p.barcode === data ||
         p.barcode === data.toLowerCase() ||
-        p._id === data
+        p.barcode === data.toUpperCase()
     );
 
     if (!matchedProduct) {
       setTimeout(() => {
         setLocalToast({
           visible: true,
-          message: `Product not found: ${data}`,
+          message: `❌ Invalid barcode: ${data}. Product not found.`,
           type: 'error',
         });
         setTimeout(() => setLocalToast({ visible: false, message: '', type: '' }), 2000);
@@ -158,7 +158,6 @@ export default function ScannerScreen({ navigation, route }) {
       return;
     }
 
-    // 🔍 DEBUG: Log what we're comparing
     // ✅ Check if product already in cart (duplicate) - only check filled items
     const isDuplicate = cartItems.some(
       (item) =>
@@ -183,7 +182,10 @@ export default function ScannerScreen({ navigation, route }) {
       return;
     }
 
-    // ✅ Not duplicate: navigate to Transaction screen
+    // ✅ Valid barcode & not duplicate: navigate to Transaction screen
+    console.log(
+      `✅ Scanned barcode: ${data} → Product: ${matchedProduct.name} (${matchedProduct.barcode})`
+    );
     navigation.navigate('Transaction', {
       scannedProduct: matchedProduct,
       openSalesForm: true,
