@@ -13,10 +13,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { global } from '../styles/global';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/slices/productSlice';
+import { selectDuplicateScan, clearDuplicateFlag } from '../store/slices/salesItemsSlice';
 
 export default function ScannerScreen({ navigation, route }) {
   const dispatch = useDispatch();
   const { products = [] } = useSelector((state) => state.products || {});
+  const duplicateScan = useSelector(selectDuplicateScan);
   
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -29,9 +31,32 @@ export default function ScannerScreen({ navigation, route }) {
   useFocusEffect(
     React.useCallback(() => {
       setScanned(false);
-      return () => setScanned(false);
-    }, [])
+      dispatch(clearDuplicateFlag());
+      return () => {
+        setScanned(false);
+        dispatch(clearDuplicateFlag());
+      };
+    }, [dispatch])
   );
+
+  // Monitor duplicate scan flag and show alert
+  useEffect(() => {
+    if (duplicateScan) {
+      Alert.alert(
+        'Item Already Added',
+        'This product is already in your cart.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              dispatch(clearDuplicateFlag());
+              setScanned(false);
+            },
+          },
+        ]
+      );
+    }
+  }, [duplicateScan, dispatch]);
 
   // animation for scanning line
   const lineAnim = useRef(new Animated.Value(0)).current;

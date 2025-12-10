@@ -1,6 +1,34 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import api from '../api/axiosClient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Local cart helpers
+let cartIdCounter = 1;
+const nextCartId = () => `cart-${Date.now()}-${cartIdCounter++}`;
+
+const createEmptyCartItem = () => ({
+  id: nextCartId(),
+  product_id: '',
+  product_name: '',
+  quantity: '1',
+  unit_price: '',
+  subtotal: 0,
+});
+
+const createCartItem = ({ product_id, product_name, unit_price }) => ({
+  id: nextCartId(),
+  product_id,
+  product_name: product_name || 'Item',
+  quantity: '1',
+  unit_price: String(unit_price || 0),
+  subtotal: computeSubtotal('1', unit_price),
+});
+
+const computeSubtotal = (qty, price) => {
+  const q = parseFloat(qty) || 0;
+  const p = parseFloat(price) || 0;
+  return q * p;
+};
 
 // Fetch all items for a specific sale
 export const fetchSalesItems = createAsyncThunk(
@@ -140,12 +168,76 @@ const initialState = {
   currentItem: null,
   status: 'idle',
   error: null,
+  // Local cart state (for POS/Sales form)
+  cartItems: [createEmptyCartItem()],
+  lastScanId: null,
+  duplicateScan: false,
 };
 
 const salesItemsSlice = createSlice({
   name: 'salesItems',
   initialState,
   reducers: {
+    // --- Local cart reducers ---
+    setCartItems(state, action) {
+      state.cartItems = action.payload || [createEmptyCartItem()];
+    },
+    addOrUpdateFromScan(state, action) {
+      const { product_id, product_name, unit_price, scanId } = action.payload || {};
+      if (!product_id) return;
+
+      const price = unit_price ?? '';
+      const existingIdx = state.cartItems.findIndex((item) => item.product_id === product_id);
+
+      if (existingIdx > -1) {
+        // Item already in cart - mark as duplicate but don't increment
+        state.lastScanId = scanId || null;
+        state.duplicateScan = true;
+      } else {
+        const emptyIdx = state.cartItems.findIndex((item) => item.product_id === '');
+        const newItem = createCartItem({ product_id, product_name, unit_price: price });
+
+        if (emptyIdx > -1) {
+          state.cartItems[emptyIdx] = newItem;
+          state.cartItems.push(createEmptyCartItem());
+        } else {
+          state.cartItems.push(newItem);
+        }
+        
+        state.lastScanId = scanId || null;
+        state.duplicateScan = false;
+      }
+    },
+    updateCartItem(state, action) {
+      const { id, changes } = action.payload || {};
+      state.cartItems = state.cartItems.map((item) => {
+        if (item.id !== id) return item;
+        const merged = { ...item, ...changes };
+        merged.subtotal = computeSubtotal(merged.quantity, merged.unit_price);
+        return merged;
+      });
+    },
+    addCartRow(state) {
+      state.cartItems.push(createEmptyCartItem());
+    },
+    removeCartItem(state, action) {
+      const id = action.payload;
+      const remaining = state.cartItems.filter((item) => item.id !== id);
+      state.cartItems = remaining.length > 0 ? remaining : [createEmptyCartItem()];
+    },
+    clearCart(state) {
+      state.cartItems = [createEmptyCartItem()];
+      state.lastScanId = null;
+      state.duplicateScan = false;
+    },
+    setLastScanId(state, action) {
+      state.lastScanId = action.payload || null;
+    },
+    clearDuplicateFlag(state) {
+      state.duplicateScan = false;
+    },
+
+    // --- Remote CRUD reducers (existing) ---
     setItems(state, action) {
       state.items = action.payload || [];
     },
@@ -264,5 +356,32 @@ const salesItemsSlice = createSlice({
   }
 });
 
-export const { setItems, setCurrentItem, clearItems, resetError } = salesItemsSlice.actions;
+export const {
+  setCartItems,
+  addOrUpdateFromScan,
+  updateCartItem,
+  addCartRow,
+  removeCartItem,
+  clearCart,
+  setLastScanId,
+  clearDuplicateFlag,
+  setItems,
+  setCurrentItem,
+  clearItems,
+  resetError,
+} = salesItemsSlice.actions;
 export default salesItemsSlice.reducer;
+
+// Selectors
+export const selectCartItems = (state) => state.salesItems.cartItems;
+export const selectLastScanId = (state) => state.salesItems.lastScanId;
+export const selectDuplicateScan = (state) => state.salesItems.duplicateScan;
+
+export const selectCartTotals = createSelector([selectCartItems], (cartItems) => {
+  const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+  const hasProducts = cartItems.some((item) => item.product_id);
+  return {
+    total,
+    hasProducts,
+  };
+});

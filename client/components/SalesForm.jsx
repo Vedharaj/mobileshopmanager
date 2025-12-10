@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,15 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { global } from "../styles/global";
 import ProductSearchModal from "./ProductSearchModal";
 import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addCartRow,
+  clearCart,
+  removeCartItem,
+  selectCartItems,
+  selectCartTotals,
+  updateCartItem,
+} from "../store/slices/salesItemsSlice";
 
 export default function SalesForm({
   primaryColor,
@@ -26,101 +35,24 @@ export default function SalesForm({
   onSubmitSales,
   onCancel,
   scannedProduct = null,
-  onScanPress = null,
-  onScanComplete = null,
 }) {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const items = useSelector(selectCartItems);
+  const { total: totalAmount } = useSelector(selectCartTotals);
 
-  const [items, setItems] = useState(() => [
-    {
-      id: Date.now(),
-      product_id: "",
-      product_name: "",
-      quantity: "1",
-      unit_price: "",
-      subtotal: 0,
-    },
-  ]);
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [cashPaid, setCashPaid] = useState("");
-  const [eCashPaid, setECashPaid] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentItemId, setCurrentItemId] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = React.useState("");
+  const [cashPaid, setCashPaid] = React.useState("");
+  const [eCashPaid, setECashPaid] = React.useState("");
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [currentItemId, setCurrentItemId] = React.useState(null);
 
-  // 🔒 Prevent processing same scanned product twice
-  const lastScannedProductIdRef = useRef(null);
-
-  // Calculate subtotal for an item
   const calculateSubtotal = (qty, price) => {
     const q = parseFloat(qty) || 0;
     const p = parseFloat(price) || 0;
     return q * p;
   };
-
-  // Handle scanned product (with duplicate scan protection)
-  useEffect(() => {
-    console.log(items);
-    if (!scannedProduct || !scannedProduct._id || products.length === 0) {
-      return;
-    }
-
-    // If the same product id comes again (due to double render / double effect),
-    // ignore it to prevent "double add" / "double log"
-    if (lastScannedProductIdRef.current === scannedProduct._id) {
-      return;
-    }
-
-    lastScannedProductIdRef.current = scannedProduct._id;
-
-    setItems((prevItems) => {
-      const updatedItems = [...prevItems];
-
-      const existingIdx = updatedItems.findIndex(
-        (item) => item.product_id === scannedProduct._id
-      );
-
-      if (existingIdx > -1) {
-        const existingItem = { ...updatedItems[existingIdx] };
-        const currentQty = parseFloat(existingItem.quantity) || 0;
-        const newQty = String(currentQty + 1);
-        existingItem.quantity = newQty;
-        existingItem.subtotal =
-          (parseFloat(existingItem.unit_price) || 0) * parseFloat(newQty);
-        updatedItems[existingIdx] = existingItem;
-        return updatedItems;
-      }
-
-      const emptyIdx = updatedItems.findIndex((item) => !item.product_id);
-      const newItem = {
-        id: Date.now(),
-        product_id: scannedProduct._id,
-        product_name: scannedProduct.name,
-        quantity: "1",
-        unit_price: String(scannedProduct.selling_price || 0),
-        subtotal: scannedProduct.selling_price || 0,
-      };
-
-      if (emptyIdx > -1) {
-        updatedItems[emptyIdx] = { ...updatedItems[emptyIdx], ...newItem };
-        return updatedItems;
-      }
-
-      return [...updatedItems, newItem];
-    });
-
-    // Trigger callback after scan is processed
-    if (onScanComplete) {
-      onScanComplete();
-    }
-  }, [scannedProduct, products.length, onScanComplete]);
-
-  // Update total whenever items change (log removed to avoid double logs)
-  useEffect(() => {
-    const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    setTotalAmount(total);
-  }, [items]);
-
+  
   const handleAddItem = () => {
     const lastItem = items[items.length - 1];
     if (!lastItem.product_id) {
@@ -130,18 +62,7 @@ export default function SalesForm({
       );
       return;
     }
-
-    setItems([
-      ...items,
-      {
-        id: Date.now(),
-        product_id: "",
-        product_name: "",
-        quantity: "1",
-        unit_price: "",
-        subtotal: 0,
-      },
-    ]);
+    dispatch(addCartRow());
   };
 
   const openProductModal = (itemId) => {
@@ -149,58 +70,46 @@ export default function SalesForm({
     setModalVisible(true);
   };
 
-  // ✅ selectProduct logic with merge
   const selectProduct = (product) => {
     if (!currentItemId) return;
+    const productId = product._id || product.id || product.product_id;
+    const productPrice =
+      product.selling_price ?? product.price ?? product.unit_price ?? 0;
 
-    setItems((prevItems) => {
-      const productExists = prevItems.some(
-        (i) => i.product_id === product._id && i.id !== currentItemId
+    const productExists = items.some(
+      (i) => i.product_id === productId && i.id !== currentItemId
+    );
+
+    if (productExists) {
+      const currentRow = items.find((i) => i.id === currentItemId);
+      const currentQty = parseFloat(currentRow?.quantity || "1") || 1;
+      items
+        .filter((i) => i.product_id === productId && i.id !== currentItemId)
+        .forEach((item) => {
+          const newQty = String((parseFloat(item.quantity) || 0) + currentQty);
+          dispatch(
+            updateCartItem({
+              id: item.id,
+              changes: {
+                quantity: newQty,
+                subtotal: calculateSubtotal(newQty, item.unit_price),
+              },
+            })
+          );
+        });
+      dispatch(removeCartItem(currentItemId));
+    } else {
+      dispatch(
+        updateCartItem({
+          id: currentItemId,
+          changes: {
+            product_id: productId,
+            product_name: product.name,
+            unit_price: String(productPrice || 0),
+          },
+        })
       );
-
-      if (productExists) {
-        // Merge quantities with existing item and remove the current row
-        const updatedItems = prevItems.map((item) => {
-          if (item.product_id === product._id && item.id !== currentItemId) {
-            const currentRow = prevItems.find((i) => i.id === currentItemId);
-            const currentQty = parseFloat(currentRow?.quantity || "1") || 1;
-            const newQty = String(
-              (parseFloat(item.quantity) || 0) + currentQty
-            );
-
-            return {
-              ...item,
-              quantity: newQty,
-              subtotal:
-                (parseFloat(newQty) || 0) *
-                (parseFloat(item.unit_price) || 0),
-            };
-          }
-          return item;
-        });
-
-        // Remove the current item row after merge
-        return updatedItems.filter((i) => i.id !== currentItemId);
-      } else {
-        // Just update the current row with selected product
-        return prevItems.map((item) => {
-          if (item.id === currentItemId) {
-            const updated = {
-              ...item,
-              product_id: product._id,
-              product_name: product.name,
-              unit_price: String(product.selling_price || 0),
-            };
-            updated.subtotal = calculateSubtotal(
-              updated.quantity,
-              updated.unit_price
-            );
-            return updated;
-          }
-          return item;
-        });
-      }
-    });
+    }
 
     setModalVisible(false);
     setCurrentItemId(null);
@@ -211,53 +120,48 @@ export default function SalesForm({
       Alert.alert("Cannot remove", "At least one item is required");
       return;
     }
-    setItems(items.filter((item) => item.id !== id));
+    dispatch(removeCartItem(id));
   };
 
   const handleItemChange = (id, field, value) => {
-    setItems((prevItems) =>
-      prevItems.map((item) => {
-        if (item.id === id) {
-          const updated = { ...item, [field]: value };
+    const current = items.find((item) => item.id === id);
+    if (!current) return;
 
-          // Auto-fill price when product is selected
-          if (field === "product_id" && value) {
-            const product = products.find((p) => p._id === value);
-            if (product) {
-              updated.unit_price = String(product.selling_price || 0);
-            }
-          }
+    let nextUnitPrice = current.unit_price;
+    if (field === "product_id" && value) {
+      const product = products.find(
+        (p) => p._id === value || p.id === value || p.product_id === value
+      );
+      if (product) {
+        nextUnitPrice = String(
+          product.selling_price ?? product.price ?? product.unit_price ?? 0
+        );
+      }
+    }
 
-          // Recalculate subtotal
-          updated.subtotal = calculateSubtotal(
-            updated.quantity,
-            updated.unit_price
-          );
-          return updated;
-        }
-        return item;
+    const merged = {
+      ...current,
+      [field]: value,
+      unit_price: field === "product_id" ? nextUnitPrice : current.unit_price,
+    };
+    merged.subtotal = calculateSubtotal(merged.quantity, merged.unit_price);
+
+    dispatch(
+      updateCartItem({
+        id,
+        changes: merged,
       })
     );
   };
 
   const handleClear = () => {
-    setItems([
-      {
-        id: Date.now(),
-        product_id: "",
-        product_name: "",
-        quantity: "1",
-        unit_price: "",
-        subtotal: 0,
-      },
-    ]);
+    dispatch(clearCart());
     setSelectedCustomer("");
     setCashPaid("");
     setECashPaid("");
   };
 
   const handleSave = () => {
-    // Validation - filter out empty items first
     const filledItems = items.filter((item) => item.product_id);
 
     if (filledItems.length === 0) {
@@ -334,11 +238,6 @@ export default function SalesForm({
     onSubmitSales(saleData);
   };
 
-  const getProductName = (productId) => {
-    const product = products.find((p) => p._id === productId);
-    return product?.name || "Select Item";
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -374,7 +273,11 @@ export default function SalesForm({
                   onValueChange={setSelectedShopForTx}
                 >
                   {shops.map((s) => (
-                    <Picker.Item key={s._id} label={s.name} value={s._id} />
+                    <Picker.Item
+                      key={s._id || s.id || s}
+                      label={s.name}
+                      value={s._id || s.id || s}
+                    />
                   ))}
                 </Picker>
               </View>
@@ -401,7 +304,11 @@ export default function SalesForm({
                 >
                   <Picker.Item label="Walk-in" value="" />
                   {customers.map((c) => (
-                    <Picker.Item key={c._id} label={c.name} value={c._id} />
+                    <Picker.Item
+                      key={c._id || c.id}
+                      label={c.name}
+                      value={c._id || c.id}
+                    />
                   ))}
                 </Picker>
               </View>
@@ -704,32 +611,6 @@ export default function SalesForm({
           onClose={() => setModalVisible(false)}
           onSelectProduct={selectProduct}
         />
-
-        {/* Floating Scanner Button (optional) */}
-        {/*
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            bottom: 20,
-            right: 20,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: primaryColor,
-            justifyContent: "center",
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-            zIndex: 10,
-          }}
-          onPress={() => navigation.navigate("Scanner")}
-        >
-          <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
-        </TouchableOpacity>
-        */}
       </ScrollView>
     </KeyboardAvoidingView>
   );

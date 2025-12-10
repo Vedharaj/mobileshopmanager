@@ -192,10 +192,12 @@ function RootNavigator() {
 
   // Show splash screen while loading (only if authenticated or still checking authentication)
   // Don't show splash screen if user is logged out (not authenticated and initial load is complete)
-  const shouldShowSplash = loading || 
-    (!isAuthenticated && !shopsLoaded) || 
-    (isAuthenticated && (!shopsLoaded || authStatus === "loading" || shopsStatus === "loading"));
-  
+  const shouldShowSplash =
+    loading ||
+    (!isAuthenticated && !shopsLoaded) ||
+    (isAuthenticated &&
+      (!shopsLoaded || authStatus === "loading" || shopsStatus === "loading"));
+
   if (shouldShowSplash) {
     return <SplashScreen />;
   }
@@ -277,7 +279,7 @@ function RootNavigator() {
               <Stack.Screen
                 name="Transaction"
                 component={TransactionScreen}
-                options={{ headerShown: true }}
+                options={{ headerShown: true, unmountOnBlur: true }}
               />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>

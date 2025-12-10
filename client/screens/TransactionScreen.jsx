@@ -16,6 +16,12 @@ import { fetchServices, updateService } from "../store/slices/serviceSlice";
 import { createSale, fetchSales } from "../store/slices/salesSlice";
 import { fetchProducts } from "../store/slices/productSlice";
 import { fetchCustomers } from "../store/slices/customerSlice";
+import {
+  addOrUpdateFromScan,
+  clearCart,
+  selectLastScanId,
+  setLastScanId,
+} from "../store/slices/salesItemsSlice";
 import { showToast } from "../store/slices/toastSlice";
 import ServiceSearch from "../components/ServiceSearch";
 import ServicePaymentForm from "../components/ServicePaymentForm";
@@ -25,26 +31,11 @@ import MoneyExpenseForm from "../components/MoneyExpenseForm";
 import SalesForm from "../components/SalesForm";
 
 const TRANSACTION_TYPES = [
-  {
-    id: "service",
-    label: "Service",
-  },
-  {
-    id: "sales",
-    label: "Sales",
-  },
-  {
-    id: "add_money",
-    label: "Add Money",
-  },
-  {
-    id: "add_expense",
-    label: "Add Expense",
-  },
-  {
-    id: "return_item",
-    label: "Return Item",
-  },
+  { id: "service", label: "Service" },
+  { id: "sales", label: "Sales" },
+  { id: "add_money", label: "Add Money" },
+  { id: "add_expense", label: "Add Expense" },
+  { id: "return_item", label: "Return Item" },
 ];
 
 export default function TransactionScreen() {
@@ -63,8 +54,9 @@ export default function TransactionScreen() {
   const { user } = useSelector((state) => state.auth);
   const { products = [] } = useSelector((state) => state.products || {});
   const { customers = [] } = useSelector((state) => state.customers || {});
+  const lastScanId = useSelector(selectLastScanId);
 
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedType, setSelectedType] = useState({"id": "sales", "label": "Sales"});
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedService, setSelectedService] = useState(null);
@@ -84,19 +76,70 @@ export default function TransactionScreen() {
   const [subtractReturn, setSubtractReturn] = useState(true);
   const [scannedProduct, setScannedProduct] = useState(null);
 
+  // Normalize scanned product data
+  const normalizeScannedProduct = (raw) => {
+    if (!raw) return null;
+
+    const candidate = raw.product || raw;
+    const productId =
+      candidate._id || candidate.id || candidate.product_id || candidate.code;
+
+    if (!productId) return null;
+
+    return {
+      _id: productId,
+      name: candidate.name || candidate.product_name || "Item",
+      selling_price:
+        candidate.selling_price ?? candidate.price ?? candidate.unit_price ?? 0,
+      scannedAt: raw.scannedAt || candidate.scannedAt || null,
+    };
+  };
+
   // Preload sales so return search has data even before switching tabs
   useEffect(() => {
     dispatch(fetchSales());
   }, [dispatch]);
 
+  // Handle scanned product - add or increment quantity
+  useEffect(() => {
+    if (!scannedProduct) {
+      return;
+    }
+
+    const normalized = normalizeScannedProduct(scannedProduct);
+    if (!normalized) {
+      console.log("❌ Scanned product missing id, ignoring:", scannedProduct);
+      return;
+    }
+
+    const { _id: productId, name, selling_price, scannedAt } = normalized;
+    // Use the scannedAt timestamp from scanner, or current time if missing
+    const timestamp = scannedAt || Date.now();
+    const scanId = `${productId}-${timestamp}`;
+
+    // Skip if we've already processed this exact scan
+    if (lastScanId === scanId) {
+      console.log("⏭️ Scan already processed, skipping:", scanId);
+      return;
+    }
+    dispatch(
+      addOrUpdateFromScan({
+        product_id: productId,
+        product_name: name,
+        unit_price: selling_price || 0,
+        scanId,
+      })
+    );
+    dispatch(setLastScanId(scanId));
+  }, [scannedProduct]);
+
   // Handle back button - navigate to Home screen
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
       // Prevent default behavior
       e.preventDefault();
-      
       // Navigate to Home screen instead
-      navigation.navigate('Home');
+      navigation.navigate("Home");
     });
 
     return unsubscribe;
@@ -111,14 +154,12 @@ export default function TransactionScreen() {
       const openSalesForm = params?.openSalesForm;
 
       if (scanned && openSalesForm) {
-        // console.log("Received scanned product:", scanned);
-
         // Make sure Sales tab is active
         if (selectedType?.id !== "sales") {
           setSelectedType({ id: "sales", label: "Sales" });
         }
 
-        // Pass product to SalesForm
+        // Pass product to local state
         setScannedProduct(scanned);
 
         // Ensure data
@@ -131,14 +172,21 @@ export default function TransactionScreen() {
 
         // Clear params so next scan (even same product) works again
         navigation.setParams({
-          ...params,
           scannedProduct: undefined,
           openSalesForm: undefined,
         });
       }
 
       // no cleanup needed
-    }, [])
+    }, [
+      params?.scannedProduct,
+      params?.openSalesForm,
+      selectedType?.id,
+      products.length,
+      customers.length,
+      dispatch,
+      navigation,
+    ])
   );
 
   useEffect(() => {
@@ -237,7 +285,13 @@ export default function TransactionScreen() {
     setReturnSearchQuery("");
     setReturnQty("1");
     setSubtractReturn(true);
-    // for non-service types we'll render a local form below
+
+    if (type.id === "sales") {
+      // reset cart & scanner state when switching to Sales
+      dispatch(clearCart());
+      dispatch(setLastScanId(null));
+      setScannedProduct(null);
+    }
   };
 
   const handleSubmitSales = async (saleData) => {
@@ -281,7 +335,13 @@ export default function TransactionScreen() {
       dispatch(
         showToast({ message: "Sale recorded successfully!", type: "success" })
       );
+
+      // reset sales form state
+      dispatch(clearCart());
+      dispatch(setLastScanId(null));
+      setScannedProduct(null);
       setSelectedType(null);
+
       navigation.navigate("Home");
     } catch (err) {
       console.error("Sales submission error:", err);
@@ -321,7 +381,6 @@ export default function TransactionScreen() {
 
     setIsSubmitting(true);
     try {
-      // For split payments, create separate sale entries so cash/e-cash counts correctly
       const common = {
         shop_id: selectedShopForTx,
         user_id: user?._id,
@@ -338,7 +397,6 @@ export default function TransactionScreen() {
         items: [],
       };
 
-      // Determine whether this is an expense
       const isExpense = selectedType?.id === "add_expense";
 
       if (cash > 0 && ecash > 0) {
@@ -370,7 +428,6 @@ export default function TransactionScreen() {
         ).unwrap();
       }
 
-      // Refresh sales (and services just in case)
       dispatch(fetchSales());
       dispatch(fetchServices());
 
@@ -381,14 +438,12 @@ export default function TransactionScreen() {
         })
       );
 
-      // reset
       setTxTitle("");
       setTxDescription("");
       setPaidInCash("");
       setPaidInEcash("");
       setSelectedType(null);
 
-      // Navigate to Home after successful submit
       navigation.navigate("Home");
     } catch (err) {
       console.error("Submit transaction error:", err);
@@ -433,12 +488,6 @@ export default function TransactionScreen() {
     setSubtractReturn(true);
   };
 
-  // Callback triggered when SalesForm completes processing a scanned product
-  const handleScanComplete = () => {
-    // Clear the scanned product after it has been processed
-    setScannedProduct(null);
-  };
-
   const handleSearchAgain = () => {
     setSelectedService(null);
     setSearchQuery("");
@@ -446,7 +495,7 @@ export default function TransactionScreen() {
     setPaidInEcash("");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitServicePayment = async () => {
     if (!selectedService) {
       dispatch(
         showToast({ message: "Please select a service", type: "error" })
@@ -502,7 +551,6 @@ export default function TransactionScreen() {
       return;
     }
 
-    // Safety: ensure related relations exist before submitting
     if (!selectedService?.shop_id?._id) {
       dispatch(
         showToast({
@@ -515,7 +563,6 @@ export default function TransactionScreen() {
 
     setIsSubmitting(true);
     try {
-      // Convert date to proper format - ensure it's a valid date
       const dateParts = transactionDate.split("-");
       const orderDate = new Date(
         `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00Z`
@@ -532,8 +579,7 @@ export default function TransactionScreen() {
         return;
       }
 
-      // 1. Create a new sale
-      const saleResponse = await dispatch(
+      await dispatch(
         createSale({
           shop_id: selectedService?.shop_id?._id,
           user_id: user?._id,
@@ -555,11 +601,9 @@ export default function TransactionScreen() {
         })
       ).unwrap();
 
-      // 2. Update the service balance
       const newBalance = selectedService
         ? selectedService.balance - totalPaid
         : 0;
-      // console.log("Updating service balance from", selectedService?.balance, "to", newBalance);
 
       await dispatch(
         updateService({
@@ -571,14 +615,9 @@ export default function TransactionScreen() {
         })
       ).unwrap();
 
-      // 3. Fetch latest sales and services (to sync balance updates)
-      // console.log("Fetching sales and services after payment");
-      const salesResult = await dispatch(fetchSales());
-      const servicesResult = await dispatch(fetchServices());
+      dispatch(fetchSales());
+      dispatch(fetchServices());
 
-      // console.log("Services after fetch:", servicesResult.payload?.[0]?.balance || "No services");
-
-      // 4. Show success and reset form
       dispatch(
         showToast({
           message: "Payment submitted successfully!",
@@ -586,7 +625,6 @@ export default function TransactionScreen() {
         })
       );
 
-      // Reset form state
       setSelectedService(null);
       setSearchQuery("");
       setPaidInCash("");
@@ -594,7 +632,6 @@ export default function TransactionScreen() {
       setTransactionDate(new Date().toISOString().split("T")[0]);
       setSelectedType(null);
 
-      // Navigate to Home after 1.5 seconds
       setTimeout(() => {
         navigation.navigate("Home");
       }, 1500);
@@ -751,7 +788,7 @@ export default function TransactionScreen() {
     }
   };
 
-  // Live computed values for previewing remaining balance
+  // Live computed values
   const cashAmount = parseFloat(paidInCash) || 0;
   const ecashAmount = parseFloat(paidInEcash) || 0;
   const previewTotalPaid = cashAmount + ecashAmount;
@@ -764,22 +801,6 @@ export default function TransactionScreen() {
     : 0;
   const previewReturnTotal =
     previewTotalPaid > 0 ? previewTotalPaid : estimatedReturnValue;
-
-  const navigationMapping = {
-    service: () => {},
-    sales: () => {
-      Alert.alert("Sales", "Navigate to sales screen");
-    },
-    add_money: () => {
-      Alert.alert("Add Money", "Add money transaction form");
-    },
-    add_expense: () => {
-      Alert.alert("Add Expense", "Add expense transaction form");
-    },
-    return_item: () => {
-      Alert.alert("Return Item", "Return item transaction form");
-    },
-  };
 
   const selectedLabel = selectedType?.label || "Select Transaction Type";
 
@@ -839,7 +860,6 @@ export default function TransactionScreen() {
             />
           </TouchableOpacity>
 
-          {/* Dropdown Menu */}
           {showDropdown && (
             <View
               style={{
@@ -941,9 +961,10 @@ export default function TransactionScreen() {
             onCancel={() => {
               setSelectedType(null);
               setScannedProduct(null);
+              dispatch(clearCart());
+              dispatch(setLastScanId(null));
             }}
             scannedProduct={scannedProduct}
-            onScanComplete={handleScanComplete}
           />
         )}
 
@@ -1007,7 +1028,7 @@ export default function TransactionScreen() {
             transactionDate={transactionDate}
             setTransactionDate={setTransactionDate}
             isSubmitting={isSubmitting}
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitServicePayment}
             onSearchAgain={handleSearchAgain}
             previewRemaining={previewRemaining}
             previewTotalPaid={previewTotalPaid}
@@ -1035,7 +1056,9 @@ export default function TransactionScreen() {
             elevation: 5,
             zIndex: 10,
           }}
-          onPress={() => navigation.navigate("Scanner", { from: "Transaction" })}
+          onPress={() =>
+            navigation.navigate("Scanner", { from: "Transaction" })
+          }
         >
           <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
         </TouchableOpacity>
