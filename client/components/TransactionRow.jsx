@@ -84,13 +84,16 @@ const TransactionRow = ({ item }) => {
                               (p) => p._id === productId || p.id === productId
                             );
                             if (product) {
-                              const currentQty = product.quantity || 0;
+                              const currentQty = product.qty || 0;
                               const newQty =
                                 currentQty + (saleItem.quantity || 0);
+                              // console.log(
+                              //   `📈 DELETE: Restoring "${product.name}" qty: ${currentQty} → ${newQty} (returned: ${saleItem.quantity})`
+                              // );
                               await dispatch(
                                 updateProduct({
                                   productId: product._id || product.id,
-                                  productData: { quantity: newQty },
+                                  productData: { qty: newQty },
                                 })
                               ).unwrap();
                             }

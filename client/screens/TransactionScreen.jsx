@@ -317,12 +317,15 @@ export default function TransactionScreen() {
             (p) => p._id === item.product_id || p.id === item.product_id
           );
           if (product) {
-            const currentQty = product.quantity || 0;
+            const currentQty = product.qty || 0;
             const newQty = Math.max(0, currentQty - (item.quantity || 0));
+            // console.log(
+            //   `📄 SALE: Reducing "${product.name}" qty: ${currentQty} → ${newQty} (sold: ${item.quantity})`
+            // );
             await dispatch(
               updateProduct({
                 productId: product._id || product.id,
-                productData: { quantity: newQty },
+                productData: { qty: newQty },
               })
             ).unwrap();
           }
