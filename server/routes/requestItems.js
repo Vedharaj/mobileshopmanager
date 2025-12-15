@@ -44,6 +44,18 @@ router.post('/', auth, async (req, res) => {
     });
     await item.save();
 
+    // Emit socket event for new request item
+    try {
+      const { getIO } = require('../socket');
+      const populated = await item
+        .populate('shop_id', 'name')
+        .populate('user_id', 'username')
+        .populate('product_id', 'name');
+      getIO().emit('request:new', { request: populated });
+    } catch (e) {
+      console.warn('Socket emit failed for request:new', e.message);
+    }
+
     const user = await req.user.populate('shops');
     const shopIds = user.shops.map(s => s._id);
     const items = await RequestItem.find({ shop_id: { $in: shopIds } })
