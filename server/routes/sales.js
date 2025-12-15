@@ -17,7 +17,8 @@ router.get('/', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price')
+      .sort({ invoice_no: -1 });
 
     res.json({ sales: sales || [] });
   } catch (err) {

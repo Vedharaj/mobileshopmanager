@@ -23,6 +23,8 @@ import {
   selectCartTotals,
   updateCartItem,
 } from "../store/slices/salesItemsSlice";
+import { createCustomer } from "../store/slices/customerSlice";
+import { showToast } from "../store/slices/toastSlice";
 
 export default function SalesForm({
   primaryColor,
@@ -45,6 +47,10 @@ export default function SalesForm({
   const [eCashPaid, setECashPaid] = React.useState("");
   const [modalVisible, setModalVisible] = React.useState(false);
   const [currentItemId, setCurrentItemId] = React.useState(null);
+  const [showCreateCustomer, setShowCreateCustomer] = React.useState(false);
+  const [newCustomerName, setNewCustomerName] = React.useState("");
+  const [newCustomerPhoneNo, setNewCustomerPhoneNo] = React.useState("");
+  const [newCustomerAddress, setNewCustomerAddress] = React.useState("");
 
   const calculateSubtotal = (qty, price) => {
     const q = parseFloat(qty) || 0;
@@ -153,11 +159,64 @@ export default function SalesForm({
     );
   };
 
+  const handleCreateCustomer = async () => {
+    if (!newCustomerName) {
+      dispatch(
+        showToast({
+          message: "Please enter customer name",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    try {
+      const result = await dispatch(
+        createCustomer({
+          name: newCustomerName,
+          phone_no: newCustomerPhoneNo,
+          address: newCustomerAddress,
+        })
+      ).unwrap();
+
+      dispatch(
+        showToast({
+          message: "Customer created successfully!",
+          type: "success",
+        })
+      );
+
+      const newCustomer = result?.find(
+        (customer) => customer.name === newCustomerName
+      );
+
+      if (newCustomer) {
+        setSelectedCustomer(newCustomer._id);
+      }
+
+      setNewCustomerName("");
+      setNewCustomerPhoneNo("");
+      setNewCustomerAddress("");
+      setShowCreateCustomer(false);
+    } catch (err) {
+      dispatch(
+        showToast({
+          message: err || "Failed to create customer",
+          type: "error",
+        })
+      );
+    }
+  };
+
   const handleClear = () => {
     dispatch(clearCart());
     setSelectedCustomer("");
     setCashPaid("");
     setECashPaid("");
+    setShowCreateCustomer(false);
+    setNewCustomerName("");
+    setNewCustomerPhoneNo("");
+    setNewCustomerAddress("");
   };
 
   const handleSave = () => {
@@ -292,35 +351,89 @@ export default function SalesForm({
           )}
 
           {/* Customer Selection (Optional) */}
-          {customers && customers.length > 0 && (
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "600",
-                  color: "#666",
-                  marginBottom: 6,
-                }}
-              >
-                Customer (Optional)
-              </Text>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: "#666",
+                marginBottom: 6,
+              }}
+            >
+              Customer (Optional)
+            </Text>
+            {!showCreateCustomer ? (
               <View style={{ ...global.input, padding: 0 }}>
                 <Picker
                   selectedValue={selectedCustomer}
-                  onValueChange={setSelectedCustomer}
+                  onValueChange={(value) => {
+                    if (value === "create_new") {
+                      setShowCreateCustomer(true);
+                      setSelectedCustomer("");
+                    } else {
+                      setSelectedCustomer(value);
+                    }
+                  }}
                 >
                   <Picker.Item label="Walk-in" value="" />
-                  {customers.map((c) => (
+                  {customers && customers.map((c) => (
                     <Picker.Item
                       key={c._id || c.id}
                       label={c.name}
                       value={c._id || c.id}
                     />
                   ))}
+                  <Picker.Item label="+ Create New Customer" value="create_new" />
                 </Picker>
               </View>
-            </View>
-          )}
+            ) : (
+              <View>
+                <TextInput
+                  style={global.input}
+                  placeholder="Customer Name *"
+                  value={newCustomerName}
+                  onChangeText={setNewCustomerName}
+                />
+                <TextInput
+                  style={global.input}
+                  placeholder="Phone Number"
+                  value={newCustomerPhoneNo}
+                  onChangeText={setNewCustomerPhoneNo}
+                  keyboardType="phone-pad"
+                />
+                <TextInput
+                  style={global.input}
+                  placeholder="Address"
+                  value={newCustomerAddress}
+                  onChangeText={setNewCustomerAddress}
+                  multiline
+                />
+                <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+                  <TouchableOpacity
+                    style={{
+                      ...global.button,
+                      flex: 1,
+                      backgroundColor: "#666",
+                    }}
+                    onPress={() => {
+                      setShowCreateCustomer(false);
+                      setNewCustomerName("");
+                      setNewCustomerPhoneNo("");
+                      setNewCustomerAddress("");
+                    }}
+                  >
+                    <Text style={global.btnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ ...global.button, flex: 1 }}
+                    onPress={handleCreateCustomer}
+                  >
+                    <Text style={global.btnText}>Create</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Items Section */}

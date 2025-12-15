@@ -55,6 +55,7 @@ const SalesSchema = new mongoose.Schema(
     service_id: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
     name: { type: String }, // Service/transaction name for reference
     type: { type: String, enum: ['service', 'sales', 'add_money', 'add_expense', 'return_item'], default: 'service' }, // Transaction type
+    invoice_no: { type: String, unique: true, sparse: true }, // Auto-generated invoice number
 
     order_date: { type: Date, default: Date.now },
 
@@ -76,6 +77,34 @@ const SalesSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// -------------------------------------------
+// AUTO-GENERATE INVOICE NUMBER
+// -------------------------------------------
+SalesSchema.pre("save", async function (next) {
+  if (!this.invoice_no && this.isNew) {
+    try {
+      const year = new Date().getFullYear().toString().slice(-2); // Get last 2 digits of year
+      
+      // Find the latest invoice for this year
+      const latestSale = await mongoose.model('Sales').findOne({
+        invoice_no: new RegExp(`^${year}`)
+      }).sort({ invoice_no: -1 });
+      
+      let nextNumber = 1;
+      if (latestSale && latestSale.invoice_no) {
+        const lastNumber = parseInt(latestSale.invoice_no.slice(2));
+        nextNumber = lastNumber + 1;
+      }
+      
+      // Format: YY + 6 digit number (e.g., 25000001)
+      this.invoice_no = `${year}${nextNumber.toString().padStart(6, '0')}`;
+    } catch (err) {
+      console.error('Error generating invoice number:', err);
+    }
+  }
+  next();
+});
 
 // -------------------------------------------
 // AUTO-CALCULATE TOTALS FOR ENTIRE SALE

@@ -35,13 +35,29 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
             <View style={{ padding: 20 }}>
               {/* Header */}
               <View style={{ marginBottom: 20, borderBottomWidth: 1, borderBottomColor: "#eee", paddingBottom: 15 }}>
-                <Text style={{ fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 5 }}>
-                  {item.title}
-                </Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 5 }}>
+                    {item.title}
+                  </Text>
+                  {sale.invoice_no && (
+                    <Text style={{ fontSize: 12, color: "#888", marginBottom: 5 }}>
+                      Invoice #{sale.invoice_no}
+                    </Text>
+                  )}
+                </View>
                 <Text style={{ fontSize: 14, color: "#666" }}>
                   {item.timeLabel} · {item.date}
                 </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {}}
+                  style={{ backgroundColor: "#f1f5f9", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb" }}
+                >
+                  <Text style={{ color: "#2563eb", fontWeight: "700", fontSize: 14, textAlign: "center" }}>Generate Invoice</Text>
+                </TouchableOpacity>
               </View>
+              
 
               {/* Amount */}
               <View style={{ marginBottom: 20 }}>

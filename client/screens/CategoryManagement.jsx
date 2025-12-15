@@ -20,7 +20,9 @@ const CategoryManagement = () => {
 
   const { categories, status, error } = useSelector((state) => state.categories);
   const { shops } = useSelector((state) => state.shops);
+  const { role } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
+  const isStaff = role === "staff";
 
   const [name, setName] = useState("");
   const [selectedShopId, setSelectedShopId] = useState("");
@@ -67,7 +69,7 @@ const CategoryManagement = () => {
     }
   };
 
-  const CategoryContainer = ({ category }) => {
+  const CategoryContainer = ({ category, isStaff }) => {
     const [showDetails, setShowDetails] = useState(false);
     const [categoryName, setCategoryName] = useState(category.name || "");
 
@@ -140,11 +142,13 @@ const CategoryManagement = () => {
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={{ marginLeft: "auto" }}>
-            <TouchableOpacity onPress={() => handleDeleteCategory(category._id)}>
-              <MaterialIcons name="delete" size={24} color="#ba181b" />
-            </TouchableOpacity>
-          </View>
+          {!isStaff && (
+            <View style={{ marginLeft: "auto" }}>
+              <TouchableOpacity onPress={() => handleDeleteCategory(category._id)}>
+                <MaterialIcons name="delete" size={24} color="#ba181b" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {showDetails && (
@@ -154,16 +158,19 @@ const CategoryManagement = () => {
               placeholder="Category Name *"
               value={categoryName}
               onChangeText={setCategoryName}
+              editable={!isStaff}
             />
 
-            <View>
-              <TouchableOpacity
-                style={{ marginTop: 10, ...global.button1 }}
-                onPress={handleUpdateCategory}
-              >
-                <Text style={global.btnText1}>Save {categoryName}</Text>
-              </TouchableOpacity>
-            </View>
+            {!isStaff && (
+              <View>
+                <TouchableOpacity
+                  style={{ marginTop: 10, ...global.button1 }}
+                  onPress={handleUpdateCategory}
+                >
+                  <Text style={global.btnText1}>Save {categoryName}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -210,15 +217,16 @@ const CategoryManagement = () => {
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <View style={global.mainContainer}>
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ marginBottom: 10 }}>Add Category</Text>
-          <TextInput
-            style={global.input}
-            placeholder="Category Name *"
-            value={name}
-            onChangeText={setName}
-            onFocus={() => setIsNameFocused(true)}
-          />
+        {!isStaff && (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ marginBottom: 10 }}>Add Category</Text>
+            <TextInput
+              style={global.input}
+              placeholder="Category Name *"
+              value={name}
+              onChangeText={setName}
+              onFocus={() => setIsNameFocused(true)}
+            />
 
           {isNameFocused && (
             <>
@@ -255,10 +263,11 @@ const CategoryManagement = () => {
               </View>
             </>
           )}
-        </View>
-        <Text style={{ marginBottom: 5, marginTop: 20 }}>Category List</Text>
+          </View>
+        )}
+        <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Category List</Text>
         {categories.map((category) => (
-          <CategoryContainer key={category._id} category={category} />
+          <CategoryContainer key={category._id} category={category} isStaff={isStaff} />
         ))}
       </View>
     </TouchableWithoutFeedback>

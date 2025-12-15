@@ -139,6 +139,49 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </>
         )}
+
+        {role === "staff" && (
+          <>
+            <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
+              View Management
+            </Text>
+            <View style={global.profileContainer}>
+              <TouchableOpacity
+                style={global.profileRow}
+                onPress={() => navigation.navigate("CategoryManagement")}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <AntDesign name="appstore" size={24} color={primaryColor} />
+                  <Text style={{ fontSize: 16 }}>View Categories</Text>
+                </View>
+                <AntDesign name="right" size={20} color="black" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={global.profileRowLast}
+                onPress={() => navigation.navigate("CustomerManagement")}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <AntDesign name="user" size={24} color={primaryColor} />
+                  <Text style={{ fontSize: 16 }}>View Customers</Text>
+                </View>
+                <AntDesign name="right" size={20} color="black" />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
         <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
           Preference
         </Text>

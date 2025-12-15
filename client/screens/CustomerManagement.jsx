@@ -18,7 +18,9 @@ const CustomerManagement = () => {
   const dispatch = useDispatch();
 
   const { customers, status, error } = useSelector((state) => state.customers);
+  const { role } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
+  const isStaff = role === "staff";
 
   const [name, setName] = useState("");
   const [phoneNo, setPhoneNo] = useState("");
@@ -61,7 +63,7 @@ const CustomerManagement = () => {
     }
   };
 
-  const CustomerContainer = ({ customer }) => {
+  const CustomerContainer = ({ customer, isStaff }) => {
     const [showDetails, setShowDetails] = useState(false);
     const [customerName, setCustomerName] = useState(customer.name || "");
     const [customerPhoneNo, setCustomerPhoneNo] = useState(customer.phone_no || "");
@@ -156,6 +158,7 @@ const CustomerManagement = () => {
               placeholder="Customer Name *"
               value={customerName}
               onChangeText={setCustomerName}
+              editable={!isStaff}
             />
 
             <TextInput
@@ -164,6 +167,7 @@ const CustomerManagement = () => {
               value={customerPhoneNo}
               onChangeText={setCustomerPhoneNo}
               keyboardType="phone-pad"
+              editable={!isStaff}
             />
 
             <TextInput
@@ -172,16 +176,19 @@ const CustomerManagement = () => {
               value={customerAddress}
               onChangeText={setCustomerAddress}
               multiline
+              editable={!isStaff}
             />
 
-            <View>
-              <TouchableOpacity
-                style={{ marginTop: 10, ...global.button1 }}
-                onPress={handleUpdateCustomer}
-              >
-                <Text style={global.btnText1}>Save {customerName}</Text>
-              </TouchableOpacity>
-            </View>
+            {!isStaff && (
+              <View>
+                <TouchableOpacity
+                  style={{ marginTop: 10, ...global.button1 }}
+                  onPress={handleUpdateCustomer}
+                >
+                  <Text style={global.btnText1}>Save {customerName}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -230,15 +237,16 @@ const CustomerManagement = () => {
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <View style={global.mainContainer}>
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ marginBottom: 10 }}>Add Customer</Text>
-          <TextInput
-            style={global.input}
-            placeholder="Customer Name *"
-            value={name}
-            onChangeText={setName}
-            onFocus={() => setIsNameFocused(true)}
-          />
+        {!isStaff && (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ marginBottom: 10 }}>Add Customer</Text>
+            <TextInput
+              style={global.input}
+              placeholder="Customer Name *"
+              value={name}
+              onChangeText={setName}
+              onFocus={() => setIsNameFocused(true)}
+            />
 
           {isNameFocused && (
             <>
@@ -280,10 +288,11 @@ const CustomerManagement = () => {
               </View>
             </>
           )}
-        </View>
-        <Text style={{ marginBottom: 5, marginTop: 20 }}>Customer List</Text>
+          </View>
+        )}
+        <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Customer List</Text>
         {customers.map((customer) => (
-          <CustomerContainer key={customer._id} customer={customer} />
+          <CustomerContainer key={customer._id} customer={customer} isStaff={isStaff} />
         ))}
       </View>
     </TouchableWithoutFeedback>
