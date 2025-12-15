@@ -88,6 +88,7 @@ export default function HomeScreen({ navigation }) {
     }).length;
   }, [products]);
 
+
   // Initialize shop filter based on role
   // useEffect(() => {
   //   if (role === "staff" && staffShops.length > 0) {
@@ -306,7 +307,7 @@ export default function HomeScreen({ navigation }) {
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
       const tDate = moment(t.date, "YYYY-MM-DD");
-      if (tDate.isSameOrBefore(selectedDate, "day")) {
+      if (tDate.isSame(selectedDate, "day")) {
         const { cash } = computeSplitAmounts(t.sale);
 
         if (t.type === "income") {
@@ -334,7 +335,7 @@ export default function HomeScreen({ navigation }) {
     transactions.forEach((t) => {
       if (filterShopId && t.shopId !== filterShopId) return;
       const tDate = moment(t.date, "YYYY-MM-DD");
-      if (tDate.isSameOrBefore(selectedDate, "day")) {
+      if (tDate.isSame(selectedDate, "day")) {
         const { ecash } = computeSplitAmounts(t.sale);
 
         if (t.type === "income") {
@@ -402,7 +403,8 @@ export default function HomeScreen({ navigation }) {
         <View style={global.navbarRight}>
           <Text style={global.navbarDate}>{formattedDate}</Text>
         </View>
-                <TouchableOpacity
+        {/* Notifications icon with low-stock badge */}
+        <TouchableOpacity
           style={{
             padding: 6,
             borderRadius: 10,

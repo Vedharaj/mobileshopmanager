@@ -1,5 +1,5 @@
 // components/BottomNavbar.jsx
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   View,
   Pressable,
@@ -11,6 +11,8 @@ import {
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors, BAR_HEIGHT, CENTER_DIAMETER } from "../styles/global"; // Import useThemeColors and constants
+import { useSelector, useDispatch } from "react-redux";
+import { fetchServices } from "../store/slices/serviceSlice";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -33,6 +35,18 @@ export default function BottomNavbar({
   navigationRef,
 }) {
   const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
+  const dispatch = useDispatch();
+  const services = useSelector((state) => state.services?.services || []);
+  const activeServiceCount = useMemo(() => {
+    if (!Array.isArray(services)) return 0;
+    return services.filter(
+      (s) => s?.status === "pending" || s?.status === "in_progress"
+    ).length;
+  }, [services]);
+
+  useEffect(() => {
+    dispatch(fetchServices());
+  }, [dispatch]);
   // compute default index from controlled prop or initial prop
   const defaultIndex = Math.max(1, Math.min(activeIndex ?? initialIndex, 5));
   const [active, setActive] = useState(defaultIndex);
@@ -141,6 +155,7 @@ export default function BottomNavbar({
     const animatedStyle = {
       transform: [{ translateY: liftsRef[slotIndex] }, { scale: scalesRef[slotIndex] }],
     };
+    const showServiceBadge = tab.key === "Services" && activeServiceCount > 0;
 
     return (
       <Pressable
@@ -153,11 +168,33 @@ export default function BottomNavbar({
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Animated.View style={[styles.iconWrapper, animatedStyle]}>
-          <Icon
-            name={tab.icon}
-            size={24}
-            color={active === displayIndex ? primaryColor : "#9aa0a6"}
-          />
+          <View style={{ position: "relative", alignItems: "center", justifyContent: "center" }}>
+            <Icon
+              name={tab.icon}
+              size={24}
+              color={active === displayIndex ? primaryColor : "#9aa0a6"}
+            />
+            {showServiceBadge && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -10,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: "#e67e22",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 9, fontWeight: "700" }}>
+                  {activeServiceCount}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text
             style={[
               styles.label,
