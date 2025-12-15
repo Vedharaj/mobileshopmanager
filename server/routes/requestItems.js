@@ -47,11 +47,13 @@ router.post('/', auth, async (req, res) => {
     // Emit socket event for new request item
     try {
       const { getIO } = require('../socket');
+      const { sendPushToShop } = require('../utils/push');
       const populated = await item
         .populate('shop_id', 'name')
         .populate('user_id', 'username')
         .populate('product_id', 'name');
-      getIO().emit('request:new', { request: populated });
+      getIO().to(`shop:${item.shop_id}`).emit('request:new', { request: populated });
+      await sendPushToShop(item.shop_id, 'New Request', `${populated.product_id?.name || 'Product'} x ${populated.qty || ''}`.trim());
     } catch (e) {
       console.warn('Socket emit failed for request:new', e.message);
     }

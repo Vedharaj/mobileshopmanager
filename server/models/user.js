@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, default: 'owner' },
   membership_level: { type: String },
   shops: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Shop' }], // Modified to store only shop_ids
+  pushTokens: [{ type: String }],
   contact_no: { type: String }, // Add contact_no field
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }

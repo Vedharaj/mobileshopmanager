@@ -9,6 +9,15 @@ function init(server) {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     },
   });
+  io.on('connection', (socket) => {
+    socket.on('join-shops', (shopIds = []) => {
+      try {
+        shopIds.forEach((id) => {
+          if (id) socket.join(`shop:${id}`);
+        });
+      } catch {}
+    });
+  });
   return io;
 }
 

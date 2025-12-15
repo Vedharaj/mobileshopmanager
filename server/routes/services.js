@@ -87,11 +87,14 @@ router.post('/', auth, async (req, res) => {
     // Emit socket event for new service
     try {
       const { getIO } = require('../socket');
+      const { sendPushToShop } = require('../utils/push');
       const populated = await service
         .populate('shop_id', 'name')
         .populate('user_id', 'username')
         .populate('customer_id', 'name');
-      getIO().emit('service:new', { service: populated });
+      getIO().to(`shop:${service.shop_id}`).emit('service:new', { service: populated });
+      // Push notification
+      await sendPushToShop(service.shop_id, 'New Service', populated.name || 'A new service was added');
     } catch (e) {
       // Non-fatal if socket not initialized
       console.warn('Socket emit failed for service:new', e.message);

@@ -5,5 +5,6 @@ const auth = require('../middleware/auth');
 
 router.get('/', auth, userController.getUsers);
 router.get('/:id', auth, userController.getUser);
+router.post('/push-token', auth, userController.savePushToken);
 
 module.exports = router;

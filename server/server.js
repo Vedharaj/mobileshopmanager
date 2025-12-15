@@ -83,12 +83,19 @@ connectDB(mongouri).then(() => {
   // Initialize Socket.IO
   try {
     const { init } = require('./socket');
-    const io = init(server);
-    io.on('connection', (socket) => {
-      console.log('🔌 Socket connected:', socket.id);
-    });
+    init(server);
   } catch (e) {
     console.error('Failed to initialize socket.io:', e.message);
+  }
+
+  // Schedule periodic pruning of malformed/duplicate tokens (daily)
+  try {
+    const { pruneInvalidFormatTokens } = require('./utils/push');
+    setInterval(() => {
+      pruneInvalidFormatTokens();
+    }, 24 * 60 * 60 * 1000);
+  } catch (e) {
+    console.error('Failed to schedule token pruning:', e.message);
   }
 
   // Handle EADDRINUSE error

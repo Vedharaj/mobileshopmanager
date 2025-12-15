@@ -10,3 +10,18 @@ exports.getUser = async (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json(user);
 };
+
+exports.savePushToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'Token is required' });
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.pushTokens = Array.from(new Set([...(user.pushTokens || []), token]));
+    await user.save();
+    res.json({ message: 'Push token saved' });
+  } catch (e) {
+    console.error('savePushToken error', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
