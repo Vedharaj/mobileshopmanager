@@ -249,7 +249,7 @@ export const global = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#dcdbdbff",
+    borderBottomColor: "#eeededff",
   },
   profileRowLast: {
     flexDirection: "row",

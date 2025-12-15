@@ -74,6 +74,8 @@ const ServicesScreen = () => {
   const [filterShopId, setFilterShopId] = useState(""); // shop filter
   const [amountInCash, setAmountInCash] = useState("");
   const [amountInEcash, setAmountInEcash] = useState("");
+  const [displayLimitServices, setDisplayLimitServices] = useState(10);
+  const [isLoadingMoreServices, setIsLoadingMoreServices] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -883,6 +885,29 @@ const ServicesScreen = () => {
     }
   };
 
+  const handleScrollServices = (event) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isAtBottom =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+
+    if (isAtBottom && !isLoadingMoreServices) {
+      setIsLoadingMoreServices(true);
+      setDisplayLimitServices((prev) => prev + 10);
+    }
+  };
+
+  const handleLoadMoreServices = () => {
+    if (isLoadingMoreServices) return;
+    setIsLoadingMoreServices(true);
+    setDisplayLimitServices((prev) => prev + 10);
+  };
+
+  useEffect(() => {
+    if (isLoadingMoreServices) {
+      setIsLoadingMoreServices(false);
+    }
+  }, [displayLimitServices, isLoadingMoreServices]);
+
   return (
     <TouchableWithoutFeedback
       onPress={() => {
@@ -894,6 +919,8 @@ const ServicesScreen = () => {
         style={global.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 60 }}
         keyboardShouldPersistTaps="handled"
+        onScroll={handleScrollServices}
+        scrollEventThrottle={400}
       >
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Service</Text>
@@ -1276,7 +1303,33 @@ const ServicesScreen = () => {
             );
           }
 
-          const groupedServices = filteredServices.reduce((acc, service) => {
+          const sortedServices = [...filteredServices].sort((a, b) => {
+            const dateA =
+              activeTab === 0
+                ? a.received_date
+                  ? new Date(a.received_date).getTime()
+                  : 0
+                : a.return_date
+                  ? new Date(a.return_date).getTime()
+                  : 0;
+            const dateB =
+              activeTab === 0
+                ? b.received_date
+                  ? new Date(b.received_date).getTime()
+                  : 0
+                : b.return_date
+                  ? new Date(b.return_date).getTime()
+                  : 0;
+            return dateB - dateA;
+          });
+
+          const paginatedServices = sortedServices.slice(
+            0,
+            displayLimitServices
+          );
+          const hasMoreServices = sortedServices.length > paginatedServices.length;
+
+          const groupedServices = paginatedServices.reduce((acc, service) => {
             const serviceDate =
               activeTab === 0
                 ? service.received_date
@@ -1296,37 +1349,99 @@ const ServicesScreen = () => {
             (a, b) => new Date(b) - new Date(a)
           );
 
-          return sortedDates.map((date) => (
-            <View
-              key={date}
-              style={{
-                ...global.profileContainer,
-                fontSize: 16,
-                marginTop: 15,
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: "bold",
-                  color: primaryColor,
-                  marginBottom: 10,
-                  paddingBottom: 5,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ddd",
-                }}
-              >
-                {activeTab === 0 ? `Received: ${date}` : `Return: ${date}`}
-              </Text>
-              {groupedServices[date].map((service, index) => (
-                <ServiceContainer
-                  key={service._id}
-                  service={service}
-                  index={index}
-                  data={groupedServices[date]}
-                />
+          return (
+            <>
+              {sortedDates.map((date) => (
+                <View
+                  key={date}
+                  style={{
+                    ...global.profileContainer,
+                    fontSize: 16,
+                    marginTop: 15,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: primaryColor,
+                      marginBottom: 10,
+                      paddingBottom: 5,
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#ddd",
+                    }}
+                  >
+                    {activeTab === 0 ? `Received: ${date}` : `Return: ${date}`}
+                  </Text>
+                  {groupedServices[date].map((service, index) => (
+                    <ServiceContainer
+                      key={service._id}
+                      service={service}
+                      index={index}
+                      data={groupedServices[date]}
+                    />
+                  ))}
+                </View>
               ))}
-            </View>
-          ));
+
+              {hasMoreServices && isLoadingMoreServices && (
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 20,
+                  }}
+                >
+                  <ActivityIndicator size="small" color={primaryColor} />
+                  <Text style={{ marginTop: 8, color: "#999", fontSize: 12 }}>
+                    Loading more services...
+                  </Text>
+                </View>
+              )}
+
+              {hasMoreServices && !isLoadingMoreServices && (
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 15,
+                    gap: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      color: "#999",
+                      fontSize: 12,
+                    }}
+                  >
+                    Showing {paginatedServices.length} of {sortedServices.length} services • Scroll for more
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleLoadMoreServices}
+                    style={{
+                      ...global.button1,
+                      paddingVertical: 8,
+                      minWidth: 140,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={global.btnText}>Load more</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {!hasMoreServices && sortedServices.length > 10 && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#999",
+                    fontSize: 12,
+                    paddingVertical: 15,
+                  }}
+                >
+                  All {sortedServices.length} services loaded
+                </Text>
+              )}
+            </>
+          );
         })()}
       </ScrollView>
     </TouchableWithoutFeedback>

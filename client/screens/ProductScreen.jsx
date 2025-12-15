@@ -31,7 +31,7 @@ import { showToast } from "../store/slices/toastSlice";
 const ProductScreen = () => {
   const dispatch = useDispatch();
 
-  const { products } = useSelector((state) => state.products);
+  const { products, status } = useSelector((state) => state.products);
   const { categories } = useSelector((state) => state.categories);
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
@@ -83,14 +83,15 @@ const ProductScreen = () => {
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // track collapsed state per category in product list
-  const [collapsedCategories, setCollapsedCategories] = useState({});
-
   // when user picks an existing product from suggestions
   const [selectedExistingProduct, setSelectedExistingProduct] = useState(null);
 
   // top navbar tabs: 0 = Name Manager, 1 = QR Generator
   const [activeTab, setActiveTab] = useState(0);
+
+  // pagination
+  const [displayLimit, setDisplayLimit] = useState(10);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -985,6 +986,30 @@ const ProductScreen = () => {
 
   const isFormLocked = !!selectedExistingProduct;
 
+  // Handle scroll to load more products
+  const handleScroll = (event) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isAtBottom =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+
+    if (isAtBottom && !isLoadingMore) {
+      setIsLoadingMore(true);
+      setDisplayLimit((prev) => prev + 10);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    setDisplayLimit((prev) => prev + 10);
+  };
+
+  useEffect(() => {
+    if (isLoadingMore) {
+      setIsLoadingMore(false);
+    }
+  }, [displayLimit, isLoadingMore]);
+
   return (
     <TouchableWithoutFeedback
       onPress={() => {
@@ -997,6 +1022,8 @@ const ProductScreen = () => {
         style={global.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 60 }}
         keyboardShouldPersistTaps="handled"
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         {/* Top navbar tab view */}
         <View
@@ -1371,6 +1398,25 @@ const ProductScreen = () => {
             {/* PRODUCT LIST HEADER */}
             <Text style={{ marginBottom: 5, marginTop: 20 }}>Product List</Text>
 
+            {/* Loading indicator */}
+            {status === 'loading' && (
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 30,
+                }}
+              >
+                <ActivityIndicator size="large" color={primaryColor} />
+                <Text style={{ marginTop: 10, color: '#666' }}>
+                  Loading products...
+                </Text>
+              </View>
+            )}
+
+            {/* Filters and Product List - Only show when not loading */}
+            {status !== 'loading' && (
+              <>
             {/* Row 1: Search */}
             <View
               style={{
@@ -1463,7 +1509,7 @@ const ProductScreen = () => {
               </View>
             </View>
 
-            {/* PRODUCT LIST grouped by category asc */}
+            {/* PRODUCT LIST - Recently added first with pagination */}
             {(() => {
               let filteredProducts = products;
 
@@ -1511,50 +1557,14 @@ const ProductScreen = () => {
                 });
               }
 
-              const groupedByCategory = filteredProducts.reduce(
-                (acc, product) => {
-                  let catLabel = "No Category";
-                  let catKey = "zzz_no_category";
+              // Sort by date - most recent first
+              const sortedProducts = [...filteredProducts].sort((a, b) => {
+                const dateA = a.date ? new Date(a.date).getTime() : 0;
+                const dateB = b.date ? new Date(b.date).getTime() : 0;
+                return dateB - dateA; // Most recent first
+              });
 
-                  if (product.category_id) {
-                    if (typeof product.category_id === "object") {
-                      const nm =
-                        product.category_id.name || product.category_id.label;
-                      if (nm) {
-                        catLabel = nm;
-                        catKey = nm.toLowerCase();
-                      }
-                    } else {
-                      const cat = categories.find(
-                        (c) => c._id === product.category_id
-                      );
-                      if (cat?.name) {
-                        catLabel = cat.name;
-                        catKey = cat.name.toLowerCase();
-                      }
-                    }
-                  }
-
-                  if (!acc[catKey]) {
-                    acc[catKey] = {
-                      label: catLabel,
-                      items: [],
-                    };
-                  }
-                  acc[catKey].items.push(product);
-                  return acc;
-                },
-                {}
-              );
-
-              const sortedCatKeys = Object.keys(groupedByCategory).sort(
-                (a, b) =>
-                  groupedByCategory[a].label
-                    .toLowerCase()
-                    .localeCompare(groupedByCategory[b].label.toLowerCase())
-              );
-
-              if (sortedCatKeys.length === 0) {
+              if (sortedProducts.length === 0) {
                 return (
                   <Text
                     style={{
@@ -1568,75 +1578,88 @@ const ProductScreen = () => {
                 );
               }
 
-              return sortedCatKeys.map((key) => {
-                const group = groupedByCategory[key];
-                const items = [...group.items].sort((a, b) =>
-                  (a.name || "")
-                    .toLowerCase()
-                    .localeCompare((b.name || "").toLowerCase())
-                );
+              // Paginate: show only up to displayLimit
+              const paginatedProducts = sortedProducts.slice(0, displayLimit);
+              const hasMore = sortedProducts.length > displayLimit;
 
-                // Default to collapsed if not yet toggled
-                const isCollapsed = collapsedCategories[key] !== false;
+              return (
+                <>
+                  <View style={{ ...global.profileContainer, marginTop: 15 }}>
+                    {paginatedProducts.map((product, index) => (
+                      <ProductContainer
+                        key={product._id}
+                        product={product}
+                        index={index}
+                        data={paginatedProducts}
+                      />
+                    ))}
+                  </View>
 
-                return (
-                  <View
-                    key={key}
-                    style={{
-                      ...global.profileContainer,
-                      fontSize: 16,
-                      marginTop: 15,
-                    }}
-                  >
+                  {/* Loading more indicator */}
+                  {hasMore && isLoadingMore && (
                     <View
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 10,
-                        paddingBottom: 5,
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#ddd",
+                        alignItems: 'center',
+                        paddingVertical: 20,
+                      }}
+                    >
+                      <ActivityIndicator size="small" color={primaryColor} />
+                      <Text style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
+                        Loading more products...
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Show count */}
+                  {hasMore && !isLoadingMore && (
+                    <View
+                      style={{
+                        alignItems: 'center',
+                        paddingVertical: 15,
+                        gap: 8,
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 16,
-                          fontWeight: "bold",
-                          color: primaryColor,
+                          textAlign: 'center',
+                          color: '#999',
+                          fontSize: 12,
                         }}
                       >
-                        {group.label}
+                        Showing {paginatedProducts.length} of {sortedProducts.length} products • Scroll for more
                       </Text>
                       <TouchableOpacity
-                        onPress={() =>
-                          setCollapsedCategories((prev) => ({
-                            ...prev,
-                            [key]: !isCollapsed,
-                          }))
-                        }
-                        style={{ paddingHorizontal: 6, paddingVertical: 4 }}
+                        onPress={handleLoadMore}
+                        style={{
+                          ...global.button1,
+                          paddingVertical: 8,
+                          minWidth: 140,
+                          alignItems: 'center',
+                        }}
                       >
-                        <MaterialIcons
-                          name={isCollapsed ? "keyboard-arrow-down" : "keyboard-arrow-up"}
-                          size={22}
-                          color={primaryColor}
-                        />
+                        <Text style={global.btnText}>Load more</Text>
                       </TouchableOpacity>
                     </View>
-                    {!isCollapsed &&
-                      items.map((product, index) => (
-                        <ProductContainer
-                          key={product._id}
-                          product={product}
-                          index={index}
-                          data={items}
-                        />
-                      ))}
-                  </View>
-                );
-              });
+                  )}
+
+                  {/* All loaded message */}
+                  {!hasMore && sortedProducts.length > 10 && (
+                    <Text
+                      style={{
+                        textAlign: 'center',
+                        color: '#999',
+                        fontSize: 12,
+                        paddingVertical: 15,
+                      }}
+                    >
+                      All {sortedProducts.length} products loaded
+                    </Text>
+                  )}
+                </>
+              );
             })()}
+              </>
+            )}
           </>
         )}
 
