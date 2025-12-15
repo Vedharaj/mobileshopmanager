@@ -80,6 +80,17 @@ connectDB(mongouri).then(() => {
     console.log(`📡 Access from network: http://10.40.5.238:${PORT}`);
   });
 
+  // Initialize Socket.IO
+  try {
+    const { init } = require('./socket');
+    const io = init(server);
+    io.on('connection', (socket) => {
+      console.log('🔌 Socket connected:', socket.id);
+    });
+  } catch (e) {
+    console.error('Failed to initialize socket.io:', e.message);
+  }
+
   // Handle EADDRINUSE error
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {

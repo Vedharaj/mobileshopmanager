@@ -27,4 +27,10 @@ export const store = configureStore({
     theme: themeReducer, // Add theme reducer
     requestItems: requestItemsReducer,
   },
+  // Disable expensive dev-only checks to avoid slowdown with large payloads
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      immutableCheck: false,
+      serializableCheck: false,
+    }),
 });

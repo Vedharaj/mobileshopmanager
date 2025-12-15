@@ -254,7 +254,7 @@ const ImportExportScreen = () => {
           if (prev >= 0.8) return prev;
           return prev + 0.05;
         });
-      }, 500);
+      }, 3000);
 
       const response = await api.post("/products/bulk-import", {
         products: productsToImport,

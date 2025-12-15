@@ -84,6 +84,19 @@ router.post('/', auth, async (req, res) => {
 
     await service.save();
 
+    // Emit socket event for new service
+    try {
+      const { getIO } = require('../socket');
+      const populated = await service
+        .populate('shop_id', 'name')
+        .populate('user_id', 'username')
+        .populate('customer_id', 'name');
+      getIO().emit('service:new', { service: populated });
+    } catch (e) {
+      // Non-fatal if socket not initialized
+      console.warn('Socket emit failed for service:new', e.message);
+    }
+
     // Return all services for user's shops
     const user = await req.user.populate('shops');
     const shopIds = user.shops.map(shop => shop._id);
