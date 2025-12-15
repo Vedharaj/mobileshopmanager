@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Shop = require('../models/Shop');
-const User = require('../models/User');
+const User = require('../models/user');
 
 // GET /api/shops - return authenticated user's shops
 router.get('/', auth, async (req, res) => {
