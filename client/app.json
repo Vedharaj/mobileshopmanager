@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "client",
+    "name": "MobX Manager",
     "slug": "client",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.client"
+      "package": "com.anonymous.client",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,6 +40,11 @@
           "recordAudioAndroid": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "86b4ad49-0db5-47c0-ab10-2198aa4f4650"
+      }
+    }
   }
 }

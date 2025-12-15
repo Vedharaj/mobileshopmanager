@@ -9,7 +9,7 @@ const connectDB = require('./config/db');
 require('./models/Counter');
 require('./models/Product');
 require('./models/Shop');
-require('./models/User');
+require('./models/user');
 require('./models/Auth');
 require('./models/Category');
 require('./models/Customer');
