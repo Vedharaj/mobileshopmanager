@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors, BAR_HEIGHT, CENTER_DIAMETER } from "../styles/global"; // Import useThemeColors and constants
 import { useSelector, useDispatch } from "react-redux";
 import { fetchServices } from "../store/slices/serviceSlice";
+import { fetchRequestItems } from "../store/slices/requestItemsSlice";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -37,6 +38,7 @@ export default function BottomNavbar({
   const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
   const dispatch = useDispatch();
   const services = useSelector((state) => state.services?.services || []);
+  const requestItems = useSelector((state) => state.requestItems?.items || []);
   const activeServiceCount = useMemo(() => {
     if (!Array.isArray(services)) return 0;
     return services.filter(
@@ -44,8 +46,14 @@ export default function BottomNavbar({
     ).length;
   }, [services]);
 
+  const pendingRequestCount = useMemo(() => {
+    if (!Array.isArray(requestItems)) return 0;
+    return requestItems.filter((r) => r?.status !== "fulfilled").length;
+  }, [requestItems]);
+
   useEffect(() => {
     dispatch(fetchServices());
+    dispatch(fetchRequestItems());
   }, [dispatch]);
   // compute default index from controlled prop or initial prop
   const defaultIndex = Math.max(1, Math.min(activeIndex ?? initialIndex, 5));
@@ -156,6 +164,7 @@ export default function BottomNavbar({
       transform: [{ translateY: liftsRef[slotIndex] }, { scale: scalesRef[slotIndex] }],
     };
     const showServiceBadge = tab.key === "Services" && activeServiceCount > 0;
+    const showRequestBadge = tab.key === "Products" && pendingRequestCount > 0;
 
     return (
       <Pressable
@@ -174,6 +183,26 @@ export default function BottomNavbar({
               size={24}
               color={active === displayIndex ? primaryColor : "#9aa0a6"}
             />
+            {showRequestBadge && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -10,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: "#e74c3c",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 9, fontWeight: "700" }}>
+                  {pendingRequestCount}
+                </Text>
+              </View>
+            )}
             {showServiceBadge && (
               <View
                 style={{

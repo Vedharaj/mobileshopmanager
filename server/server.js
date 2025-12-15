@@ -16,6 +16,7 @@ require('./models/Customer');
 require('./models/Service');
 require('./models/Sales');
 require('./models/SalesItem');
+require('./models/RequestItem');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -27,6 +28,7 @@ const productRoutes = require('./routes/products');
 const serviceRoutes = require('./routes/services');
 const salesRoutes = require('./routes/sales');
 const salesItemsRoutes = require('./routes/salesItems');
+const requestItemsRoutes = require('./routes/requestItems');
 
 
 const app = express();
@@ -57,6 +59,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/sales-items', salesItemsRoutes);
+app.use('/api/request-items', requestItemsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

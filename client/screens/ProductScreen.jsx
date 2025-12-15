@@ -27,6 +27,10 @@ import {
 import { fetchCategories, createCategory } from "../store/slices/categorySlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
+import { createRequestItem, fetchRequestItems } from "../store/slices/requestItemsSlice";
+import RequestsTab from "../components/tabs/RequestsTab";
+import ProductsTab from "../components/tabs/ProductsTab";
+import QrGeneratorTab from "../components/tabs/QrGeneratorTab";
 
 const ProductScreen = () => {
   const dispatch = useDispatch();
@@ -36,7 +40,12 @@ const ProductScreen = () => {
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
   const { userid, role, user } = useSelector((state) => state.auth);
+  const { items: requestItems = [] } = useSelector((state) => state.requestItems);
   const { primaryColor } = useThemeColors();
+
+  const pendingRequestCount = Array.isArray(requestItems)
+    ? requestItems.filter((r) => r?.status !== "fulfilled").length
+    : 0;
 
   const staffShops = user?.shops || [];
 
@@ -86,7 +95,7 @@ const ProductScreen = () => {
   // when user picks an existing product from suggestions
   const [selectedExistingProduct, setSelectedExistingProduct] = useState(null);
 
-  // top navbar tabs: 0 = Name Manager, 1 = QR Generator
+  // top navbar tabs: 0 = Requests, 1 = Product Manager, 2 = QR Generator
   const [activeTab, setActiveTab] = useState(0);
 
   // pagination
@@ -97,6 +106,7 @@ const ProductScreen = () => {
     const loadData = async () => {
       dispatch(fetchProducts());
       dispatch(fetchCategories());
+      dispatch(fetchRequestItems());
     };
     loadData();
 
@@ -988,10 +998,9 @@ const ProductScreen = () => {
 
   // Handle scroll to load more products
   const handleScroll = (event) => {
+    if (activeTab !== 1) return;
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const isAtBottom =
-      layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
-
+    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
     if (isAtBottom && !isLoadingMore) {
       setIsLoadingMore(true);
       setDisplayLimit((prev) => prev + 10);
@@ -1043,14 +1052,33 @@ const ProductScreen = () => {
             }}
             onPress={() => setActiveTab(0)}
           >
-            <Text
-              style={{
-                color: activeTab === 0 ? primaryColor : "#666",
-                fontWeight: activeTab === 0 ? "600" : "400",
-              }}
-            >
-              Product Manager
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text
+                style={{
+                  color: activeTab === 0 ? primaryColor : "#666",
+                  fontWeight: activeTab === 0 ? "600" : "400",
+                }}
+              >
+                Requests
+              </Text>
+              {pendingRequestCount > 0 && (
+                <View
+                  style={{
+                    minWidth: 18,
+                    paddingHorizontal: 6,
+                    height: 18,
+                    borderRadius: 9,
+                    backgroundColor: "#e74c3c",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                    {pendingRequestCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -1068,12 +1096,181 @@ const ProductScreen = () => {
                 fontWeight: activeTab === 1 ? "600" : "400",
               }}
             >
+              Products
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              borderBottomWidth: activeTab === 2 ? 3 : 0,
+              borderBottomColor: activeTab === 2 ? primaryColor : "transparent",
+              alignItems: "center",
+              paddingBottom: 6,
+            }}
+            onPress={() => setActiveTab(2)}
+          >
+            <Text
+              style={{
+                color: activeTab === 2 ? primaryColor : "#666",
+                fontWeight: activeTab === 2 ? "600" : "400",
+              }}
+            >
               QR Generator
             </Text>
           </TouchableOpacity>
         </View>
 
-        {activeTab === 0 && (
+        {activeTab === 0 && <RequestsTab />}
+
+        {false && activeTab === 0 && (
+          <>
+            {/* REQUESTS TAB (simple form) */}
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ marginBottom: 10 }}>Create Request</Text>
+              <TextInput
+                style={global.input}
+                placeholder="Search product name *"
+                value={name}
+                onChangeText={updateNameAndSuggestions}
+                onFocus={() => {
+                  setIsNameFocused(true);
+                  if (name && name.length >= 3 && nameSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+              />
+
+              {isNameFocused && showSuggestions && nameSuggestions.length > 0 && (
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ddd",
+                    borderRadius: 8,
+                    paddingVertical: 6,
+                    paddingHorizontal: 8,
+                    marginTop: 4,
+                    marginBottom: 8,
+                    backgroundColor: "#fafafa",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#666",
+                      marginBottom: 4,
+                      fontWeight: "500",
+                    }}
+                  >
+                    Matching products:
+                  </Text>
+                  {nameSuggestions.map((p) => (
+                    <TouchableOpacity
+                      key={p._id}
+                      onPress={() => {
+                        handlePickSuggestion(p);
+                        setShowSuggestions(false);
+                        setIsNameFocused(false);
+                      }}
+                      style={{ paddingVertical: 4, borderRadius: 4 }}
+                    >
+                      <Text style={{ fontSize: 13, color: primaryColor }} numberOfLines={1}>
+                        {p.name}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: "#666" }} numberOfLines={1}>
+                        {p.shop_id?.name ? `Shop: ${p.shop_id.name}` : p.shop_id ? `Shop: ${p.shop_id}` : "Shop: -"}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <TextInput
+                style={global.input}
+                placeholder="Quantity *"
+                value={qty}
+                onChangeText={setQty}
+                keyboardType="numeric"
+              />
+
+              {role !== "staff" && shops.length > 0 && (
+                <View style={{ ...global.input, padding: 0 }}>
+                  <Picker
+                    selectedValue={selectedShopId}
+                    onValueChange={(itemValue) => {
+                      setSelectedShopId(itemValue);
+                    }}
+                    style={{ fontSize: 12 }}
+                    itemStyle={{ fontSize: 12 }}
+                  >
+                    {shops.map((shop) => (
+                      <Picker.Item
+                        key={shop._id}
+                        label={shop.name}
+                        value={shop._id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              )}
+
+              <TextInput
+                style={global.input}
+                placeholder="Note"
+                value={note}
+                onChangeText={setNote}
+                multiline
+              />
+
+              <View>
+                <TouchableOpacity
+                  style={{ marginTop: 10, ...global.button1 }}
+                  onPress={() => {
+                    if (!selectedExistingProduct || !qty) {
+                      dispatch(
+                        showToast({
+                          message: "Please select a product and enter quantity",
+                          type: "error",
+                        })
+                      );
+                      return;
+                    }
+                    const payload = {
+                      product_id: selectedExistingProduct._id,
+                      shop_id:
+                        role === "staff"
+                          ? selectedShopId
+                          : selectedShopId || selectedExistingProduct.shop_id?._id || selectedExistingProduct.shop_id,
+                      qty: parseInt(qty, 10) || 0,
+                      note: note || "",
+                    };
+                    dispatch(createRequestItem(payload))
+                      .unwrap()
+                      .then(() => {
+                        dispatch(
+                          showToast({ message: "Request submitted!", type: "success" })
+                        );
+                        setName("");
+                        setQty("");
+                        setNote("");
+                        setSelectedExistingProduct(null);
+                      })
+                      .catch((err) => {
+                        dispatch(
+                          showToast({ message: err || "Failed to submit request", type: "error" })
+                        );
+                      });
+                  }}
+                >
+                  <Text style={global.btnText1}>Submit Request</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        )}
+
+        {activeTab === 1 && <ProductsTab displayLimit={displayLimit} isLoadingMore={isLoadingMore} onLoadMore={handleLoadMore} />}
+
+        {false && activeTab === 1 && (
           <>
             {/* ADD PRODUCT */}
             <View style={{ marginTop: 10 }}>
@@ -1631,7 +1828,7 @@ const ProductScreen = () => {
                       <TouchableOpacity
                         onPress={handleLoadMore}
                         style={{
-                          ...global.button1,
+                        ...global.button1,
                           paddingVertical: 8,
                           minWidth: 140,
                           alignItems: 'center',
@@ -1663,7 +1860,9 @@ const ProductScreen = () => {
           </>
         )}
 
-        {activeTab === 1 && (
+        {activeTab === 2 && <QrGeneratorTab />}
+
+        {false && activeTab === 2 && (
           <View style={{ marginTop: 30, alignItems: "center" }}>
             <Text style={{ color: "#666", marginBottom: 10 }}>
               QR Generator
