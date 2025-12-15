@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Sales = require('../models/Sales');
 const Shop = require('../models/Shop');
+const Product = require('../models/Product');
 
 // GET /api/sales - return authenticated user's sales (from their shops)
 router.get('/', auth, async (req, res) => {
@@ -13,11 +14,11 @@ router.get('/', auth, async (req, res) => {
     const sales = await Sales.find({
       shop_id: { $in: shopIds }
     })
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
-      .populate('customer_id', 'name')
+      .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price')
+      .populate('items.product_id', 'name selling_price cgst sgst')
       .sort({ invoice_no: -1 });
 
     res.json({ sales: sales || [] });
@@ -33,11 +34,11 @@ router.get('/service/:serviceId', auth, async (req, res) => {
     const serviceId = req.params.serviceId;
 
     const sales = await Sales.find({ service_id: serviceId })
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
-      .populate('customer_id', 'name')
+      .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price cgst sgst');
 
     res.json({ sales: sales || [] });
   } catch (err) {
@@ -52,11 +53,11 @@ router.get('/:id', auth, async (req, res) => {
     const saleId = req.params.id;
 
     const sale = await Sales.findById(saleId)
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
-      .populate('customer_id', 'name')
+      .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price cgst sgst');
 
     if (!sale) {
       return res.status(404).json({ msg: 'Sale not found' });
@@ -140,6 +141,28 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
+    let mappedItems = items || [];
+    if (Array.isArray(items) && items.length > 0) {
+      const productIds = items.map(i => i.product_id).filter(Boolean);
+      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst');
+      const productMap = products.reduce((acc, p) => {
+        acc[p._id.toString()] = p;
+        return acc;
+      }, {});
+
+      mappedItems = items.map((it) => {
+        const prod = productMap[it.product_id?.toString()] || {};
+        const cgst = it.cgst ?? prod.cgst ?? 0;
+        const sgst = it.sgst ?? prod.sgst ?? 0;
+        const qty = Number(it.quantity || 0);
+        const unit = Number(it.unit_price || 0);
+        const discount = Number(it.discount || 0);
+        const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
+        const total_price = it.total_price ?? qty * unit - discount + taxAmount;
+        return { ...it, cgst, sgst, total_price };
+      });
+    }
+
     const sale = new Sales({
       shop_id,
       user_id: user_id || req.user._id,
@@ -157,7 +180,7 @@ router.post('/', auth, async (req, res) => {
       payment_breakdown: payment_breakdown || {},
       status: status || 'completed',
       notes: notes || '',
-      items: items || []
+      items: mappedItems
     });
 
     console.log('Creating sale with data:', JSON.stringify(sale, null, 2));
@@ -170,11 +193,11 @@ router.post('/', auth, async (req, res) => {
     const sales = await Sales.find({
       shop_id: { $in: shopIds }
     })
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
-      .populate('customer_id', 'name')
+      .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price cgst sgst');
 
     res.status(201).json({ msg: 'Sale created successfully', sales });
   } catch (err) {
@@ -210,6 +233,28 @@ router.put('/:id', auth, async (req, res) => {
       items
     } = req.body;
 
+    let mappedItems = items;
+    if (Array.isArray(items) && items.length > 0) {
+      const productIds = items.map(i => i.product_id).filter(Boolean);
+      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst');
+      const productMap = products.reduce((acc, p) => {
+        acc[p._id.toString()] = p;
+        return acc;
+      }, {});
+
+      mappedItems = items.map((it) => {
+        const prod = productMap[it.product_id?.toString()] || {};
+        const cgst = it.cgst ?? prod.cgst ?? 0;
+        const sgst = it.sgst ?? prod.sgst ?? 0;
+        const qty = Number(it.quantity || 0);
+        const unit = Number(it.unit_price || 0);
+        const discount = Number(it.discount || 0);
+        const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
+        const total_price = it.total_price ?? qty * unit - discount + taxAmount;
+        return { ...it, cgst, sgst, total_price };
+      });
+    }
+
     const sale = await Sales.findById(saleId);
     if (!sale) {
       return res.status(404).json({ msg: 'Sale not found' });
@@ -233,7 +278,7 @@ router.put('/:id', auth, async (req, res) => {
     if (payment_breakdown) sale.payment_breakdown = payment_breakdown;
     if (status) sale.status = status;
     if (notes !== undefined) sale.notes = notes || '';
-    if (items) sale.items = items;
+    if (items) sale.items = mappedItems;
 
     await sale.save();
 
@@ -243,11 +288,11 @@ router.put('/:id', auth, async (req, res) => {
     const sales = await Sales.find({
       shop_id: { $in: shopIds }
     })
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
-      .populate('customer_id', 'name')
+      .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price cgst sgst');
 
     res.status(200).json({ msg: 'Sale updated successfully', sales });
   } catch (err) {
@@ -295,11 +340,11 @@ router.delete('/:id', auth, async (req, res) => {
     const sales = await Sales.find({
       shop_id: { $in: shopIds }
     })
-      .populate('shop_id', 'name')
+      .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price');
+      .populate('items.product_id', 'name selling_price cgst sgst');
 
     res.status(200).json({ msg: 'Sale deleted successfully', sales });
   } catch (err) {

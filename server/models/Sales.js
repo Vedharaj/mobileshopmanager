@@ -15,7 +15,8 @@ const SalesItemSchema = new mongoose.Schema(
     unit_price: { type: Number, required: true, min: 0 },
 
     discount: { type: Number, default: 0, min: 0 }, // per item discount
-    tax: { type: Number, default: 0, min: 0 }, // per item tax %
+    cgst: { type: Number, default: 0, min: 0 }, // CGST %
+    sgst: { type: Number, default: 0, min: 0 }, // SGST %
 
     total_price: { type: Number, required: true, min: 0 }, // auto-calculated
 
@@ -28,7 +29,9 @@ const SalesItemSchema = new mongoose.Schema(
 SalesItemSchema.pre("validate", function (next) {
   const base = this.quantity * this.unit_price;
   const discountAmount = this.discount || 0;
-  const taxAmount = ((this.tax || 0) / 100) * base;
+  const cgst = this.cgst || 0;
+  const sgst = this.sgst || 0;
+  const taxAmount = ((cgst + sgst) / 100) * base;
 
   this.total_price = base - discountAmount + taxAmount;
   next();

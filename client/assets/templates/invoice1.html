@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Invoice</title>
+
+<style>
+  /* A4 Page Setup */
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f9;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: auto;
+    background: #fff;
+    padding: 20mm;
+    box-sizing: border-box;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+  }
+
+  .top {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 15px;
+  }
+
+  .company {
+    text-align: right;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    font-size: 13px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    font-size: 13px;
+  }
+
+  table thead th {
+    background: #f1f3f6;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
+  }
+
+  table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  table th:last-child,
+  table td:last-child {
+    text-align: right;
+  }
+
+  .summary {
+    width: 40%;
+    float: right;
+    margin-top: 30px;
+    font-size: 14px;
+  }
+
+  .summary div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .summary .total {
+    font-size: 18px;
+    font-weight: bold;
+    border-top: 2px solid #000;
+    padding-top: 10px;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 20mm;
+    left: 20mm;
+    right: 20mm;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="top">
+    <div>
+      <h1>Invoice</h1>
+      <p>
+        <strong>Invoice No:</strong> {{invoice_no}}<br>
+        <strong>Date:</strong> {{invoice_date}}
+      </p>
+    </div>
+
+    <div class="company">
+      <strong>{{company_name}}</strong><br>
+      {{company_address}}<br>
+      Phone: {{company_phone}}<br>
+      GSTIN: {{company_gstin}}
+    </div>
+  </div>
+
+  <!-- BILLING -->
+  <div class="info">
+    <div>
+      <strong>Billed To</strong><br>
+      {{customer_name}}<br>
+      {{customer_address}}<br>
+      Phone: {{customer_phone}}
+    </div>
+
+    <div>
+      <strong>Payment Method</strong><br>
+      {{payment_method}}
+    </div>
+  </div>
+
+  <!-- ITEMS -->
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Unit Cost</th>
+        <th>Qty</th>
+        <th>Tax %</th>
+        <th>Tax Amount</th>
+        <th>Line Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{items_rows}}
+    </tbody>
+  </table>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div>
+      <span>Subtotal</span>
+      <span>{{subtotal}}</span>
+    </div>
+    <div>
+      <span>Total Tax</span>
+      <span>{{total_tax}}</span>
+    </div>
+    <div class="total">
+      <span>Invoice Total</span>
+      <span>{{invoice_total}}</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -143,6 +143,28 @@ export default function ProfileScreen({ navigation }) {
         {role === "staff" && (
           <>
             <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
+              Account
+            </Text>
+            <View style={global.profileContainer}>
+              <TouchableOpacity
+                style={global.profileRow}
+                onPress={() => navigation.navigate("EditProfile")}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <AntDesign name="edit" size={24} color={primaryColor} />
+                  <Text style={{ fontSize: 16 }}>Edit Profile</Text>
+                </View>
+                <AntDesign name="right" size={20} color="black" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
               View Management
             </Text>
             <View style={global.profileContainer}>

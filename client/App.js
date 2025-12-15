@@ -196,10 +196,22 @@ function RootNavigator() {
 
   // Show splash screen while loading (only if authenticated or still checking authentication)
   // Don't show splash screen if user is logged out (not authenticated and initial load is complete)
+  // Don't show splash screen if user is on a protected management screen
+  const protectedRoutes = [
+    "ShopManagement",
+    "StaffManagement",
+    "CategoryManagement",
+    "CustomerManagement",
+    "ThemeSettings",
+    "EditProfile",
+    "Scanner",
+  ];
+  const isOnProtectedRoute = currentRoute && protectedRoutes.includes(currentRoute);
   const shouldShowSplash =
     loading ||
     (!isAuthenticated && !shopsLoaded) ||
     (isAuthenticated &&
+      !isOnProtectedRoute &&
       (!shopsLoaded || authStatus === "loading" || shopsStatus === "loading"));
 
   if (shouldShowSplash) {

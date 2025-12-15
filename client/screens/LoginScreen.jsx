@@ -24,16 +24,7 @@ export default function LoginScreen({ navigation }) {
     }
   }, [error, dispatch]);
 
-  useEffect(() => {
-    const fetchShopsOnLogin = async () => {
-      if (status === "succeeded") {
-        await dispatch(fetchShops()).unwrap();
-      }
-    };
-    fetchShopsOnLogin();
-  }, [status, dispatch]);
-
-  const submitLogin = () => {
+  const submitLogin = async () => {
     if (!identifier || !password) {
       dispatch(
         showToast({
@@ -43,7 +34,14 @@ export default function LoginScreen({ navigation }) {
       );
       return;
     }
-    dispatch(login({ identifier, password }));
+    
+    try {
+      await dispatch(login({ identifier, password })).unwrap();
+      // Fetch shops after successful login
+      await dispatch(fetchShops()).unwrap();
+    } catch (err) {
+      console.error("Login error:", err);
+    }
   };
 
   const createNewAcountBtn = () => {

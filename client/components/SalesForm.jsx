@@ -80,6 +80,8 @@ export default function SalesForm({
     const productId = product._id || product.id || product.product_id;
     const productPrice =
       product.selling_price ?? product.price ?? product.unit_price ?? 0;
+    const productCgst = product.cgst ?? 0;
+    const productSgst = product.sgst ?? 0;
 
     const productExists = items.some(
       (i) => i.product_id === productId && i.id !== currentItemId
@@ -111,6 +113,8 @@ export default function SalesForm({
             product_id: productId,
             product_name: product.name,
             unit_price: String(productPrice || 0),
+            cgst: productCgst,
+            sgst: productSgst,
           },
         })
       );
@@ -133,6 +137,8 @@ export default function SalesForm({
     if (!current) return;
 
     let nextUnitPrice = current.unit_price;
+    let nextCgst = current.cgst ?? 0;
+    let nextSgst = current.sgst ?? 0;
     if (field === "product_id" && value) {
       const product = products.find(
         (p) => p._id === value || p.id === value || p.product_id === value
@@ -141,6 +147,8 @@ export default function SalesForm({
         nextUnitPrice = String(
           product.selling_price ?? product.price ?? product.unit_price ?? 0
         );
+        nextCgst = product.cgst ?? 0;
+        nextSgst = product.sgst ?? 0;
       }
     }
 
@@ -148,6 +156,8 @@ export default function SalesForm({
       ...current,
       [field]: value,
       unit_price: field === "product_id" ? nextUnitPrice : current.unit_price,
+      cgst: field === "product_id" ? nextCgst : current.cgst ?? 0,
+      sgst: field === "product_id" ? nextSgst : current.sgst ?? 0,
     };
     merged.subtotal = calculateSubtotal(merged.quantity, merged.unit_price);
 
@@ -286,10 +296,17 @@ export default function SalesForm({
       items: filledItems.map((item) => {
         const qty = parseFloat(item.quantity) || 0;
         const price = parseFloat(item.unit_price) || 0;
+        const product = products.find(
+          (p) => p._id === item.product_id || p.id === item.product_id || p.product_id === item.product_id
+        ) || {};
+        const cgst = item.cgst ?? product.cgst ?? 0;
+        const sgst = item.sgst ?? product.sgst ?? 0;
         return {
           product_id: item.product_id,
           quantity: qty,
           unit_price: price,
+          cgst,
+          sgst,
           total_price: qty * price,
         };
       }),
@@ -449,19 +466,25 @@ export default function SalesForm({
             Items
           </Text>
 
-          <View style={{ maxHeight: 500 }}>
-            {items.map((item, index) => (
-              <View
-                key={item.id}
-                style={{
-                  backgroundColor: "#f9f9f9",
-                  padding: 12,
-                  borderRadius: 8,
-                  marginBottom: 10,
-                  borderWidth: 1,
-                  borderColor: "#e0e0e0",
-                }}
-              >
+          <View style={{ maxHeight: 320 }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              {items.map((item, index) => (
+                <View
+                  key={item.id}
+                  style={{
+                    backgroundColor: "#f9f9f9",
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 10,
+                    borderWidth: 1,
+                    borderColor: "#e0e0e0",
+                  }}
+                >
                 {/* Item Selection */}
                 <View style={{ marginBottom: 10 }}>
                   <Text
@@ -567,7 +590,8 @@ export default function SalesForm({
                   )}
                 </View>
               </View>
-            ))}
+              ))}
+            </ScrollView>
           </View>
 
           {/* Add Item Button */}

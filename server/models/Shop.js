@@ -6,6 +6,7 @@ const ShopSchema = new mongoose.Schema({
   address: { type: String },
   contact_no: { type: String },
   membership_level: { type: String },
+  gstin: { type: String },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });

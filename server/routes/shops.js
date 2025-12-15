@@ -19,7 +19,7 @@ router.get('/', auth, async (req, res) => {
 // POST /api/shops - create a new Shop and attach to user
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, email, address, contact_no, membership_level } = req.body;
+    const { name, email, address, contact_no, membership_level, gstin } = req.body;
     if (!name) return res.status(400).json({ msg: 'Shop name is required' });
 
     // create Shop document
@@ -28,7 +28,8 @@ router.post('/', auth, async (req, res) => {
       email: email || '',
       address: address || '',
       contact_no: contact_no || '',
-      membership_level: membership_level || ''
+      membership_level: membership_level || '',
+      gstin: gstin || ''
     });
 
     await shop.save();
@@ -81,7 +82,7 @@ router.put('/:shop_id', auth, async (req, res) => {
   try {
     const shopId = req.params.shop_id;
     const userId = req.user.id;
-    const { name, email, address, contact_no, membership_level } = req.body;
+    const { name, email, address, contact_no, membership_level, gstin } = req.body;
 
     if (!name) return res.status(400).json({ msg: 'Shop name is required' });
 
@@ -102,6 +103,7 @@ router.put('/:shop_id', auth, async (req, res) => {
     shop.address = address || '';
     shop.contact_no = contact_no || '';
     shop.membership_level = membership_level || '';
+    shop.gstin = gstin || '';
     await shop.save();
 
     // No need to update user's shops subdocument, as it's now just ObjectIds

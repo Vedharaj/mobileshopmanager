@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
@@ -17,13 +17,14 @@ import { showToast } from "../store/slices/toastSlice";
 const ShopManagement = () => {
   const dispatch = useDispatch();
 
-  const { shops, status, error } = useSelector((state) => state.shops);
+  const { shops } = useSelector((state) => state.shops);
   const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [contact_no, setContactNo] = useState("");
+  const [gstin, setGstin] = useState("");
   const [isNameFocused, setIsNameFocused] = useState(false); // New state for focus
 
   const handleDeleteShop = async (shopId) => {
@@ -61,6 +62,7 @@ const ShopManagement = () => {
     const [shopEmail, setShopEmail] = useState(shop.email || ''); // Changed to shop.email
     const [shopAddress, setShopAddress] = useState(shop.address || '');
     const [shopContactNo, setShopContactNo] = useState(shop.contact_no || ''); // Changed to shop.contact_no
+    const [shopGstin, setShopGstin] = useState(shop.gstin || '');
 
     const handleUpdateShop = async () => {
       // Check if any changes were made
@@ -68,7 +70,8 @@ const ShopManagement = () => {
         shopName === shop.name &&
         shopEmail === (shop.email || '') &&
         shopAddress === (shop.address || '') &&
-        shopContactNo === (shop.contact_no || '')
+        shopContactNo === (shop.contact_no || '') &&
+        shopGstin === (shop.gstin || '')
       ) {
         dispatch(showToast({
           message: "No changes made to shop details",
@@ -86,6 +89,7 @@ const ShopManagement = () => {
             email: shopEmail,
             address: shopAddress,
             contact_no: shopContactNo,
+            gstin: shopGstin,
           },
         })).unwrap();
         dispatch(showToast({
@@ -184,6 +188,15 @@ const ShopManagement = () => {
               onChangeText={setShopContactNo}
               keyboardType="phone-pad"
             />
+
+            <TextInput
+              style={global.input}
+              placeholder="GSTIN (Optional)"
+              value={shopGstin}
+              onChangeText={setShopGstin}
+              placeholderTextColor="#999"
+            />
+
             <View>
               <TouchableOpacity
                 style={{ marginTop: 10, ...global.button1 }} // Removed width: "30%"
@@ -214,7 +227,7 @@ const ShopManagement = () => {
     }
 
     try {
-      await dispatch(createShop({ name, email, address, contact_no })).unwrap();
+      await dispatch(createShop({ name, email, address, contact_no, gstin })).unwrap();
 
       dispatch(
         showToast({
@@ -227,6 +240,7 @@ const ShopManagement = () => {
       setEmail("");
       setAddress("");
       setContactNo("");
+      setGstin("");
       setIsNameFocused(false); // Clear focus
       Keyboard.dismiss(); // Dismiss keyboard
     } catch (err) {
@@ -276,6 +290,15 @@ const ShopManagement = () => {
                 onChangeText={setContactNo}
                 keyboardType="phone-pad"
               />
+
+              <TextInput
+                style={global.input}
+                placeholder="GSTIN (Optional)"
+                value={gstin}
+                onChangeText={setGstin}
+                placeholderTextColor="#999"
+              />
+
               <View style={{ alignItems: "flex-end" }}>
                 <TouchableOpacity
                   style={{ marginTop: 10, ...global.button1, width: "30%" }}

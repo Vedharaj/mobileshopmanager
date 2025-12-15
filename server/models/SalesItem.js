@@ -9,7 +9,8 @@ const SalesItemSchema = new mongoose.Schema({
   unit_price: { type: Number, required: true, min: 0 },
   total_price: { type: Number, required: true, min: 0 },
   discount: { type: Number, default: 0, min: 0 },
-  tax: { type: Number, default: 0, min: 0 },
+  cgst: { type: Number, default: 0, min: 0 },
+  sgst: { type: Number, default: 0, min: 0 },
   notes: { type: String },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
@@ -19,7 +20,9 @@ const SalesItemSchema = new mongoose.Schema({
 SalesItemSchema.pre('validate', function (next) {
   const base = this.quantity * this.unit_price;
   const discountAmount = this.discount || 0;
-  const taxAmount = ((this.tax || 0) / 100) * base;
+  const cgstPercent = this.cgst || 0;
+  const sgstPercent = this.sgst || 0;
+  const taxAmount = ((cgstPercent + sgstPercent) / 100) * base;
 
   this.total_price = base - discountAmount + taxAmount;
   next();

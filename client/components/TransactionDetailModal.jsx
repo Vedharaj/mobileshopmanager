@@ -1,8 +1,14 @@
-import React from "react";
-import { View, Text, Modal, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Modal, ScrollView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Print from "expo-print";
+import { readAsStringAsync } from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Asset } from "expo-asset";
 
 const TransactionDetailModal = ({ visible, onClose, item }) => {
+  const [exporting, setExporting] = useState(false);
+
   if (!item) return null;
 
   const sale = item.sale || {};
@@ -10,6 +16,44 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
   const customerName = sale.customer_id?.name || "Walk-in";
   const cashAmount = sale.cash_paid || 0;
   const onlineAmount = sale.online_paid || 0;
+
+  const handleGenerateInvoice = async () => {
+    if (!sale) return;
+    if (sale.type !== 'sales') {
+      Alert.alert('Invoice', 'Invoice is available for sales only.');
+      return;
+    }
+    try {
+      setExporting(true);
+
+      const asset = Asset.fromModule(require("../assets/templates/invoice1.html"));
+      await asset.downloadAsync();
+
+
+      let templateHtml = "";
+      if (asset.uri && asset.uri.startsWith("http")) {
+        const res = await fetch(asset.uri);
+        templateHtml = await res.text();
+      } else {
+        templateHtml = await readAsStringAsync(asset.localUri || asset.uri, { encoding: 'utf8' });
+      }
+
+      const filledHtml = populateInvoiceTemplate(templateHtml, sale, item);
+      const pdfFileName = sale.invoice_no ? `invoice-${sale.invoice_no}` : `invoice-${Date.now()}`;
+      const { uri } = await Print.printToFileAsync({ html: filledHtml, fileName: pdfFileName });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { UTI: "com.adobe.pdf", mimeType: "application/pdf" });
+      } else {
+        Alert.alert("Invoice generated", `PDF saved to: ${uri}`);
+      }
+    } catch (err) {
+      Alert.alert("Invoice error", err?.message || "Could not generate invoice.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <Modal
@@ -50,12 +94,18 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
                   {item.timeLabel} · {item.date}
                 </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  style={{ backgroundColor: "#f1f5f9", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb" }}
-                >
-                  <Text style={{ color: "#2563eb", fontWeight: "700", fontSize: 14, textAlign: "center" }}>Generate Invoice</Text>
-                </TouchableOpacity>
+                {saleType === 'sales' && (
+                  <TouchableOpacity
+                    onPress={handleGenerateInvoice}
+                    disabled={exporting}
+                    style={{ backgroundColor: "#f1f5f9", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb", flexDirection: "row", alignItems: "center", gap: 8 }}
+                  >
+                    {exporting && <ActivityIndicator size="small" color="#2563eb" />}
+                    <Text style={{ color: "#2563eb", fontWeight: "700", fontSize: 14, textAlign: "center" }}>
+                      {exporting ? "Generating..." : "Generate Invoice"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               
 
@@ -149,6 +199,86 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
       </TouchableWithoutFeedback>
     </Modal>
   );
+};
+
+const populateInvoiceTemplate = (templateHtml, sale, transaction) => {
+  const formatCurrency = (val) => `₹${Number(val || 0).toFixed(2)}`;
+  const formatDate = (val) => {
+    try {
+      return new Date(val).toLocaleDateString("en-IN");
+    } catch (e) {
+      return new Date().toLocaleDateString("en-IN");
+    }
+  };
+
+  const shop = sale.shop_id || {};
+  const customer = sale.customer_id || {};
+  // logs removed
+  const items = Array.isArray(sale.items) ? sale.items : [];
+
+  const { itemsRows, subtotal, taxTotal, grandTotal } = buildInvoiceItems(items, sale);
+
+  const placeholders = {
+    "{{invoice_no}}": sale.invoice_no || "N/A",
+    "{{invoice_date}}": formatDate(sale.createdAt || sale.created_at || transaction?.date || Date.now()),
+    "{{company_name}}": shop.name || "Shop",
+    "{{company_address}}": shop.address || shop.street || "",
+    "{{company_phone}}": shop.contact_no || shop.phone || "",
+    "{{company_gstin}}": shop.gstin || "",
+    "{{customer_name}}": customer.name || "Walk-in",
+    "{{customer_address}}": customer.address || "",
+    "{{customer_phone}}": customer.contact_no || customer.phone || customer.phone_no || "",
+    "{{payment_method}}": sale.payment_method || "N/A",
+    "{{items_rows}}": itemsRows,
+    "{{subtotal}}": formatCurrency(subtotal),
+    "{{total_tax}}": formatCurrency(taxTotal),
+    "{{invoice_total}}": formatCurrency(grandTotal),
+  };
+
+  return Object.entries(placeholders).reduce((html, [token, value]) => {
+    const safeValue = value === undefined || value === null ? "" : String(value);
+    return html.replace(new RegExp(token, "g"), safeValue);
+  }, templateHtml);
+};
+
+const buildInvoiceItems = (items, sale) => {
+  let subtotal = 0;
+  let taxTotal = 0;
+  const formatCurrency = (val) => `₹${Number(val || 0).toFixed(2)}`;
+
+  const rows = items.length
+    ? items
+        .map((it) => {
+          const name = it.product_id?.name || it.name || "Item";
+          const qty = Number(it.quantity || 0);
+          const unitPrice = Number(it.unit_price || 0);
+          const cgst = Number(it.cgst ?? it.product_id?.cgst ?? 0);
+          const sgst = Number(it.sgst ?? it.product_id?.sgst ?? 0);
+          const taxPercent = Number(it.tax_percent ?? it.product_id?.tax_percent ?? sale.tax_percent ?? (cgst + sgst));
+          const lineSubtotal = unitPrice * qty;
+          const taxAmount = Number(it.tax_amount ?? lineSubtotal * (taxPercent / 100));
+          const lineTotal = Number(it.total_price ?? lineSubtotal + taxAmount);
+
+          subtotal += lineSubtotal;
+          taxTotal += taxAmount;
+
+          
+
+          return `
+            <tr>
+              <td>${name}</td>
+              <td>${formatCurrency(unitPrice)}</td>
+              <td>${qty}</td>
+              <td>${taxPercent}%</td>
+              <td>${formatCurrency(taxAmount)}</td>
+              <td>${formatCurrency(lineTotal)}</td>
+            </tr>`;
+        })
+        .join("")
+    : '<tr><td colspan="6" style="text-align:center; padding: 12px;">No items</td></tr>';
+
+  const grandTotal = sale.total_amount != null ? Number(sale.total_amount) : subtotal + taxTotal;
+  return { itemsRows: rows, subtotal, taxTotal, grandTotal };
 };
 
 // Helper component for detail rows
