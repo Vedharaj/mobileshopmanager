@@ -36,6 +36,12 @@ export default function ProfileScreen({ navigation }) {
       icon: <AntDesign name="user" size={24} color={primaryColor} />,
       navigatePage: "CustomerManagement",
     },
+    {
+      id: 5,
+      title: "Import/Export",
+      icon: <AntDesign name="swap" size={24} color={primaryColor} />,
+      navigatePage: "ImportExport",
+    },
   ];
 
   const preferenceData = [
@@ -71,6 +77,7 @@ export default function ProfileScreen({ navigation }) {
       <ScrollView
         style={global.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 40 }}
+        showsVerticalScrollIndicator={false}
       >
         <View style={global.profileHeader}>
           <View

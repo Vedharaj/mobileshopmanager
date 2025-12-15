@@ -37,6 +37,14 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Health check & diagnostics (public endpoints)
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is running'
+  });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -60,20 +68,23 @@ app.use((err, req, res, next) => {
 
 // DB connect & server start
 const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0'; // Listen on all network interfaces (not just localhost)
 const mongouri = process.env.MONGO_URI;
 
 connectDB(mongouri).then(() => {
-  const server = app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`✅ Server listening on ${HOST}:${PORT}`);
+    console.log(`📡 Access from network: http://10.40.5.238:${PORT}`);
   });
 
   // Handle EADDRINUSE error
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is already in use. Trying alternative port...`);
+      console.error(`❌ Port ${PORT} is already in use. Trying alternative port...`);
       const altPort = PORT + 1;
-      const altServer = app.listen(altPort, () => {
-        console.log(`Server listening on alternative port ${altPort}`);
+      const altServer = app.listen(altPort, HOST, () => {
+        console.log(`✅ Server listening on alternative port ${HOST}:${altPort}`);
+        console.log(`⚠️ UPDATE CLIENT: Change API URL to http://10.40.5.238:${altPort}/api`);
       });
       altServer.on('error', (altErr) => {
         console.error(`Could not bind to port ${altPort}:`, altErr.message);

@@ -27,6 +27,7 @@ import StaffManagement from "./screens/StaffManagement.jsx";
 import CategoryManagement from "./screens/CategoryManagement.jsx";
 import CustomerManagement from "./screens/CustomerManagement.jsx";
 import ThemeSettings from "./screens/ThemeSettings.jsx";
+import ImportExportScreen from "./screens/ImportExportScreen.jsx";
 import TransactionScreen from "./screens/TransactionScreen.jsx";
 
 // Redux
@@ -47,6 +48,7 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "CategoryManagement",
   "CustomerManagement",
   "ThemeSettings",
+  "ImportExport",
   "Transaction",
 ];
 
@@ -269,6 +271,11 @@ function RootNavigator() {
               <Stack.Screen
                 name="ThemeSettings"
                 component={ThemeSettings}
+                options={{ headerShown: true }}
+              />
+              <Stack.Screen
+                name="ImportExport"
+                component={ImportExportScreen}
                 options={{ headerShown: true }}
               />
               <Stack.Screen

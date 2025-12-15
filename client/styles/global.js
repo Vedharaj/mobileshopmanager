@@ -118,7 +118,7 @@ export const global = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
   logoutBtn: {
     padding: 8,
