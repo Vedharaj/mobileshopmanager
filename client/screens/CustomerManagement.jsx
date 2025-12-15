@@ -158,7 +158,7 @@ const CustomerManagement = () => {
               placeholder="Customer Name *"
               value={customerName}
               onChangeText={setCustomerName}
-              editable={!isStaff}
+              editable={true}
             />
 
             <TextInput
@@ -167,7 +167,7 @@ const CustomerManagement = () => {
               value={customerPhoneNo}
               onChangeText={setCustomerPhoneNo}
               keyboardType="phone-pad"
-              editable={!isStaff}
+              editable={true}
             />
 
             <TextInput
@@ -176,10 +176,10 @@ const CustomerManagement = () => {
               value={customerAddress}
               onChangeText={setCustomerAddress}
               multiline
-              editable={!isStaff}
+              editable={true}
             />
 
-            {!isStaff && (
+            {true && (
               <View>
                 <TouchableOpacity
                   style={{ marginTop: 10, ...global.button1 }}

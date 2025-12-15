@@ -158,10 +158,10 @@ const CategoryManagement = () => {
               placeholder="Category Name *"
               value={categoryName}
               onChangeText={setCategoryName}
-              editable={!isStaff}
+              editable={true}
             />
 
-            {!isStaff && (
+            {true && (
               <View>
                 <TouchableOpacity
                   style={{ marginTop: 10, ...global.button1 }}
