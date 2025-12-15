@@ -1,6 +1,6 @@
 // App.js
 import React, { useEffect, useState, useRef } from "react";
-import { View } from "react-native";
+import { View, Appearance } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -40,6 +40,9 @@ import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-impor
 import { getSocket, disconnectSocket } from './utils/socket';
 import { showToast } from './store/slices/toastSlice';
 import { registerPushToken } from './utils/notifications';
+
+// Force app to light mode regardless of system setting
+Appearance.setColorScheme("light");
 
 const Stack = createNativeStackNavigator();
 

@@ -852,7 +852,7 @@ export default function TransactionScreen() {
 
           <TouchableOpacity
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: CARD_BG,
               borderWidth: 1,
               borderColor: primaryColor,
               borderRadius: 8,
@@ -888,7 +888,7 @@ export default function TransactionScreen() {
           {showDropdown && (
             <View
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: CARD_BG,
                 borderWidth: 1,
                 borderColor: primaryColor,
                 borderTopWidth: 0,

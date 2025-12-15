@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Modal, ScrollView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { CARD_BG } from "../styles/global";
 import * as Print from "expo-print";
 import { readAsStringAsync } from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
@@ -65,7 +66,7 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, height: "90%" }}>
+            <View style={{ backgroundColor: CARD_BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, height: "90%" }}>
               {/* Modal Header */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" }}>
                 <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>Transaction Details</Text>

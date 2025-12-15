@@ -12,7 +12,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { global } from '../styles/global';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/slices/productSlice';
-import { showToast } from '../store/slices/toastSlice';
 import { selectCartItems } from '../store/slices/salesItemsSlice';
 
 export default function ScannerScreen({ navigation, route }) {
@@ -183,9 +182,6 @@ export default function ScannerScreen({ navigation, route }) {
     }
 
     // ✅ Valid barcode & not duplicate: navigate to Transaction screen
-    console.log(
-      `✅ Scanned barcode: ${data} → Product: ${matchedProduct.name} (${matchedProduct.barcode})`
-    );
     navigation.navigate('Transaction', {
       scannedProduct: matchedProduct,
       openSalesForm: true,

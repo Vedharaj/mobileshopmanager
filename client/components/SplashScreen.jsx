@@ -7,6 +7,7 @@ import {
   Image,
   Animated,
 } from "react-native";
+import { global, BG_COLOR } from "../styles/global";
 import {
   useThemeColors,
   PRIMARY_COLOR_DEFAULT,
@@ -67,7 +68,7 @@ const SplashScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: BG_COLOR,
     justifyContent: "center",
     alignItems: "center",
   },

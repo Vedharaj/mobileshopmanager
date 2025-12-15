@@ -6,6 +6,7 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
+import { CARD_BG, BG_COLOR } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { setTheme, saveThemeToStorage } from "../store/slices/themeSlice";
 
@@ -161,14 +162,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: BG_COLOR,
   },
   header: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 30,
     textAlign: "center",
-    color: "#333",
+    color: BG_COLOR === "#000000" ? "#ffffff" : "#333",
   },
   columnWrapper: {
     justifyContent: "space-between",
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
