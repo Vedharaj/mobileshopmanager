@@ -15,6 +15,7 @@ import SplashScreen from "./components/SplashScreen.jsx";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import HomeScreen from "./screens/HomeScreen.jsx";
+import NotificationScreen from "./screens/NotificationScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
 import Productscreen from "./screens/ProductScreen.jsx";
 import ServicesScreen from "./screens/ServicesScreen.jsx";
@@ -50,6 +51,7 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "ThemeSettings",
   "ImportExport",
   "Transaction",
+  "Notification",
 ];
 
 const ROUTE_TO_INDEX = {
@@ -242,6 +244,11 @@ function RootNavigator() {
                 name="Products"
                 component={Productscreen}
                 options={{ headerShown: true, headerBackVisible: false }}
+              />
+              <Stack.Screen
+                name="Notification"
+                component={NotificationScreen}
+                options={{ headerShown: true, headerBackVisible: true, title: "Notifications" }}
               />
               <Stack.Screen
                 name="EditProfile"

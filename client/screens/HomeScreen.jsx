@@ -20,8 +20,10 @@ import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
 import { clearCart } from "../store/slices/salesItemsSlice";
 import { BAR_HEIGHT } from "../styles/global";
+import { fetchProducts } from "../store/slices/productSlice";
 
 import Entypo from "@expo/vector-icons/Entypo";
+import { MaterialIcons } from "@expo/vector-icons";
 import TransactionRow from "../components/TransactionRow";
 
 const getWeekDates = (weekOffset = 0) => {
@@ -35,6 +37,7 @@ export default function HomeScreen({ navigation }) {
   const { role, username, user } = useSelector((state) => state.auth);
   const { shops } = useSelector((state) => state.shops);
   const { sales, status: salesStatus } = useSelector((state) => state.sales);
+  const { products = [] } = useSelector((state) => state.products || {});
 
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
@@ -64,6 +67,7 @@ export default function HomeScreen({ navigation }) {
   // Fetch sales on component mount
   useEffect(() => {
     dispatch(fetchSales());
+    dispatch(fetchProducts());
   }, [dispatch]);
 
   // Fetch transactions when date changes
@@ -75,6 +79,14 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     dispatch(fetchSales());
   }, [filterShopId, dispatch]);
+
+  const notificationCount = useMemo(() => {
+    return products.filter((p) => {
+      const qty = parseInt(p.qty, 10) || 0;
+      const min = parseInt(p.minimum_stock, 10) || 0;
+      return min > 0 && qty <= min;
+    }).length;
+  }, [products]);
 
   // Initialize shop filter based on role
   // useEffect(() => {
@@ -367,17 +379,61 @@ export default function HomeScreen({ navigation }) {
         backgroundColor="#fff"
       />
       {/* Navbar */}
-      <View style={{ ...global.navbarContainer, paddingTop: 2, elevation: 0 }}>
-        <Text numberOfLines={2} style={global.navbarName}>
-          {username}{" "}
-          <Text style={{ ...global.navbarRole, color: primaryColor }}>
-            {role || "User"}
+      <View
+        style={{
+          ...global.navbarContainer,
+          paddingTop: 2,
+          elevation: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+
+        <View style={{ flex: 1 }}>
+          <Text numberOfLines={2} style={global.navbarName}>
+            {username}{" "}
+            <Text style={{ ...global.navbarRole, color: primaryColor }}>
+              {role || "User"}
+            </Text>
           </Text>
-        </Text>
+        </View>
 
         <View style={global.navbarRight}>
           <Text style={global.navbarDate}>{formattedDate}</Text>
         </View>
+                <TouchableOpacity
+          style={{
+            padding: 6,
+            borderRadius: 10,
+            backgroundColor: "#f5f5f5",
+            position: "relative",
+          }}
+          onPress={() => navigation.navigate("Notification")}
+        >
+          <MaterialIcons name="notifications-none" size={22} color={primaryColor} />
+          {notificationCount > 0 && (
+            <View
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                minWidth: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#ba181b",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 4,
+                zIndex: 2,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>
+                {notificationCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
       <View style={global.container}>
         {/* Toggle Summary Button */}
