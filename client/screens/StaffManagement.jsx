@@ -31,7 +31,9 @@ const StaffManagement = () => {
 
   useEffect(() => {
     const loadStaff = async () => {
-      dispatch(fetchStaff());
+      if (!staff || staff.length === 0) {
+        dispatch(fetchStaff());
+      }
     };
     loadStaff();
 

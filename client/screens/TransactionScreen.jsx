@@ -97,7 +97,9 @@ export default function TransactionScreen() {
 
   // Preload sales so return search has data even before switching tabs
   useEffect(() => {
-    dispatch(fetchSales());
+    if (!sales || sales.length === 0) {
+      dispatch(fetchSales());
+    }
   }, [dispatch]);
 
   // Handle scanned product - add or increment quantity
@@ -190,15 +192,19 @@ export default function TransactionScreen() {
   );
 
   useEffect(() => {
-    if (selectedType?.id === "service") {
+    if (selectedType?.id === "service" && (!services || services.length === 0)) {
       dispatch(fetchServices());
     }
-    if (selectedType?.id === "return_item") {
+    if (selectedType?.id === "return_item" && (!sales || sales.length === 0)) {
       dispatch(fetchSales());
     }
     if (selectedType?.id === "sales") {
-      dispatch(fetchProducts());
-      dispatch(fetchCustomers());
+      if (!products || products.length === 0) {
+        dispatch(fetchProducts());
+      }
+      if (!customers || customers.length === 0) {
+        dispatch(fetchCustomers());
+      }
     }
     // default shop for non-service transactions
     if (shops && shops.length > 0 && !selectedShopForTx) {
@@ -852,7 +858,7 @@ export default function TransactionScreen() {
 
           <TouchableOpacity
             style={{
-              backgroundColor: CARD_BG,
+              backgroundColor: "#f5f5f5",
               borderWidth: 1,
               borderColor: primaryColor,
               borderRadius: 8,
@@ -888,7 +894,7 @@ export default function TransactionScreen() {
           {showDropdown && (
             <View
               style={{
-                backgroundColor: CARD_BG,
+                backgroundColor: "#f5f5f5",
                 borderWidth: 1,
                 borderColor: primaryColor,
                 borderTopWidth: 0,

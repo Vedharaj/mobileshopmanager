@@ -212,7 +212,9 @@ const ShopManagement = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchShops());
+    if (!shops || shops.length === 0) {
+      dispatch(fetchShops());
+    }
   }, [dispatch]);
 
   const handleCreateShop = async () => {

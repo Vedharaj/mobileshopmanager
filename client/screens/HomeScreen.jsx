@@ -64,21 +64,15 @@ export default function HomeScreen({ navigation }) {
     }, [dispatch])
   );
 
-  // Fetch sales on component mount
+  // Fetch sales on component mount only if not already loaded
   useEffect(() => {
-    dispatch(fetchSales());
-    dispatch(fetchProducts());
+    if (!sales || sales.length === 0) {
+      dispatch(fetchSales());
+    }
+    if (!products || products.length === 0) {
+      dispatch(fetchProducts());
+    }
   }, [dispatch]);
-
-  // Fetch transactions when date changes
-  useEffect(() => {
-    dispatch(fetchSales());
-  }, [selectedDate, dispatch]);
-
-  // Fetch transactions when shop filter changes
-  useEffect(() => {
-    dispatch(fetchSales());
-  }, [filterShopId, dispatch]);
 
   const notificationCount = useMemo(() => {
     return products.filter((p) => {

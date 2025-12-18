@@ -40,6 +40,10 @@ import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-impor
 import { getSocket, disconnectSocket } from './utils/socket';
 import { showToast } from './store/slices/toastSlice';
 import { registerPushToken } from './utils/notifications';
+// import * as ExpoSplashScreen from 'expo-splash-screen';
+
+// Prevent auto-hide
+// ExpoSplashScreen.preventAutoHideAsync();
 
 // Force app to light mode regardless of system setting
 Appearance.setColorScheme("light");

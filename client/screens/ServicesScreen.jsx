@@ -79,8 +79,12 @@ const ServicesScreen = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      dispatch(fetchServices());
-      dispatch(fetchCustomers());
+      if (!services || services.length === 0) {
+        dispatch(fetchServices());
+      }
+      if (!customers || customers.length === 0) {
+        dispatch(fetchCustomers());
+      }
     };
     loadData();
 

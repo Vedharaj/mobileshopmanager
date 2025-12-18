@@ -14,7 +14,9 @@ const NotificationScreen = () => {
   const { shops } = useSelector((state) => state.shops);
 
   useEffect(() => {
-    dispatch(fetchProducts());
+    if (!products || products.length === 0) {
+      dispatch(fetchProducts());
+    }
   }, [dispatch]);
 
   const lowStockProducts = products

@@ -30,7 +30,9 @@ export default function RequestsTab() {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchRequestItems());
+    if (!requestItems || requestItems.length === 0) {
+      dispatch(fetchRequestItems());
+    }
     if (role === 'staff' && staffShops.length > 0) {
       const staffShopId = staffShops[0]?._id || staffShops[0];
       setSelectedShopId(staffShopId);

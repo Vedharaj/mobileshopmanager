@@ -423,6 +423,9 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
                 <Text style={{ color: '#666', fontSize: 12, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
                   CP/SP: <Text style={{ color: primaryColor }}>₹{productCostPrice || '0'} / ₹{productSellingPrice || '0'}</Text>
                 </Text>
+                <Text style={{ color: '#666', fontSize: 12, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
+                  Note: <Text style={{ color: primaryColor }}>{productNote && productNote.length > 5 ? `${productNote.slice(0, 5)}...` : (productNote || '—')}</Text>
+                </Text>
               </View>
             </View>
           </View>

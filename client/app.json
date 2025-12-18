@@ -1,24 +1,30 @@
 {
   "expo": {
     "name": "MobX Manager",
-    "slug": "client",
+    "slug": "MobX",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#3b3de2"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "splash": {
+        "image": "assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#3b3de2"
+      },
       "adaptiveIcon": {
-        "foregroundImage": "assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "image": "assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#3b3de2"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.client",
@@ -37,6 +43,14 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "assets/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#3b3de2"
         }
       ]
     ],

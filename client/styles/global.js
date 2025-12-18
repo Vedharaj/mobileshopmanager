@@ -15,6 +15,8 @@ export const CENTER_DIAMETER = 72;
 // Default static colors (fallback)
 export const PRIMARY_COLOR_DEFAULT = "#2a81d3ff";
 export const SECONDARY_COLOR_DEFAULT = "#90CAF9";
+export const CARD_BG = "#f5f5f5";
+export const BG_COLOR = "#ffffff";
 
 // Custom hook to access theme colors
 export const useThemeColors = () => {

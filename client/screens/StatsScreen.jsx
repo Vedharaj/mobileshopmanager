@@ -48,7 +48,9 @@ const StatsScreen = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchSales());
+    if (!sales || sales.length === 0) {
+      dispatch(fetchSales());
+    }
   }, [dispatch]);
 
   const daysInRange = useMemo(() => {
