@@ -5,11 +5,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // Fetch all sales
 export const fetchSales = createAsyncThunk(
   'sales/fetch',
-  async (_, thunkAPI) => {
+  async (params = {}, thunkAPI) => {
     try {
       const token = await AsyncStorage.getItem('token');
       const res = await api.get('/sales', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params,
       });
       return res.data.sales;
     } catch (error) {

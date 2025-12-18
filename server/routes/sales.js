@@ -11,15 +11,48 @@ router.get('/', auth, async (req, res) => {
     const user = await req.user.populate('shops');
     const shopIds = user.shops.map(shop => shop._id);
 
-    const sales = await Sales.find({
-      shop_id: { $in: shopIds }
-    })
+    // Optional query params for faster loading of recent data
+    // days: number of days back from now (e.g., 30)
+    // from/to: ISO dates to bound by order_date
+    // limit: max number of records to return
+    const { days, from, to, limit } = req.query;
+
+    const query = { shop_id: { $in: shopIds } };
+
+    // Build date filter
+    const now = new Date();
+    let dateFilter = null;
+    if (days && !isNaN(parseInt(days))) {
+      const daysNum = Math.max(1, parseInt(days));
+      const fromDate = new Date(now.getTime() - daysNum * 24 * 60 * 60 * 1000);
+      dateFilter = { $gte: fromDate };
+    }
+    if (from || to) {
+      dateFilter = {
+        ...(from ? { $gte: new Date(from) } : {}),
+        ...(to ? { $lte: new Date(to) } : {}),
+      };
+    }
+    if (dateFilter) {
+      // Filter by order_date which represents the transaction date
+      query.order_date = dateFilter;
+    }
+
+    let q = Sales.find(query)
       .populate('shop_id', 'name email address contact_no membership_level gstin')
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
       .populate('items.product_id', 'name selling_price cgst sgst')
-      .sort({ invoice_no: -1 });
+      // Use createdAt for recency; fallback sort by invoice_no if needed
+      .sort({ createdAt: -1 });
+
+    const limitNum = parseInt(limit);
+    if (!isNaN(limitNum) && limitNum > 0) {
+      q = q.limit(limitNum);
+    }
+
+    const sales = await q.exec();
 
     res.json({ sales: sales || [] });
   } catch (err) {

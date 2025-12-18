@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "assets/splash.png",
+      "image": "assets/icon.png",
       "resizeMode": "cover",
       "backgroundColor": "#3b3de2"
     },
@@ -17,12 +17,12 @@
     },
     "android": {
       "splash": {
-        "image": "assets/splash.png",
+        "image": "assets/icon.png",
         "resizeMode": "cover",
         "backgroundColor": "#3b3de2"
       },
       "adaptiveIcon": {
-        "image": "assets/splash.png",
+        "image": "assets/icon.png",
         "resizeMode": "cover",
         "backgroundColor": "#3b3de2"
       },
@@ -48,7 +48,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "assets/splash.png",
+          "image": "assets/icon.png",
           "resizeMode": "cover",
           "backgroundColor": "#3b3de2"
         }

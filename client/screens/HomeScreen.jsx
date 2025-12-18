@@ -53,9 +53,23 @@ export default function HomeScreen({ navigation }) {
 
   // Summary visibility
   const [showSummary, setShowSummary] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const RECENT_DAYS = 14; // Limit fetch to recent days for faster loads
 
   const staffShops = user?.shops || [];
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await dispatch(fetchSales({ days: RECENT_DAYS })).unwrap();
+      await dispatch(fetchProducts()).unwrap();
+    } catch (e) {
+      // ignore; toasts handled in thunks if needed
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Clear cart items when HomeScreen is focused
   useFocusEffect(
@@ -64,15 +78,21 @@ export default function HomeScreen({ navigation }) {
     }, [dispatch])
   );
 
-  // Fetch sales on component mount only if not already loaded
+  // Fetch sales on component mount
   useEffect(() => {
-    if (!sales || sales.length === 0) {
-      dispatch(fetchSales());
-    }
-    if (!products || products.length === 0) {
-      dispatch(fetchProducts());
-    }
+    dispatch(fetchSales({ days: RECENT_DAYS }));
+    dispatch(fetchProducts());
   }, [dispatch]);
+
+  // Fetch transactions when date changes
+  useEffect(() => {
+    dispatch(fetchSales({ days: RECENT_DAYS }));
+  }, [selectedDate, dispatch]);
+
+  // Fetch transactions when shop filter changes
+  useEffect(() => {
+    dispatch(fetchSales({ days: RECENT_DAYS }));
+  }, [filterShopId, dispatch]);
 
   const notificationCount = useMemo(() => {
     return products.filter((p) => {
@@ -196,6 +216,11 @@ export default function HomeScreen({ navigation }) {
         if (method === "cash") cash += amt;
         else ecash += amt;
       });
+    } else if (
+      sale?.cash_paid !== undefined || sale?.online_paid !== undefined
+    ) {
+      cash = Number(sale?.cash_paid) || 0;
+      ecash = Number(sale?.online_paid) || 0;
     } else {
       if (
         sale?.amount_in_cash !== undefined ||
@@ -654,6 +679,8 @@ export default function HomeScreen({ navigation }) {
               return `${base}-${index}`;
             }}
             showsVerticalScrollIndicator={false}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             renderSectionHeader={({ section }) => (
               <View style={{ alignItems: "center", marginVertical: 6 }}>
                 <Text style={{ color: primaryColor, fontWeight: "600" }}>
