@@ -3,10 +3,17 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Customer = require('../models/Customer');
 
-// GET /api/customers - return all customers
+// GET /api/customers - return customers for the authenticated user/shop
 router.get('/', auth, async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ created_at: -1 });
+    // If you want to filter by user or shop, adjust the query below
+    // Example: const customers = await Customer.find({ user_id: req.user.id })
+    // For now, return all customers (legacy behavior)
+    // const customers = await Customer.find({ user_id: req.user.id }).sort({ created_at: -1 });
+    const customers = await Customer.find({
+      // Uncomment and adjust if you add user/shop reference to Customer model
+      // user_id: req.user.id
+    }).sort({ created_at: -1 });
     res.json({ customers: customers || [] });
   } catch (err) {
     console.error(err);

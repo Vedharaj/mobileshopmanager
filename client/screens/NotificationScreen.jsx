@@ -2,12 +2,13 @@ import React, { useEffect } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { global, useThemeColors, BAR_HEIGHT } from "../styles/global";
+import { global, useThemeColors, useThemedStyles, BAR_HEIGHT } from "../styles/global";
 import { fetchProducts } from "../store/slices/productSlice";
 
 const NotificationScreen = () => {
   const dispatch = useDispatch();
-  const { primaryColor } = useThemeColors();
+  const { primaryColor, cardBg, textColor, textSecondary, isDarkMode } = useThemeColors();
+  const themedStyles = useThemedStyles();
   const insets = useSafeAreaInsets();
 
   const { products, status } = useSelector((state) => state.products);
@@ -38,22 +39,22 @@ const NotificationScreen = () => {
   };
 
   return (
-    <View style={global.safeArea}>
+    <View style={themedStyles.safeArea}>
       <ScrollView
-        style={global.mainContainer}
+        style={themedStyles.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + (insets.bottom || 0) + 20 }}
       >
-        <Text style={[global.sectionTitle, { marginTop: 10, textAlign: "center" }]}>Low Stock Alerts</Text>
+        <Text style={[themedStyles.text, { marginTop: 10, textAlign: "center", fontSize: 18, fontWeight: "700" }]}>Low Stock Alerts</Text>
 
         {status === "loading" && (
           <View style={{ alignItems: "center", paddingVertical: 30 }}>
             <ActivityIndicator size="small" color={primaryColor} />
-            <Text style={{ marginTop: 8, color: "#666" }}>Checking products...</Text>
+            <Text style={{ marginTop: 8, color: textSecondary }}>Checking products...</Text>
           </View>
         )}
 
         {status !== "loading" && lowStockProducts.length === 0 && (
-          <Text style={{ textAlign: "center", color: "#999", marginTop: 30 }}>
+          <Text style={{ textAlign: "center", color: textSecondary, marginTop: 30 }}>
             No products are below minimum stock.
           </Text>
         )}
@@ -65,7 +66,7 @@ const NotificationScreen = () => {
               const min = parseInt(product.minimum_stock, 10) || 0;
               const shopName = resolveShopName(product);
               const shortage = min - qty;
-              const bgColor = shortage >= 3 ? "#ffe5e5" : "#fff9e6";
+              const bgColor = isDarkMode ? cardBg : shortage >= 3 ? "#ffe5e5" : "#fff9e6";
               const accent = shortage >= 3 ? "#ba181b" : "#f39c12";
 
               return (
@@ -124,7 +125,7 @@ const NotificationScreen = () => {
                       marginTop: 6,
                     }}
                   >
-                    <Text style={{ color: "#666", fontSize: 12 }}>{shopName}</Text>
+                    <Text style={{ color: textSecondary, fontSize: 12 }}>{shopName}</Text>
                     <Text style={{ color: accent, fontWeight: "700" }}>
                       Qty {qty} / Min {min}
                     </Text>
@@ -133,7 +134,7 @@ const NotificationScreen = () => {
                   {product.note ? (
                     <Text
                       style={{
-                        color: "#555",
+                        color: textSecondary,
                         fontSize: 12,
                         marginTop: 6,
                         lineHeight: 16,

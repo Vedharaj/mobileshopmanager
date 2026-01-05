@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const SalesItem = require('../models/SalesItem');
 const Sales = require('../models/Sales');
+const Product = require('../models/Product');
 
 // GET /api/sales-items/:salesId - get all items for a specific sale
 router.get('/:salesId', auth, async (req, res) => {
@@ -65,6 +66,7 @@ router.post('/', auth, async (req, res) => {
     const {
       sales_id,
       product_id,
+      product_name,
       quantity,
       unit_price,
       total_price,
@@ -90,9 +92,21 @@ router.post('/', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Unauthorized: Not authorized to add items to this sale' });
     }
 
+    // Try to resolve product_name if not provided
+    let finalProductName = product_name;
+    if (!finalProductName) {
+      try {
+        const p = await Product.findById(product_id).select('name');
+        if (p) finalProductName = p.name;
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const item = new SalesItem({
       sales_id,
       product_id,
+      product_name: finalProductName,
       quantity: quantity || 1,
       unit_price: unit_price || 0,
       total_price: total_price || (quantity * unit_price) || 0,
@@ -138,10 +152,16 @@ router.post('/bulk/:salesId', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Unauthorized: Not authorized to add items to this sale' });
     }
 
+    // Resolve product names in bulk (fetch names for any product_ids that lack product_name)
+    const productIds = itemsData.map(i => i.product_id).filter(Boolean);
+    const products = await Product.find({ _id: { $in: productIds } }).select('name');
+    const productMap = products.reduce((acc, p) => { acc[p._id.toString()] = p.name; return acc; }, {});
+
     // Prepare items for bulk insert
     const itemsToInsert = itemsData.map(item => ({
       sales_id: salesId,
       product_id: item.product_id,
+      product_name: item.product_name || productMap[item.product_id]?.toString() || '',
       quantity: item.quantity || 1,
       unit_price: item.unit_price || 0,
       total_price: item.total_price || (item.quantity * item.unit_price) || 0,
@@ -203,6 +223,7 @@ router.put('/:itemId', auth, async (req, res) => {
     if (amount_in_cash !== undefined) item.amount_in_cash = amount_in_cash;
     if (amount_in_ecash !== undefined) item.amount_in_ecash = amount_in_ecash;
     if (notes !== undefined) item.notes = notes;
+    if (req.body.product_name !== undefined) item.product_name = req.body.product_name;
 
     await item.save();
 

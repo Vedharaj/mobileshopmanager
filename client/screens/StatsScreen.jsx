@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Platform, Dimensions, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { global } from '../styles/global';
+import { global, useThemeColors, useThemedStyles } from '../styles/global';
 import { LineChart, PieChart, BarChart } from 'react-native-chart-kit';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSales } from '../store/slices/salesSlice';
@@ -16,6 +16,8 @@ const StatsScreen = () => {
   const [showToPicker, setShowToPicker] = useState(false);
   const dispatch = useDispatch();
   const { sales = [] } = useSelector((state) => state.sales || {});
+  const { textColor, cardBg, bgColor } = useThemeColors();
+  const themedStyles = useThemedStyles();
 
   const fmt = (d) => {
     try {
@@ -185,21 +187,21 @@ const StatsScreen = () => {
   }, [sales, fromDate, toDate]);
 
   return (
-    <View style={[global.container, { flex: 1 }]}>
+    <View style={[themedStyles.container, { flex: 1 }]}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', gap: 10, marginBottom: 12 }}>
         <TouchableOpacity
-          style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, backgroundColor: '#fff' }}
+          style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, backgroundColor: cardBg }}
           onPress={() => setShowFromPicker(true)}
         >
           <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>From</Text>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>{fmt(fromDate)}</Text>
+          <Text style={[themedStyles.text, { fontSize: 16, fontWeight: '600' }]}>{fmt(fromDate)}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, backgroundColor: '#fff' }}
+          style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, backgroundColor: cardBg }}
           onPress={() => setShowToPicker(true)}
         >
           <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>To</Text>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>{fmt(toDate)}</Text>
+          <Text style={[themedStyles.text, { fontSize: 16, fontWeight: '600' }]}>{fmt(toDate)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -225,7 +227,7 @@ const StatsScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}>
         {daysInRange.length > 0 && (
           <View style={{ marginTop: 12 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 10 }}>Sales by Day</Text>
+            <Text style={[themedStyles.text, { fontSize: 14, fontWeight: '600', marginBottom: 10 }]}>Sales by Day</Text>
             <LineChart
               data={{
                 labels,
@@ -242,8 +244,8 @@ const StatsScreen = () => {
               yAxisSuffix=""
               yAxisInterval={1}
               chartConfig={{
-                backgroundGradientFrom: '#ffffff',
-                backgroundGradientTo: '#ffffff',
+                backgroundGradientFrom: bgColor,
+                backgroundGradientTo: bgColor,
                 decimalPlaces: 0,
                 color: (opacity = 1) => `rgba(51, 65, 85, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
@@ -257,7 +259,7 @@ const StatsScreen = () => {
         )}
 
         <View style={{ marginTop: 20 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 10 }}>Expenses by Day</Text>
+          <Text style={[themedStyles.text, { fontSize: 14, fontWeight: '600', marginBottom: 10 }]}>Expenses by Day</Text>
           <LineChart
             data={{
               labels,
@@ -274,8 +276,8 @@ const StatsScreen = () => {
             yAxisSuffix=""
             yAxisInterval={1}
             chartConfig={{
-              backgroundGradientFrom: '#ffffff',
-              backgroundGradientTo: '#ffffff',
+              backgroundGradientFrom: bgColor,
+              backgroundGradientTo: bgColor,
               decimalPlaces: 0,
               color: (opacity = 1) => `rgba(51, 65, 85, ${opacity})`,
               labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
@@ -288,7 +290,7 @@ const StatsScreen = () => {
         </View>
 
         <View style={{ marginTop: 20 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 10 }}>Sales Count by Weekday</Text>
+          <Text style={[themedStyles.text, { fontSize: 14, fontWeight: '600', marginBottom: 10 }]}>Sales Count by Weekday</Text>
           <BarChart
             data={{
               labels: weekdayLabels,
@@ -301,8 +303,8 @@ const StatsScreen = () => {
             fromZero
             showValuesOnTopOfBars
             chartConfig={{
-              backgroundGradientFrom: '#ffffff',
-              backgroundGradientTo: '#ffffff',
+              backgroundGradientFrom: bgColor,
+              backgroundGradientTo: bgColor,
               decimalPlaces: 0,
               color: (opacity = 1) => `rgba(51, 65, 85, ${opacity})`,
               labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
@@ -316,7 +318,7 @@ const StatsScreen = () => {
 
         {productSoldCounts.length > 0 && (
           <View style={{ marginTop: 20 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 10 }}>Products Sold by Count</Text>
+            <Text style={[themedStyles.text, { fontSize: 14, fontWeight: '600', marginBottom: 10 }]}>Products Sold by Count</Text>
             <View style={{ alignItems: 'center' }}>
               <PieChart
                 data={pieChartData}
@@ -334,8 +336,8 @@ const StatsScreen = () => {
             <View style={{ marginTop: 10, paddingHorizontal: 4, marginBottom: 20 }}>
               {productSoldCounts.map((item, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-                  <Text style={{ fontSize: 12, color: '#666' }}>{item.name}</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#333' }}>{item.count} units</Text>
+                  <Text style={[themedStyles.textSecondary, { fontSize: 12 }]}>{item.name}</Text>
+                  <Text style={[themedStyles.text, { fontSize: 12, fontWeight: '600' }]}>{item.count} units</Text>
                 </View>
               ))}
             </View>

@@ -5,10 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { CARD_BG, BG_COLOR } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { setTheme, saveThemeToStorage } from "../store/slices/themeSlice";
+import { useThemeColors, useThemedStyles } from "../styles/global";
 
 const colorData = [
   {
@@ -106,12 +108,15 @@ const colorData = [
 const ThemeSettings = () => {
   const dispatch = useDispatch();
   const currentTheme = useSelector((state) => state.theme);
+  const themedStyles = useThemedStyles();
+  const { bgColor, textColor, cardBg } = useThemeColors();
 
   const handleThemeChange = (theme) => {
     const newTheme = {
       primaryColor: theme.primary.hex,
       secondaryColor: theme.secondary.hex,
       themeName: theme.name,
+      isDarkMode: currentTheme.isDarkMode,
     };
     dispatch(setTheme(newTheme));
     dispatch(saveThemeToStorage(newTheme));
@@ -122,14 +127,14 @@ const ThemeSettings = () => {
       style={{
         ...styles.themeItem,
         backgroundColor:
-          currentTheme.primaryColor === item.primary.hex ? "#7be4a5" : "white",
+          currentTheme.primaryColor === item.primary.hex ? "#7be4a5" : cardBg,
         borderWidth: currentTheme.primaryColor === item.primary.hex ? 2 : 1,
         borderColor:
-          currentTheme.primaryColor === item.primary.hex ? "#00c851" : "#ccc",
+          currentTheme.primaryColor === item.primary.hex ? "#38ff87ff" : "#ccc",
       }}
       onPress={() => handleThemeChange(item)}
     >
-      <View style={styles.colorBoxRow}>
+      <View style={{...styles.colorBoxRow}}>
         <View
           style={{
             ...styles.colorBox,
@@ -140,37 +145,28 @@ const ThemeSettings = () => {
           style={{ ...styles.colorBox, backgroundColor: item.secondary.hex }}
         />
       </View>
-      <Text style={styles.themeName}>{item.name}</Text>
+      <Text style={{...styles.themeName, color: textColor}}>{item.name}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Choose Your Theme</Text>
+    <ScrollView
+      style={[global.mainContainer, { backgroundColor: bgColor, padding: 6 }]}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
       <FlatList
         data={colorData}
         renderItem={renderThemeItem}
         keyExtractor={(item) => item.name}
         numColumns={3} // Display in 3 columns
         columnWrapperStyle={styles.columnWrapper}
+        scrollEnabled={false}
       />
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: BG_COLOR,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 30,
-    textAlign: "center",
-    color: BG_COLOR === "#000000" ? "#ffffff" : "#333",
-  },
   columnWrapper: {
     justifyContent: "space-between",
     marginBottom: 15,
@@ -201,8 +197,8 @@ const styles = StyleSheet.create({
   themeName: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#555",
-    marginTop: 5,
+    marginTop: 4,
+    textAlign: "center",
   },
 });
 

@@ -3,14 +3,16 @@ import { View, Text, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyb
 import { Picker } from '@react-native-picker/picker';
 import { useDispatch, useSelector } from 'react-redux';
 import { AntDesign } from '@expo/vector-icons';
-import { global, useThemeColors } from '../../styles/global';
+import { global, useThemeColors, useThemedStyles } from '../../styles/global';
 import { showToast } from '../../store/slices/toastSlice';
 import { createRequestItem, fetchRequestItems, updateRequestItem, deleteRequestItem } from '../../store/slices/requestItemsSlice';
 import { updateProduct } from '../../store/slices/productSlice';
+import ThemeSettings from '../../screens/ThemeSettings';
 
 export default function RequestsTab() {
   const dispatch = useDispatch();
-  const { primaryColor } = useThemeColors();
+  const { primaryColor, textSecondary, cardBg, borderColor, textColor } = useThemeColors();
+  const themedStyles = useThemedStyles();
 
   const { products } = useSelector((state) => state.products);
   const { shops } = useSelector((state) => state.shops);
@@ -159,8 +161,8 @@ export default function RequestsTab() {
     }, [products, product]);
 
     const statusColors = {
-      pending: { bg: '#f5f5f5', accent: '#f39c12', text: 'Pending' },
-      fulfilled: { bg: '#f5f5f5', accent: '#2ecc71', text: 'Fulfilled' },
+      pending: { bg: cardBg, accent: '#f39c12', text: 'Pending' },
+      fulfilled: { bg: cardBg, accent: '#2ecc71', text: 'Fulfilled' },
     };
 
     const colors = statusColors[editStatus] || statusColors.pending;
@@ -298,7 +300,7 @@ export default function RequestsTab() {
             left: 0,
             top: 0,
             bottom: 0,
-            borderRadius: 8,
+            borderRadius: 10,
             backgroundColor: '#e9f7ef',
             justifyContent: 'center',
             alignItems: 'flex-end',
@@ -325,7 +327,7 @@ export default function RequestsTab() {
                 padding: 10,
               }}
             >
-              <Text style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>
+              <Text style={{ fontSize: 11, color: primaryColor, marginBottom: 4 }}>
                 {timeLabel}
               </Text>
 
@@ -338,7 +340,7 @@ export default function RequestsTab() {
                   width: '100%',
                 }}
               >
-                <Text style={[global.txnTitle, { marginBottom: 4 }]}>
+                <Text style={[themedStyles.txnTitle, { color: primaryColor, marginBottom: 4 }]}>
                   {productName}
                 </Text>
                 <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 14 }}>
@@ -354,11 +356,11 @@ export default function RequestsTab() {
                   width: '100%',
                 }}
               >
-                <Text style={[global.txnSubtitle, { color: '#666' }]}>
+                <Text style={[global.txnSubtitle, { color: textSecondary }]}>
                   {shopName} · {colors.text}
                 </Text>
                 {editNote && (
-                  <Text style={{ fontSize: 11, color: '#888', fontStyle: 'italic', maxWidth: '50%' }} numberOfLines={1}>
+                  <Text style={{ fontSize: 11, color: textSecondary, fontStyle: 'italic', maxWidth: '50%' }} numberOfLines={1}>
                     {editNote}
                   </Text>
                 )}
@@ -370,27 +372,29 @@ export default function RequestsTab() {
         {showDetails && (
           <View style={{ backgroundColor: colors.bg, paddingHorizontal: 10, paddingBottom: 10 }}>
             <TextInput
-              style={global.input}
+              style={themedStyles.input}
               placeholder="Quantity *"
+              placeholderTextColor={textSecondary}
               value={editQty}
               onChangeText={setEditQty}
               keyboardType="numeric"
               editable={!isUpdating}
             />
             <TextInput
-              style={global.input}
+              style={themedStyles.input}
               placeholder="Note"
+              placeholderTextColor={textSecondary}
               value={editNote}
               onChangeText={setEditNote}
               multiline
               editable={!isUpdating}
             />
-            <View style={{ ...global.input, padding: 0, opacity: isUpdating ? 0.6 : 1 }}>
+            <View style={[themedStyles.input, { padding: 0, opacity: isUpdating ? 0.6 : 1 }]}>
               <Picker
                 selectedValue={editStatus}
                 onValueChange={(val) => setEditStatus(val)}
                 enabled={!isUpdating}
-                style={{ fontSize: 12 }}
+                style={{ fontSize: 12, color: textColor }}
                 itemStyle={{ fontSize: 12 }}
               >
                 <Picker.Item label="Pending" value="pending" />
@@ -415,7 +419,7 @@ export default function RequestsTab() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ 
-                  ...global.button1, 
+                  ...themedStyles.button1, 
                   flex: 2, 
                   opacity: isUpdating ? 0.6 : 1,
                   paddingVertical: 10,
@@ -452,7 +456,7 @@ export default function RequestsTab() {
         {/* Add Request Button */}
         <TouchableOpacity
           style={{
-            ...global.button1,
+            ...themedStyles.button1,
             marginBottom: 15,
             flexDirection: 'row',
             alignItems: 'center',
@@ -466,12 +470,13 @@ export default function RequestsTab() {
         </TouchableOpacity>
 
         {showForm && (
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ marginBottom: 10 }}>Create Request</Text>
+          <View style={{marginBottom: 20 }}>
+            <Text style={[themedStyles.text, { marginBottom: 10 }]}>Create Request</Text>
 
         <TextInput
-          style={global.input}
+          style={themedStyles.input}
           placeholder="Search product name *"
+          placeholderTextColor={textSecondary}
           value={name}
           onChangeText={updateNameAndSuggestions}
           onFocus={() => {
@@ -484,20 +489,20 @@ export default function RequestsTab() {
           <View
             style={{
               borderWidth: 1,
-              borderColor: '#ddd',
+              borderColor: borderColor,
               borderRadius: 8,
               paddingVertical: 6,
               paddingHorizontal: 8,
               marginTop: 4,
               marginBottom: 8,
-              backgroundColor: '#fafafa',
+              backgroundColor: cardBg,
             }}
           >
-            <Text style={{ fontSize: 12, color: '#666', marginBottom: 4, fontWeight: '500' }}>Matching products:</Text>
+            <Text style={{ fontSize: 12, color: textSecondary, marginBottom: 4, fontWeight: '500' }}>Matching products:</Text>
             {nameSuggestions.map((p) => (
               <TouchableOpacity key={p._id} onPress={() => handlePickSuggestion(p)} style={{ paddingVertical: 4, borderRadius: 4 }}>
                 <Text style={{ fontSize: 13, color: primaryColor }} numberOfLines={1}>{p.name}</Text>
-                <Text style={{ fontSize: 11, color: '#666' }} numberOfLines={1}>
+                <Text style={{ fontSize: 11, color: textSecondary }} numberOfLines={1}>
                   {p.shop_id?.name ? `Shop: ${p.shop_id.name}` : p.shop_id ? `Shop: ${p.shop_id}` : 'Shop: -'}
                 </Text>
               </TouchableOpacity>
@@ -505,11 +510,11 @@ export default function RequestsTab() {
           </View>
         )}
 
-        <TextInput style={global.input} placeholder="Quantity *" value={qty} onChangeText={setQty} keyboardType="numeric" />
+        <TextInput style={themedStyles.input} placeholder="Quantity *" placeholderTextColor={textSecondary} value={qty} onChangeText={setQty} keyboardType="numeric" />
 
         {role !== 'staff' && shops.length > 0 && (
-          <View style={{ ...global.input, padding: 0 }}>
-            <Picker selectedValue={selectedShopId} onValueChange={(val) => setSelectedShopId(val)} style={{ fontSize: 12 }} itemStyle={{ fontSize: 12 }}>
+          <View style={[themedStyles.input, { padding: 0 }]}>
+            <Picker selectedValue={selectedShopId} onValueChange={(val) => setSelectedShopId(val)} style={{ fontSize: 12, color: textColor }} itemStyle={{ fontSize: 12 }}>
               {shops.map((shop) => (
                 <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
               ))}
@@ -517,10 +522,10 @@ export default function RequestsTab() {
           </View>
         )}
 
-        <TextInput style={global.input} placeholder="Note" value={note} onChangeText={setNote} multiline />
+        <TextInput style={themedStyles.input} placeholder="Note" placeholderTextColor={textSecondary} value={note} onChangeText={setNote} multiline />
 
             <View>
-              <TouchableOpacity style={{ marginTop: 10, ...global.button1 }} onPress={handleSubmit}>
+              <TouchableOpacity style={{ marginTop: 10, ...themedStyles.button1 }} onPress={handleSubmit}>
                 <Text style={global.btnText1}>Submit Request</Text>
               </TouchableOpacity>
             </View>
@@ -528,17 +533,17 @@ export default function RequestsTab() {
         )}
 
         {/* Request Items List */}
-        <Text style={{ marginBottom: 10, marginTop: 10 }}>Request Items</Text>
+        <Text style={[themedStyles.text, { marginBottom: 10, marginTop: 10 }]}>Request Items</Text>
 
         {requestStatus === 'loading' && (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 30 }}>
             <ActivityIndicator size="large" color={primaryColor} />
-            <Text style={{ marginTop: 10, color: '#666' }}>Loading requests...</Text>
+            <Text style={{ marginTop: 10, color: textSecondary }}>Loading requests...</Text>
           </View>
         )}
 
         {requestStatus !== 'loading' && pendingRequests.length === 0 && (
-          <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>
+          <Text style={{ textAlign: 'center', color: textSecondary, marginTop: 20 }}>
             No pending request items
           </Text>
         )}

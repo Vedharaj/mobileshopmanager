@@ -14,6 +14,7 @@ import { Picker } from "@react-native-picker/picker";
 import {
   global,
   useThemeColors,
+  useThemedStyles,
   BAR_HEIGHT,
   SECONDARY_COLOR_DEFAULT,
 } from "../styles/global";
@@ -41,7 +42,8 @@ const ProductScreen = () => {
   const { shops } = useSelector((state) => state.shops);
   const { userid, role, user } = useSelector((state) => state.auth);
   const { items: requestItems = [] } = useSelector((state) => state.requestItems);
-  const { primaryColor } = useThemeColors();
+  const { primaryColor, cardBg, textColor } = useThemeColors();
+  const themedStyles = useThemedStyles();
 
   const pendingRequestCount = Array.isArray(requestItems)
     ? requestItems.filter((r) => r?.status !== "fulfilled").length
@@ -1028,7 +1030,7 @@ const ProductScreen = () => {
       }}
     >
       <ScrollView
-        style={global.mainContainer}
+        style={themedStyles.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 60 }}
         keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
@@ -1055,8 +1057,9 @@ const ProductScreen = () => {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <Text
                 style={{
-                  color: activeTab === 0 ? primaryColor : "#666",
+                  color: activeTab === 0 ? primaryColor : textColor,
                   fontWeight: activeTab === 0 ? "600" : "400",
+                  opacity: activeTab === 0 ? 1 : 0.6,
                 }}
               >
                 Requests
@@ -1092,8 +1095,9 @@ const ProductScreen = () => {
           >
             <Text
               style={{
-                color: activeTab === 1 ? primaryColor : "#666",
+                color: activeTab === 1 ? primaryColor : textColor,
                 fontWeight: activeTab === 1 ? "600" : "400",
+                opacity: activeTab === 1 ? 1 : 0.6,
               }}
             >
               Products
@@ -1111,8 +1115,9 @@ const ProductScreen = () => {
           >
             <Text
               style={{
-                color: activeTab === 2 ? primaryColor : "#666",
+                color: activeTab === 2 ? primaryColor : textColor,
                 fontWeight: activeTab === 2 ? "600" : "400",
+                opacity: activeTab === 2 ? 1 : 0.6,
               }}
             >
               QR Generator

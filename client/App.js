@@ -1,3 +1,6 @@
+import AddProductScreen from "./screens/AddProductScreen.jsx";
+import CreateServiceScreen from "./screens/CreateServiceScreen.jsx";
+import AddSalesFormItems from "./screens/AddSalesFormItems.jsx";
 // App.js
 import React, { useEffect, useState, useRef } from "react";
 import { View, Appearance } from "react-native";
@@ -5,6 +8,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar } from "react-native";
 
 // components
 import BottomNavbar from "./components/BottomNavbar.jsx";
@@ -30,23 +34,26 @@ import CustomerManagement from "./screens/CustomerManagement.jsx";
 import ThemeSettings from "./screens/ThemeSettings.jsx";
 import ImportExportScreen from "./screens/ImportExportScreen.jsx";
 import TransactionScreen from "./screens/TransactionScreen.jsx";
+import TransactionDetailScreen from "./screens/TransactionDetailScreen.jsx";
+import ProductDetailScreen from "./screens/ProductDetailScreen.jsx";
 
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./store/store.js";
 import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
 import { fetchShops, clearShops } from "./store/slices/shopsSlice.js"; // Import clearShops
-import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-import loadThemeFromStorage
-import { getSocket, disconnectSocket } from './utils/socket';
-import { showToast } from './store/slices/toastSlice';
-import { registerPushToken } from './utils/notifications';
+import {
+  loadThemeFromStorage,
+  setDarkMode,
+} from "./store/slices/themeSlice.js"; // Import setDarkMode
+import { useThemeColors } from "./styles/global.js";
+import { getSocket, disconnectSocket } from "./utils/socket";
+import { showToast } from "./store/slices/toastSlice";
+import { registerPushToken } from "./utils/notifications";
 // import * as ExpoSplashScreen from 'expo-splash-screen';
 
 // Prevent auto-hide
 // ExpoSplashScreen.preventAutoHideAsync();
-
-// Force app to light mode regardless of system setting
-Appearance.setColorScheme("light");
 
 const Stack = createNativeStackNavigator();
 
@@ -61,7 +68,10 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "ThemeSettings",
   "ImportExport",
   "Transaction",
+  "TransactionDetail",
+  "ProductDetail",
   "Notification",
+  "AddSalesFormItems",
 ];
 
 const ROUTE_TO_INDEX = {
@@ -96,6 +106,28 @@ function RootNavigator() {
   const shops = useSelector((state) => state.shops?.shops || []);
   const shopsStatus = useSelector((state) => state.shops.status);
   const authStatus = useSelector((state) => state.auth.status);
+  const { isDarkMode, bgColor, textColor } = useThemeColors();
+
+  useEffect(() => {
+    StatusBar.setBarStyle(isDarkMode ? "light-content" : "dark-content", true);
+    StatusBar.setBackgroundColor(bgColor, true);
+  }, [isDarkMode, bgColor]);
+
+  // Sync with system color scheme
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      const systemIsDark = colorScheme === "dark";
+      dispatch(setDarkMode(systemIsDark));
+    });
+
+    // Set initial theme based on system preference
+    const currentScheme = Appearance.getColorScheme();
+    if (currentScheme) {
+      dispatch(setDarkMode(currentScheme === "dark"));
+    }
+
+    return () => subscription.remove();
+  }, [dispatch]);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -110,7 +142,9 @@ function RootNavigator() {
             await dispatch(fetchMe()).unwrap();
             await dispatch(fetchShops()).unwrap();
             // Register Expo push token after we know the user is authenticated
-            try { await registerPushToken(); } catch {}
+            try {
+              await registerPushToken();
+            } catch {}
             setShopsLoaded(true);
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
@@ -217,28 +251,30 @@ function RootNavigator() {
     // Join shop rooms so we only get relevant events
     try {
       const ids = (shops || []).map((sh) => sh._id || sh.id).filter(Boolean);
-      s.emit('join-shops', ids);
+      s.emit("join-shops", ids);
     } catch {}
     const onServiceNew = (payload) => {
       try {
-        const name = payload?.service?.name || 'New Service';
-        dispatch(showToast({ message: `New service: ${name}`, type: 'info' }));
+        const name = payload?.service?.name || "New Service";
+        dispatch(showToast({ message: `New service: ${name}`, type: "info" }));
       } catch {}
     };
     const onRequestNew = (payload) => {
       try {
-        const product = payload?.request?.product_id?.name || 'Request';
-        const qty = payload?.request?.qty ?? '';
-        const msg = qty ? `New request: ${product} x ${qty}` : `New request: ${product}`;
-        dispatch(showToast({ message: msg, type: 'info' }));
+        const product = payload?.request?.product_id?.name || "Request";
+        const qty = payload?.request?.qty ?? "";
+        const msg = qty
+          ? `New request: ${product} x ${qty}`
+          : `New request: ${product}`;
+        dispatch(showToast({ message: msg, type: "info" }));
       } catch {}
     };
-    s.on('service:new', onServiceNew);
-    s.on('request:new', onRequestNew);
+    s.on("service:new", onServiceNew);
+    s.on("request:new", onRequestNew);
     return () => {
       try {
-        s.off('service:new', onServiceNew);
-        s.off('request:new', onRequestNew);
+        s.off("service:new", onServiceNew);
+        s.off("request:new", onRequestNew);
       } catch {}
     };
   }, [dispatch, isAuthenticated, shops]);
@@ -255,7 +291,8 @@ function RootNavigator() {
     "EditProfile",
     "Scanner",
   ];
-  const isOnProtectedRoute = currentRoute && protectedRoutes.includes(currentRoute);
+  const isOnProtectedRoute =
+    currentRoute && protectedRoutes.includes(currentRoute);
   const shouldShowSplash =
     loading ||
     (!isAuthenticated && !shopsLoaded) ||
@@ -266,6 +303,24 @@ function RootNavigator() {
   if (shouldShowSplash) {
     return <SplashScreen />;
   }
+
+  const screenOptions = {
+    headerShown: true,
+    headerStyle: {
+      backgroundColor: bgColor,
+      elevation: 3,
+      shadowColor: isDarkMode ? "#000" : "#000",
+      shadowOpacity: isDarkMode ? 0.3 : 0.1,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 3 },
+    },
+    headerTintColor: textColor,
+    headerTitleStyle: {
+      color: textColor,
+      fontSize: 18,
+      fontWeight: "600",
+    },
+  };
 
   return (
     <NavigationContainer
@@ -283,80 +338,138 @@ function RootNavigator() {
     >
       <View style={{ flex: 1 }}>
         <Stack.Navigator
-          screenOptions={{ headerShown: false }}
+          screenOptions={{ headerShown: false, ...screenOptions }}
           // initialRouteName is now handled by the useEffect above
         >
           {!isAuthenticated ? (
             <>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{ headerShown: false }}
+              />
             </>
           ) : (
             <>
-              <Stack.Screen name="welcome" component={WelcomeScreen} />
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen
+                name="welcome"
+                component={WelcomeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{ headerShown: false }}
+              />
               <Stack.Screen
                 name="Stats"
                 component={StatsScreen}
-                options={{ headerShown: true, headerBackVisible: false }}
+                options={{ ...screenOptions, headerBackVisible: false }}
               />
               <Stack.Screen
                 name="Products"
                 component={Productscreen}
-                options={{ headerShown: true, headerBackVisible: false }}
+                options={{ ...screenOptions, headerBackVisible: false }}
+              />
+              <Stack.Screen
+                name="ProductDetail"
+                component={ProductDetailScreen}
+                options={{ ...screenOptions, title: "Product Details" }}
+              />
+              <Stack.Screen
+                name="AddProductScreen"
+                component={AddProductScreen}
+                options={{ ...screenOptions, title: "Add Product" }}
               />
               <Stack.Screen
                 name="Notification"
                 component={NotificationScreen}
-                options={{ headerShown: true, headerBackVisible: true, title: "Notifications" }}
+                options={{
+                  ...screenOptions,
+                  headerBackVisible: true,
+                  title: "Notifications",
+                }}
               />
               <Stack.Screen
                 name="EditProfile"
                 component={EditProfile}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="ShopManagement"
                 component={ShopManagement}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="StaffManagement"
                 component={StaffManagement}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="CategoryManagement"
                 component={CategoryManagement}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="CustomerManagement"
                 component={CustomerManagement}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="ThemeSettings"
                 component={ThemeSettings}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="ImportExport"
                 component={ImportExportScreen}
-                options={{ headerShown: true }}
+                options={screenOptions}
               />
               <Stack.Screen
                 name="Services"
                 component={ServicesScreen}
-                options={{ headerShown: true, headerBackVisible: false }}
+                options={{ ...screenOptions, headerBackVisible: false }}
+              />
+              <Stack.Screen
+                name="CreateServiceScreen"
+                component={CreateServiceScreen}
+                options={{ ...screenOptions, title: "Add Service" }}
+              />
+              <Stack.Screen
+                name="ServiceDetail"
+                component={require('./screens/ServiceDetailScreen').default}
+                options={{ ...screenOptions, title: "Service Details" }}
               />
               <Stack.Screen
                 name="Transaction"
                 component={TransactionScreen}
-                options={{ headerShown: true, unmountOnBlur: true }}
+                options={{ ...screenOptions, unmountOnBlur: true }}
               />
-              <Stack.Screen name="Scanner" component={ScannerScreen} />
+              <Stack.Screen
+                name="TransactionDetail"
+                component={TransactionDetailScreen}
+                options={{ ...screenOptions, title: "Transaction Details" }}
+              />
+              <Stack.Screen
+                name="Scanner"
+                component={ScannerScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="AddSalesFormItems"
+                component={AddSalesFormItems}
+                options={{ ...screenOptions, title: "Add Sales Items" }}
+              />
             </>
           )}
         </Stack.Navigator>

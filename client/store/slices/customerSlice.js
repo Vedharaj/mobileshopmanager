@@ -2,13 +2,15 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axiosClient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Fetch authenticated user's customers
+// Fetch authenticated user's customers (optionally by shop)
 export const fetchCustomers = createAsyncThunk(
   'customers/fetch',
-  async (_, thunkAPI) => {
+  async (shopId = null, thunkAPI) => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res = await api.get('/customers', {
+      let url = '/customers';
+      if (shopId) url += `?shop_id=${shopId}`;
+      const res = await api.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

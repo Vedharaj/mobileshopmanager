@@ -40,7 +40,8 @@ router.post('/', auth, async (req, res) => {
       status,
       received_date,
       return_date,
-      note
+      note,
+      product_name
     } = req.body;
 
     if (!name || !shop_id) {
@@ -79,7 +80,8 @@ router.post('/', auth, async (req, res) => {
       status: status || 'pending',
       received_date: received_date ? new Date(received_date) : new Date(),
       return_date: return_date ? new Date(return_date) : new Date(),
-      note: note || ''
+      note: note || '',
+      product_name: product_name || ''
     });
 
     await service.save();
@@ -132,7 +134,8 @@ router.put('/:id', auth, async (req, res) => {
       status,
       received_date,
       return_date,
-      note
+      note,
+      product_name
     } = req.body;
 
     const service = await Service.findById(serviceId);
@@ -167,6 +170,7 @@ router.put('/:id', auth, async (req, res) => {
       service.return_date = new Date(return_date);
     }
     service.note = note || '';
+    if (product_name !== undefined) service.product_name = product_name || '';
     await service.save();
 
     // Return all services for user's shops

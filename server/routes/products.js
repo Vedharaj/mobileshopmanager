@@ -331,5 +331,71 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// PATCH /api/products/:id/increment - increment product quantity
+router.patch('/:id/increment', auth, async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const { amount = 1 } = req.body;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: 'Product not found' });
+    }
+    // Check if the authenticated user has access to this product's shop
+    const isOwnerOfShop = req.user.shops.some(shopId => shopId.toString() === product.shop_id.toString());
+    if (!isOwnerOfShop) {
+      return res.status(403).json({ msg: 'Unauthorized: Not authorized to update this product' });
+    }
+    product.qty = (parseInt(product.qty) || 0) + Math.abs(parseInt(amount) || 1);
+    await product.save();
+    // Return all products for user's shops
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+    const products = await Product.find({
+      shop_id: { $in: shopIds }
+    })
+      .populate('shop_id', 'name')
+      .populate('user_id', 'username')
+      .populate('category_id', 'name')
+      .populate('customer_id', 'name');
+    res.status(200).json({ msg: 'Product quantity incremented', products });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// PATCH /api/products/:id/decrement - decrement product quantity
+router.patch('/:id/decrement', auth, async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const { amount = 1 } = req.body;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: 'Product not found' });
+    }
+    // Check if the authenticated user has access to this product's shop
+    const isOwnerOfShop = req.user.shops.some(shopId => shopId.toString() === product.shop_id.toString());
+    if (!isOwnerOfShop) {
+      return res.status(403).json({ msg: 'Unauthorized: Not authorized to update this product' });
+    }
+    product.qty = Math.max(0, (parseInt(product.qty) || 0) - Math.abs(parseInt(amount) || 1));
+    await product.save();
+    // Return all products for user's shops
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+    const products = await Product.find({
+      shop_id: { $in: shopIds }
+    })
+      .populate('shop_id', 'name')
+      .populate('user_id', 'username')
+      .populate('category_id', 'name')
+      .populate('customer_id', 'name');
+    res.status(200).json({ msg: 'Product quantity decremented', products });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 module.exports = router;
 

@@ -2,16 +2,22 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
 } from "react-native";
-import { Picker } from '@react-native-picker/picker'; // Corrected Picker import
-import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
+import { Picker } from "@react-native-picker/picker"; // Corrected Picker import
+import { global, useThemeColors, useThemedStyles } from "../styles/global"; // Import useThemeColors and themed styles
 import { useDispatch, useSelector } from "react-redux";
-import { fetchStaff, createStaff, deleteStaff, updateStaff } from "../store/slices/staffSlice";
+import {
+  fetchStaff,
+  createStaff,
+  deleteStaff,
+  updateStaff,
+} from "../store/slices/staffSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
 
@@ -20,7 +26,16 @@ const StaffManagement = () => {
 
   const { staff, status, error } = useSelector((state) => state.staff);
   const { shops } = useSelector((state) => state.shops); // Get shops from Redux
-  const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
+  const {
+    primaryColor,
+    bgColor,
+    textColor,
+    textSecondary,
+    cardBg,
+    inputBg,
+    inputBorder,
+  } = useThemeColors(); // Use the hook to get theme colors
+  const themedStyles = useThemedStyles();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -77,7 +92,9 @@ const StaffManagement = () => {
     const [staffUsername, setStaffUsername] = useState(staff.username);
     const [staffPassword, setStaffPassword] = useState(staff.password);
     const [staffEmail, setStaffEmail] = useState(staff.email || ""); // New state for email
-    const [staffContactNo, setStaffContactNo] = useState(staff.contact_no || ""); // New state for contact number
+    const [staffContactNo, setStaffContactNo] = useState(
+      staff.contact_no || ""
+    ); // New state for contact number
 
     const handleUpdateStaff = async () => {
       if (
@@ -86,48 +103,49 @@ const StaffManagement = () => {
         staffEmail === (staff.email || "") && // Compare email
         staffContactNo === (staff.contact_no || "") // Compare contact_no
       ) {
-        dispatch(showToast({
-          message: "No changes made to staff details",
-          type: "info",
-        }));
+        dispatch(
+          showToast({
+            message: "No changes made to staff details",
+            type: "info",
+          })
+        );
         setShowDetails(false);
         return;
       }
       try {
-        await dispatch(updateStaff({
-          staffId: staff._id,
-          staffData: {
-            username: staffUsername,
-            password: staffPassword,
-            email: staffEmail, // Pass email
-            contact_no: staffContactNo, // Pass contact_no
-          },
-        })).unwrap();
-        dispatch(showToast({
-          message: `Staff "${staffUsername}" updated successfully!`, // Dynamic message
-          type: "success",
-        }));
+        await dispatch(
+          updateStaff({
+            staffId: staff._id,
+            staffData: {
+              username: staffUsername,
+              password: staffPassword,
+              email: staffEmail, // Pass email
+              contact_no: staffContactNo, // Pass contact_no
+            },
+          })
+        ).unwrap();
+        dispatch(
+          showToast({
+            message: `Staff "${staffUsername}" updated successfully!`, // Dynamic message
+            type: "success",
+          })
+        );
         setShowDetails(false);
       } catch (error) {
-        const errorMessage = error.message || error.msg || "Failed to update staff";
-        dispatch(showToast({
-          message: errorMessage,
-          type: "error",
-        }));
+        const errorMessage =
+          error.message || error.msg || "Failed to update staff";
+        dispatch(
+          showToast({
+            message: errorMessage,
+            type: "error",
+          })
+        );
         console.error("Staff update error:", error);
       }
     };
 
     return (
-      <View
-        key={staff._id}
-        style={{
-          ...global.profileRow,
-          paddingVertical: 10,
-          paddingHorizontal: 8,
-          flexDirection: "column",
-        }}
-      >
+      <View key={staff._id} style={themedStyles.listStyle1}>
         <View
           style={{
             flexDirection: "row",
@@ -149,16 +167,16 @@ const StaffManagement = () => {
                 style={{ marginTop: 5 }}
                 name={showDetails ? "caret-up" : "caret-down"}
                 size={20}
-                color="black"
+                color={textColor}
               />
-              <Text style={{ color: primaryColor, fontSize: 16 }}>
+              <Text style={{ color: textColor, fontSize: 16 }}>
                 {staff.username}
               </Text>
             </TouchableOpacity>
           </View>
           <View style={{ marginLeft: "auto" }}>
             <TouchableOpacity onPress={() => handleDeleteStaff(staff._id)}>
-              <MaterialIcons name="delete" size={24} color="#ba181b" />
+              <Text style={{ color: "#ba181b", fontSize: 16 }}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -166,37 +184,73 @@ const StaffManagement = () => {
         {showDetails && (
           <View style={{ marginTop: 10, width: "100%" }}>
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Username *"
+              placeholderTextColor={textSecondary}
               value={staffUsername}
               onChangeText={setStaffUsername}
             />
 
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Password *"
+              placeholderTextColor={textSecondary}
               value={staffPassword}
               onChangeText={setStaffPassword}
               secureTextEntry
             />
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Email"
+              placeholderTextColor={textSecondary}
               value={staffEmail}
               onChangeText={setStaffEmail}
               keyboardType="email-address"
             />
 
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Contact Number"
+              placeholderTextColor={textSecondary}
               value={staffContactNo}
               onChangeText={setStaffContactNo}
               keyboardType="phone-pad"
             />
             <View>
               <TouchableOpacity
-                style={{ marginTop: 10, ...global.button1 }}
+                style={{
+                  marginTop: 10,
+                  ...global.button1,
+                  backgroundColor: primaryColor,
+                }}
                 onPress={handleUpdateStaff}
               >
                 <Text style={global.btnText}>Save {staffUsername}</Text>
@@ -210,7 +264,8 @@ const StaffManagement = () => {
 
   const handleAddStaff = async () => {
     console.log(username, password);
-    if (!username || !password || !selectedShopId) { // Added selectedShopId validation
+    if (!username || !password || !selectedShopId) {
+      // Added selectedShopId validation
       dispatch(
         showToast({
           message: "Please enter username, password and select a shop", // Updated message
@@ -221,7 +276,15 @@ const StaffManagement = () => {
     }
 
     try {
-      await dispatch(createStaff({ username, password, email, contactNo, shopId: selectedShopId })).unwrap(); // Pass email and contact_no
+      await dispatch(
+        createStaff({
+          username,
+          password,
+          email,
+          contactNo,
+          shopId: selectedShopId,
+        })
+      ).unwrap(); // Pass email and contact_no
 
       dispatch(
         showToast({
@@ -247,13 +310,26 @@ const StaffManagement = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsUsernameFocused(false); }}>
-      <View style={global.mainContainer}>
+    <TouchableWithoutFeedback
+      onPress={() => {
+        Keyboard.dismiss();
+        setIsUsernameFocused(false);
+      }}
+    >
+      <View style={[global.mainContainer, { backgroundColor: bgColor }]}>
         <View style={{ marginTop: 10 }}>
-          <Text style={{ marginBottom: 10 }}>Add Staff</Text>
+          <Text style={{ marginBottom: 10, color: textColor }}>Add Staff</Text>
           <TextInput
-            style={global.input}
+            style={[
+              global.input,
+              {
+                backgroundColor: inputBg,
+                borderColor: inputBorder,
+                color: textColor,
+              },
+            ]}
             placeholder="Username *"
+            placeholderTextColor={textSecondary}
             value={username}
             onChangeText={setUsername}
             onFocus={() => setIsUsernameFocused(true)}
@@ -262,42 +338,85 @@ const StaffManagement = () => {
           {isUsernameFocused && (
             <>
               <TextInput
-                style={global.input}
+                style={[
+                  global.input,
+                  {
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                    color: textColor,
+                  },
+                ]}
                 placeholder="Password *"
+                placeholderTextColor={textSecondary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
               />
               <TextInput
-                style={global.input}
+                style={[
+                  global.input,
+                  {
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                    color: textColor,
+                  },
+                ]}
                 placeholder="Email"
+                placeholderTextColor={textSecondary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
               />
 
               <TextInput
-                style={global.input}
+                style={[
+                  global.input,
+                  {
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                    color: textColor,
+                  },
+                ]}
                 placeholder="Contact Number"
+                placeholderTextColor={textSecondary}
                 value={contactNo}
                 onChangeText={setContactNo}
                 keyboardType="phone-pad"
               />
               {shops.length > 0 && (
-                <View style={{ ...global.input, padding: 0 }}>
+                <View
+                  style={{
+                    ...global.input,
+                    padding: 0,
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                  }}
+                >
                   <Picker
                     selectedValue={selectedShopId}
                     onValueChange={(itemValue) => setSelectedShopId(itemValue)}
+                    style={{ color: textColor }}
+                    itemStyle={{ color: textColor }}
+                    dropdownIconColor={textColor}
                   >
                     {shops.map((shop) => (
-                      <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
+                      <Picker.Item
+                        key={shop._id}
+                        label={shop.name}
+                        value={shop._id}
+                      />
                     ))}
                   </Picker>
                 </View>
               )}
               <View style={{ alignItems: "flex-end" }}>
                 <TouchableOpacity
-                  style={{ marginTop: 10, ...global.button1, width: "30%" }}
+                  style={{
+                    marginTop: 10,
+                    ...global.button1,
+                    width: "30%",
+                    backgroundColor: primaryColor,
+                  }}
                   onPress={handleAddStaff}
                 >
                   <Text style={global.btnText}>Add</Text>
@@ -306,7 +425,7 @@ const StaffManagement = () => {
             </>
           )}
         </View>
-        <Text style={{ marginBottom: 5, marginTop: 20 }}>Staff List</Text>
+        <Text style={{ marginBottom: 5, color: textColor }}>Staff List</Text>
         {staff.map((staffItem) => (
           <StaffContainer key={staffItem._id} staff={staffItem} />
         ))}

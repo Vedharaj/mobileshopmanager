@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { global } from "../styles/global";
+import { useNavigation } from "@react-navigation/native";
+import { global, useThemeColors, useThemedStyles } from "../styles/global";
 import { deleteSale, fetchSales } from "../store/slices/salesSlice";
 import { fetchProducts, updateProduct } from "../store/slices/productSlice";
-import TransactionDetailModal from "./TransactionDetailModal";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SWIPE_THRESHOLD = 50;
@@ -20,8 +20,10 @@ const SWIPE_THRESHOLD = 50;
 const TransactionRow = ({ item }) => {
   const dispatch = useDispatch();
   const { products = [] } = useSelector((state) => state.products || {});
+  const { textSecondary, isDarkMode, cardBg } = useThemeColors();
+  const themedStyles = useThemedStyles();
+  const navigation = useNavigation();
   const translateX = useRef(new Animated.Value(0)).current;
-  const [modalVisible, setModalVisible] = useState(false);
 
   const pan = useRef(
     PanResponder.create({
@@ -127,7 +129,9 @@ const TransactionRow = ({ item }) => {
 
   const isPending = item.sale?.status === "pending" || item.sale?.balance > 0;
   
-  const bgColor = isPending 
+  const bgColor = isDarkMode 
+    ? cardBg 
+    : isPending 
     ? "#fff9e6" 
     : item.type === "income" 
     ? "#e9f7ef" 
@@ -170,7 +174,7 @@ const TransactionRow = ({ item }) => {
           left: 0,
           top: 0,
           bottom: 0,
-          borderRadius: 8,
+          borderRadius: 10,
           backgroundColor: "#ffecec",
           justifyContent: "center",
           alignItems: "flex-end",
@@ -185,7 +189,7 @@ const TransactionRow = ({ item }) => {
         style={{ transform: [{ translateX }], width: "100%" }}
       >
         <TouchableOpacity
-          onPress={() => setModalVisible(true)}
+          onPress={() => navigation.navigate("TransactionDetail", { item })}
           activeOpacity={0.7}
         >
           <View
@@ -194,10 +198,12 @@ const TransactionRow = ({ item }) => {
               alignItems: "flex-start",
               backgroundColor: bgColor,
               borderRadius: 8,
+              borderWidth: 1,
+              borderColor: isDarkMode ? "#333" : "transparent",
               padding: 10,
             }}
           >
-          <Text style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>
+          <Text style={{ fontSize: 11, color: textSecondary, marginBottom: 4 }}>
             {item.timeLabel}
           </Text>
           <View
@@ -209,7 +215,7 @@ const TransactionRow = ({ item }) => {
               width: "100%",
             }}
           >
-            <Text style={[global.txnTitle, { marginBottom: 4 }]}>
+            <Text style={[themedStyles.txnTitle, { marginBottom: 4 }]}>
               {item.title}{item.title !== "Sale" && ` - ${item.name}`}
             </Text>
             <Text style={{ color: accent, fontWeight: "700", fontSize: 14 }}>
@@ -226,7 +232,7 @@ const TransactionRow = ({ item }) => {
               width: "100%",
             }}
           >
-            <Text style={[global.txnSubtitle, { color: "#666" }]}>
+            <Text style={[themedStyles.txnSubtitle, { color: textSecondary }]}>
               {subtitleLabel}
             </Text>
             <View
@@ -238,14 +244,14 @@ const TransactionRow = ({ item }) => {
             >
               {cashAmount > 0 && (
                 <View style={{ alignItems: "center", marginRight: 8 }}>
-                  <Text style={{ fontSize: 11, color: "#666" }}>
+                  <Text style={{ fontSize: 11, color: textSecondary }}>
                     Cash: ₹{cashAmount.toFixed(2)}
                   </Text>
                 </View>
               )}
               {onlineAmount > 0 && (
                 <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 11, color: "#666" }}>
+                  <Text style={{ fontSize: 11, color: textSecondary }}>
                     Online: ₹{onlineAmount.toFixed(2)}
                   </Text>
                 </View>
@@ -255,13 +261,6 @@ const TransactionRow = ({ item }) => {
         </View>
         </TouchableOpacity>
       </Animated.View>
-
-      {/* Details Modal */}
-      <TransactionDetailModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        item={item}
-      />
     </View>
   );
 };

@@ -2,26 +2,43 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
 } from "react-native";
-import { Picker } from '@react-native-picker/picker';
-import { global, useThemeColors } from "../styles/global";
+import { Picker } from "@react-native-picker/picker";
+import { global, useThemeColors, useThemedStyles } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCategories, createCategory, deleteCategory, updateCategory } from "../store/slices/categorySlice";
+import {
+  fetchCategories,
+  createCategory,
+  deleteCategory,
+  updateCategory,
+} from "../store/slices/categorySlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
 
 const CategoryManagement = () => {
   const dispatch = useDispatch();
 
-  const { categories, status, error } = useSelector((state) => state.categories);
+  const { categories, status, error } = useSelector(
+    (state) => state.categories
+  );
   const { shops } = useSelector((state) => state.shops);
   const { role } = useSelector((state) => state.auth);
-  const { primaryColor } = useThemeColors();
+  const {
+    primaryColor,
+    bgColor,
+    textColor,
+    textSecondary,
+    cardBg,
+    inputBg,
+    inputBorder,
+  } = useThemeColors();
+  const themedStyles = useThemedStyles();
   const isStaff = role === "staff";
 
   const [name, setName] = useState("");
@@ -75,31 +92,40 @@ const CategoryManagement = () => {
 
     const handleUpdateCategory = async () => {
       if (categoryName === (category.name || "")) {
-        dispatch(showToast({
-          message: "No changes made to category details",
-          type: "info",
-        }));
+        dispatch(
+          showToast({
+            message: "No changes made to category details",
+            type: "info",
+          })
+        );
         setShowDetails(false);
         return;
       }
       try {
-        await dispatch(updateCategory({
-          categoryId: category._id,
-          categoryData: {
-            name: categoryName,
-          },
-        })).unwrap();
-        dispatch(showToast({
-          message: `Category "${categoryName}" updated successfully!`,
-          type: "success",
-        }));
+        await dispatch(
+          updateCategory({
+            categoryId: category._id,
+            categoryData: {
+              name: categoryName,
+            },
+          })
+        ).unwrap();
+        dispatch(
+          showToast({
+            message: `Category "${categoryName}" updated successfully!`,
+            type: "success",
+          })
+        );
         setShowDetails(false);
       } catch (error) {
-        const errorMessage = error.message || error.msg || "Failed to update category";
-        dispatch(showToast({
-          message: errorMessage,
-          type: "error",
-        }));
+        const errorMessage =
+          error.message || error.msg || "Failed to update category";
+        dispatch(
+          showToast({
+            message: errorMessage,
+            type: "error",
+          })
+        );
         console.error("Category update error:", error);
       }
     };
@@ -107,12 +133,7 @@ const CategoryManagement = () => {
     return (
       <View
         key={category._id}
-        style={{
-          ...global.profileRow,
-          paddingVertical: 10,
-          paddingHorizontal: 8,
-          flexDirection: "column",
-        }}
+        style={themedStyles.listStyle1}
       >
         <View
           style={{
@@ -135,17 +156,19 @@ const CategoryManagement = () => {
                 style={{ marginTop: 5 }}
                 name={showDetails ? "caret-up" : "caret-down"}
                 size={20}
-                color="black"
+                color={textColor}
               />
-              <Text style={{ color: primaryColor, fontSize: 16 }}>
+              <Text style={{ color: textColor, fontSize: 16 }}>
                 {category.name}
               </Text>
             </TouchableOpacity>
           </View>
           {!isStaff && (
             <View style={{ marginLeft: "auto" }}>
-              <TouchableOpacity onPress={() => handleDeleteCategory(category._id)}>
-                <MaterialIcons name="delete" size={24} color="#ba181b" />
+              <TouchableOpacity
+                onPress={() => handleDeleteCategory(category._id)}
+              >
+                <Text style={{ color: "#ba181b", fontSize: 16 }}>Delete</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -154,8 +177,16 @@ const CategoryManagement = () => {
         {showDetails && (
           <View style={{ marginTop: 10, width: "100%" }}>
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Category Name *"
+              placeholderTextColor={textSecondary}
               value={categoryName}
               onChangeText={setCategoryName}
               editable={true}
@@ -164,7 +195,11 @@ const CategoryManagement = () => {
             {true && (
               <View>
                 <TouchableOpacity
-                  style={{ marginTop: 10, ...global.button1 }}
+                  style={{
+                    marginTop: 10,
+                    ...global.button1,
+                    backgroundColor: primaryColor,
+                  }}
                   onPress={handleUpdateCategory}
                 >
                   <Text style={global.btnText1}>Save {categoryName}</Text>
@@ -189,10 +224,12 @@ const CategoryManagement = () => {
     }
 
     try {
-      await dispatch(createCategory({
-        name,
-        shop_id: selectedShopId,
-      })).unwrap();
+      await dispatch(
+        createCategory({
+          name,
+          shop_id: selectedShopId,
+        })
+      ).unwrap();
 
       dispatch(
         showToast({
@@ -215,64 +252,117 @@ const CategoryManagement = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
-      <View style={global.mainContainer}>
+    <TouchableWithoutFeedback
+      onPress={() => {
+        Keyboard.dismiss();
+        setIsNameFocused(false);
+      }}
+    >
+      <ScrollView
+        style={[global.mainContainer, { backgroundColor: bgColor }]}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {!isStaff && (
           <View style={{ marginTop: 10 }}>
-            <Text style={{ marginBottom: 10 }}>Add Category</Text>
+            <Text style={{ marginBottom: 10, color: textColor }}>
+              Add Category
+            </Text>
             <TextInput
-              style={global.input}
+              style={[
+                global.input,
+                {
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: textColor,
+                },
+              ]}
               placeholder="Category Name *"
+              placeholderTextColor={textSecondary}
               value={name}
               onChangeText={setName}
               onFocus={() => setIsNameFocused(true)}
             />
 
-          {isNameFocused && (
-            <>
-              {shops.length > 0 && (
-                <View style={{ ...global.input, padding: 0 }}>
-                  <Picker
-                    selectedValue={selectedShopId}
-                    onValueChange={(itemValue) => setSelectedShopId(itemValue)}
+            {isNameFocused && (
+              <>
+                {shops.length > 0 && (
+                  <View
+                    style={{
+                      ...global.input,
+                      padding: 0,
+                      backgroundColor: inputBg,
+                      borderColor: inputBorder,
+                    }}
                   >
-                    {shops.map((shop) => (
-                      <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
-                    ))}
-                  </Picker>
-                </View>
-              )}
+                    <Picker
+                      selectedValue={selectedShopId}
+                      onValueChange={(itemValue) =>
+                        setSelectedShopId(itemValue)
+                      }
+                      style={{ color: textColor }}
+                      itemStyle={{ color: textColor }}
+                      dropdownIconColor={textColor}
+                    >
+                      {shops.map((shop) => (
+                        <Picker.Item
+                          key={shop._id}
+                          label={shop.name}
+                          value={shop._id}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                )}
 
-              <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
-                <TouchableOpacity
-                  style={{ ...global.button1, width: "30%", backgroundColor: "#666" }}
-                  onPress={() => {
-                    setIsNameFocused(false);
-                    setName("");
-                    Keyboard.dismiss();
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    gap: 10,
+                    marginTop: 10,
                   }}
                 >
-                  <Text style={global.btnText}>Close</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{ ...global.button1, width: "30%" }}
-                  onPress={handleAddCategory}
-                >
-                  <Text style={global.btnText}>Add</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+                  <TouchableOpacity
+                    style={{
+                      ...global.button1,
+                      width: "30%",
+                      backgroundColor: "#666",
+                    }}
+                    onPress={() => {
+                      setIsNameFocused(false);
+                      setName("");
+                      Keyboard.dismiss();
+                    }}
+                  >
+                    <Text style={global.btnText}>Close</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      ...global.button1,
+                      width: "30%",
+                      backgroundColor: primaryColor,
+                    }}
+                    onPress={handleAddCategory}
+                  >
+                    <Text style={global.btnText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         )}
-        <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Category List</Text>
+        <Text style={{ marginBottom: 5, color: textColor }}>Category List</Text>
         {categories.map((category) => (
-          <CategoryContainer key={category._id} category={category} isStaff={isStaff} />
+          <CategoryContainer
+            key={category._id}
+            category={category}
+            isStaff={isStaff}
+          />
         ))}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };
 
 export default CategoryManagement;
-

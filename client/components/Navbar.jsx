@@ -1,13 +1,14 @@
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { global } from '../styles/global';
+import { global, useThemedStyles } from '../styles/global';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
 
 const Navbar = () => {
   const dispatch = useDispatch();
+  const themedStyles = useThemedStyles();
 
   // Format current date
   const today = new Date();
@@ -15,13 +16,13 @@ const Navbar = () => {
   const formattedDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
 
   return (
-    <View style={global.navbarContainer}>
+    <View style={themedStyles.navbarContainer}>
       {/* Left: Name */}
-      <Text style={global.navbarName}>{name}</Text>
+      <Text style={themedStyles.navbarName}>{name}</Text>
 
       <View style={global.navbarRight}>
         {/* Current Date */}
-        <Text style={global.navbarDate}>{formattedDate}</Text>
+        <Text style={themedStyles.navbarDate}>{formattedDate}</Text>
 
         {/* Logout Icon */}
         <TouchableOpacity

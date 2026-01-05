@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { global, useThemeColors } from "../styles/global";
+import { global, useThemeColors, useThemedStyles } from "../styles/global";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,12 +23,12 @@ import {
   setLastScanId,
 } from "../store/slices/salesItemsSlice";
 import { showToast } from "../store/slices/toastSlice";
-import ServiceSearch from "../components/ServiceSearch";
-import ServicePaymentForm from "../components/ServicePaymentForm";
-import ReturnItemSearch from "../components/ReturnItemSearch";
-import ReturnItemForm from "../components/ReturnItemForm";
-import MoneyExpenseForm from "../components/MoneyExpenseForm";
-import SalesForm from "../components/SalesForm";
+import ServiceSearch from "../components/modals/ServiceSearch";
+import ServicePaymentForm from "../components/forms/ServicePaymentForm";
+import ReturnItemSearch from "../components/modals/ReturnItemSearch";
+import ReturnItemForm from "../components/forms/ReturnItemForm";
+import MoneyExpenseForm from "../components/forms/MoneyExpenseForm";
+import SalesForm from "../components/forms/SalesForm";
 
 const TRANSACTION_TYPES = [
   { id: "service", label: "Service" },
@@ -41,7 +41,8 @@ const TRANSACTION_TYPES = [
 export default function TransactionScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { primaryColor } = useThemeColors();
+  const { primaryColor, textColor, cardBg } = useThemeColors();
+  const themedStyles = useThemedStyles();
   const dispatch = useDispatch();
 
   const { services, status: servicesStatus } = useSelector(
@@ -835,9 +836,9 @@ export default function TransactionScreen() {
   const selectedLabel = selectedType?.label || "Select Transaction Type";
 
   return (
-    <SafeAreaView style={global.safeArea}>
+    <SafeAreaView style={themedStyles.safeArea}>
       <ScrollView
-        style={global.container}
+        style={themedStyles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -846,19 +847,21 @@ export default function TransactionScreen() {
         {/* Dropdown Section */}
         <View style={{ marginBottom: 20 }}>
           <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: 10,
-            }}
+            style={[
+              themedStyles.text,
+              {
+                fontSize: 14,
+                fontWeight: "600",
+                marginBottom: 10,
+              },
+            ]}
           >
             Transaction Type *
           </Text>
 
           <TouchableOpacity
             style={{
-              backgroundColor: "#f5f5f5",
+              backgroundColor: cardBg,
               borderWidth: 1,
               borderColor: primaryColor,
               borderRadius: 8,
@@ -878,7 +881,7 @@ export default function TransactionScreen() {
             <Text
               style={{
                 fontSize: 16,
-                color: selectedType ? "#333" : "#999",
+                color: selectedType ? textColor : "#999",
                 fontWeight: "500",
               }}
             >
@@ -894,7 +897,7 @@ export default function TransactionScreen() {
           {showDropdown && (
             <View
               style={{
-                backgroundColor: "#f5f5f5",
+                backgroundColor: cardBg,
                 borderWidth: 1,
                 borderColor: primaryColor,
                 borderTopWidth: 0,
@@ -920,7 +923,7 @@ export default function TransactionScreen() {
                         index !== TRANSACTION_TYPES.length - 1 ? 1 : 0,
                       borderBottomColor: "#f0f0f0",
                       backgroundColor:
-                        selectedType?.id === item.id ? "#f5f5f5" : "#fff",
+                        selectedType?.id === item.id ? cardBg : "transparent",
                     }}
                     onPress={() => handleTransactionTypeSelect(item)}
                   >
@@ -941,7 +944,7 @@ export default function TransactionScreen() {
                           color:
                             selectedType?.id === item.id
                               ? primaryColor
-                              : "#333",
+                              : textColor,
                           fontWeight:
                             selectedType?.id === item.id ? "600" : "500",
                         }}

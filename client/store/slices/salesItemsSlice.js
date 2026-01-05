@@ -218,7 +218,15 @@ const salesItemsSlice = createSlice({
       });
     },
     addCartRow(state) {
-      state.cartItems.push(createEmptyCartItem());
+      const lastItem = state.cartItems[state.cartItems.length - 1];
+      // Consider an item empty if it has no product_id
+      if (!lastItem || lastItem.product_id) {
+        state.cartItems.push(createEmptyCartItem());
+        state.addCartRowError = null;
+      } else {
+        // Set an error flag in state (UI should read and show this)
+        state.addCartRowError = 'Please select a product for the current item first.';
+      }
     },
     removeCartItem(state, action) {
       const id = action.payload;
