@@ -14,7 +14,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { global, useThemeColors, useThemedStyles } from "../styles/global";
+import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { fetchSales } from "../store/slices/salesSlice";
@@ -40,8 +40,7 @@ export default function HomeScreen({ navigation }) {
   const { products = [] } = useSelector((state) => state.products || {});
 
   const dispatch = useDispatch();
-  const { primaryColor, cardBg, textColor } = useThemeColors();
-  const themedStyles = useThemedStyles();
+  const { primaryColor } = useThemeColors();
   const insets = useSafeAreaInsets();
   const SWIPE_THRESHOLD = 50;
 
@@ -393,16 +392,16 @@ export default function HomeScreen({ navigation }) {
   const isLoading = salesStatus === "loading";
   const totalItems = sections.length;
   return (
-    <SafeAreaView style={themedStyles.safeArea}>
+    <SafeAreaView style={global.safeArea}>
       <StatusBar
         className="statusBarStyleHomeScreen"
         barStyle="dark-content"
-        backgroundColor="transparent"
+        backgroundColor="#fff"
       />
       {/* Navbar */}
       <View
         style={{
-          ...themedStyles.navbarContainer,
+          ...global.navbarContainer,
           paddingTop: 2,
           elevation: 0,
           flexDirection: "row",
@@ -412,7 +411,7 @@ export default function HomeScreen({ navigation }) {
       >
 
         <View style={{ flex: 1 }}>
-          <Text numberOfLines={2} style={themedStyles.navbarName}>
+          <Text numberOfLines={2} style={global.navbarName}>
             {username}{" "}
             <Text style={{ ...global.navbarRole, color: primaryColor }}>
               {role || "User"}
@@ -421,14 +420,14 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={global.navbarRight}>
-          <Text style={themedStyles.navbarDate}>{formattedDate}</Text>
+          <Text style={global.navbarDate}>{formattedDate}</Text>
         </View>
         {/* Notifications icon with low-stock badge */}
         <TouchableOpacity
           style={{
             padding: 6,
             borderRadius: 10,
-            backgroundColor: cardBg,
+            backgroundColor: "#f5f5f5",
             position: "relative",
           }}
           onPress={() => navigation.navigate("Notification")}
@@ -457,7 +456,7 @@ export default function HomeScreen({ navigation }) {
           )}
         </TouchableOpacity>
       </View>
-      <View style={themedStyles.container}>
+      <View style={global.container}>
         {/* Toggle Summary Button */}
         <TouchableOpacity
           onPress={() => setShowSummary(!showSummary)}
@@ -467,7 +466,7 @@ export default function HomeScreen({ navigation }) {
             justifyContent: "center",
             paddingVertical: 8,
             marginBottom: 10,
-            backgroundColor: cardBg,
+            backgroundColor: "#f0f0f0",
             borderRadius: 8,
           }}
         >
@@ -475,7 +474,7 @@ export default function HomeScreen({ navigation }) {
             style={{
               fontSize: 14,
               fontWeight: "600",
-              color: textColor,
+              color: "#666",
               marginRight: 6,
             }}
           >
@@ -484,7 +483,7 @@ export default function HomeScreen({ navigation }) {
           <Entypo
             name={showSummary ? "chevron-up" : "chevron-down"}
             size={18}
-            color={textColor}
+            color="#666"
           />
         </TouchableOpacity>
 
@@ -493,32 +492,32 @@ export default function HomeScreen({ navigation }) {
             {/* Income / Expense summary - Row 1 */}
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
               <View
-                style={[themedStyles.summaryBox, global.summaryIncome, { flex: 1 }]}
+                style={[global.summaryBox, global.summaryIncome, { flex: 1 }]}
               >
-                <Text style={themedStyles.summaryLabel}>Income</Text>
-                <Text style={themedStyles.summaryValue}>₹{totalIncome}</Text>
+                <Text style={global.summaryLabel}>Income</Text>
+                <Text style={global.summaryValue}>₹{totalIncome}</Text>
               </View>
               <View
-                style={[themedStyles.summaryBox, global.summaryExpense, { flex: 1 }]}
+                style={[global.summaryBox, global.summaryExpense, { flex: 1 }]}
               >
-                <Text style={themedStyles.summaryLabel}>Expense</Text>
-                <Text style={themedStyles.summaryValue}>₹{totalExpense}</Text>
+                <Text style={global.summaryLabel}>Expense</Text>
+                <Text style={global.summaryValue}>₹{totalExpense}</Text>
               </View>
             </View>
 
             {/* Cash on Hand / E-Cash summary - Row 2 */}
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
               <View
-                style={[themedStyles.summaryBox, global.summaryCash, { flex: 1 }]}
+                style={[global.summaryBox, global.summaryCash, { flex: 1 }]}
               >
-                <Text style={themedStyles.summaryLabel}>Cash on Hand</Text>
-                <Text style={themedStyles.summaryValue}>
+                <Text style={global.summaryLabel}>Cash on Hand</Text>
+                <Text style={global.summaryValue}>
                   ₹{cashOnHand.toFixed(2)}
                 </Text>
               </View>
-              <View style={[themedStyles.summaryBox, { flex: 1 }]}>
-                <Text style={themedStyles.summaryLabel}>E-Cash</Text>
-                <Text style={themedStyles.summaryValue}>₹{eCash.toFixed(2)}</Text>
+              <View style={[global.summaryBox, { flex: 1 }]}>
+                <Text style={global.summaryLabel}>E-Cash</Text>
+                <Text style={global.summaryValue}>₹{eCash.toFixed(2)}</Text>
               </View>
             </View>
           </>
@@ -547,15 +546,15 @@ export default function HomeScreen({ navigation }) {
                 <TouchableOpacity
                   key={day.format("YYYY-MM-DD")}
                   style={[
-                    themedStyles.dateItem,
-                    isSelected && themedStyles.selectedDateItem,
+                    global.dateItem,
+                    isSelected && global.selectedDateItem,
                     isFuture && global.disabledDateItem,
                   ]}
                   disabled={isFuture}
                   onPress={() => setSelectedDate(day)}
                 >
-                  <Text style={themedStyles.dayLabel}>{day.format("ddd")}</Text>
-                  <Text style={themedStyles.dateLabel}>{day.format("DD")}</Text>
+                  <Text style={global.dayLabel}>{day.format("ddd")}</Text>
+                  <Text style={global.dateLabel}>{day.format("DD")}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -607,14 +606,14 @@ export default function HomeScreen({ navigation }) {
                       global.chipBaseStyle,
                       {
                         borderColor: isActive ? primaryColor : "#ccc",
-                        backgroundColor: isActive ? primaryColor : cardBg,
+                        backgroundColor: isActive ? primaryColor : "#fff",
                       },
                     ]}
                   >
                     <Text
                       style={{
                         fontSize: 12,
-                        color: isActive ? "#fff" : textColor,
+                        color: isActive ? "#fff" : "#333",
                       }}
                     >
                       {shop.name}
@@ -632,13 +631,13 @@ export default function HomeScreen({ navigation }) {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: 10,
+            marginTop: 0,
             paddingTop: 6,
             paddingBottom: 0,
           }}
         >
           <Text
-            style={[themedStyles.text, { marginTop: 0, marginBottom: 0, fontSize: 16, fontWeight: "600" }]}
+            style={[global.sectionTitle, { marginTop: 0, marginBottom: 0 }]}
           >
             Transaction History
           </Text>

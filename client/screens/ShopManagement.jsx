@@ -2,21 +2,15 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  TouchableOpacity,
+TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
 } from "react-native";
-import { global, useThemeColors, useThemedStyles } from "../styles/global"; // Import useThemeColors and themed styles
+import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createShop,
-  fetchShops,
-  deleteShop,
-  updateShop,
-} from "../store/slices/shopsSlice";
+import { createShop, fetchShops, deleteShop, updateShop } from "../store/slices/shopsSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
 
@@ -24,16 +18,7 @@ const ShopManagement = () => {
   const dispatch = useDispatch();
 
   const { shops } = useSelector((state) => state.shops);
-  const {
-    primaryColor,
-    bgColor,
-    textColor,
-    textSecondary,
-    cardBg,
-    inputBg,
-    inputBorder,
-  } = useThemeColors(); // Use the hook to get theme colors
-  const themedStyles = useThemedStyles();
+  const { primaryColor } = useThemeColors(); // Use the hook to get primaryColor
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -74,65 +59,65 @@ const ShopManagement = () => {
   const ShopContainer = ({ shop }) => {
     const [showDetails, setShowDetails] = useState(false); // New state for toggling details
     const [shopName, setShopName] = useState(shop.name);
-    const [shopEmail, setShopEmail] = useState(shop.email || ""); // Changed to shop.email
-    const [shopAddress, setShopAddress] = useState(shop.address || "");
-    const [shopContactNo, setShopContactNo] = useState(shop.contact_no || ""); // Changed to shop.contact_no
-    const [shopGstin, setShopGstin] = useState(shop.gstin || "");
+    const [shopEmail, setShopEmail] = useState(shop.email || ''); // Changed to shop.email
+    const [shopAddress, setShopAddress] = useState(shop.address || '');
+    const [shopContactNo, setShopContactNo] = useState(shop.contact_no || ''); // Changed to shop.contact_no
+    const [shopGstin, setShopGstin] = useState(shop.gstin || '');
 
     const handleUpdateShop = async () => {
       // Check if any changes were made
       if (
         shopName === shop.name &&
-        shopEmail === (shop.email || "") &&
-        shopAddress === (shop.address || "") &&
-        shopContactNo === (shop.contact_no || "") &&
-        shopGstin === (shop.gstin || "")
+        shopEmail === (shop.email || '') &&
+        shopAddress === (shop.address || '') &&
+        shopContactNo === (shop.contact_no || '') &&
+        shopGstin === (shop.gstin || '')
       ) {
-        dispatch(
-          showToast({
-            message: "No changes made to shop details",
-            type: "info",
-          })
-        );
+        dispatch(showToast({
+          message: "No changes made to shop details",
+          type: "info",
+        }));
         setShowDetails(false);
         return;
       }
 
       try {
-        await dispatch(
-          updateShop({
-            shopId: shop._id,
-            shopData: {
-              name: shopName,
-              email: shopEmail,
-              address: shopAddress,
-              contact_no: shopContactNo,
-              gstin: shopGstin,
-            },
-          })
-        ).unwrap();
-        dispatch(
-          showToast({
-            message: `Shop "${shopName}" updated successfully!`, // Dynamic message
-            type: "success",
-          })
-        );
+        await dispatch(updateShop({
+          shopId: shop._id,
+          shopData: {
+            name: shopName,
+            email: shopEmail,
+            address: shopAddress,
+            contact_no: shopContactNo,
+            gstin: shopGstin,
+          },
+        })).unwrap();
+        dispatch(showToast({
+          message: `Shop "${shopName}" updated successfully!`, // Dynamic message
+          type: "success",
+        }));
         setShowDetails(false);
       } catch (error) {
-        const errorMessage =
-          error.message || error.msg || "Failed to update shop";
-        dispatch(
-          showToast({
-            message: errorMessage,
-            type: "error",
-          })
-        );
+          const errorMessage = error.message || error.msg || "Failed to update shop";
+        dispatch(showToast({
+          message: errorMessage,
+          type: "error",
+        }));
         console.error("Shop update error:", error);
       }
     };
 
     return (
-      <View key={shop._id} style={themedStyles.listStyle1}>
+      <View
+        key={shop._id}
+        style={{
+          ...global.profileRow,
+          // backgroundColor: "#f3f3f3ff",
+          paddingVertical: 10,
+          paddingHorizontal: 8,
+          flexDirection: "column",
+        }}
+      >
         <View
           style={{
             flexDirection: "row",
@@ -155,9 +140,9 @@ const ShopManagement = () => {
                 style={{ marginTop: 5 }}
                 name={showDetails ? "caret-up" : "caret-down"} // Dynamic icon name
                 size={20}
-                color={textColor}
+                color="black"
               />
-              <Text style={{ color: textColor, fontSize: 16 }}>
+              <Text style={{ color: primaryColor, fontSize: 16 }}>
                 {shop.name}
               </Text>
             </TouchableOpacity>
@@ -166,7 +151,7 @@ const ShopManagement = () => {
             <View style={{ marginLeft: "auto" }}>
               {/* Wrapper for delete icon */}
               <TouchableOpacity onPress={() => handleDeleteShop(shop._id)}>
-                <Text style={{ color: "#ba181b" }}>Delete</Text>
+                <MaterialIcons name="delete" size={24} color="#ba181b" />
               </TouchableOpacity>
             </View>
           )}
@@ -175,89 +160,46 @@ const ShopManagement = () => {
         {showDetails && (
           <View style={{ marginTop: 10, width: "100%" }}>
             <TextInput
-              style={[
-                global.input,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
-                },
-              ]}
+              style={global.input}
               placeholder="Store Name *"
-              placeholderTextColor={textSecondary}
               value={shopName}
               onChangeText={setShopName}
             />
 
             <TextInput
-              style={[
-                global.input,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
-                },
-              ]}
+              style={global.input}
               placeholder="Email"
-              placeholderTextColor={textSecondary}
               value={shopEmail}
               onChangeText={setShopEmail}
               keyboardType="email-address"
             />
 
             <TextInput
-              style={[
-                global.input,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
-                },
-              ]}
+              style={global.input}
               placeholder="Address"
-              placeholderTextColor={textSecondary}
               value={shopAddress}
               onChangeText={setShopAddress}
             />
 
             <TextInput
-              style={[
-                global.input,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
-                },
-              ]}
+              style={global.input}
               placeholder="Contact Number"
-              placeholderTextColor={textSecondary}
               value={shopContactNo}
               onChangeText={setShopContactNo}
               keyboardType="phone-pad"
             />
 
             <TextInput
-              style={[
-                global.input,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
-                },
-              ]}
+              style={global.input}
               placeholder="GSTIN (Optional)"
-              placeholderTextColor={textSecondary}
               value={shopGstin}
               onChangeText={setShopGstin}
+              placeholderTextColor="#999"
             />
 
             <View>
               <TouchableOpacity
-                style={{
-                  marginTop: 10,
-                  ...global.button1,
-                  backgroundColor: primaryColor,
-                }}
+                style={{ marginTop: 10, ...global.button1 }} // Removed width: "30%"
                 onPress={handleUpdateShop}
               >
                 <Text style={global.btnText}>Save {shopName}</Text>
@@ -287,9 +229,7 @@ const ShopManagement = () => {
     }
 
     try {
-      await dispatch(
-        createShop({ name, email, address, contact_no, gstin })
-      ).unwrap();
+      await dispatch(createShop({ name, email, address, contact_no, gstin })).unwrap();
 
       dispatch(
         showToast({
@@ -316,30 +256,13 @@ const ShopManagement = () => {
   };
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        Keyboard.dismiss();
-        setIsNameFocused(false);
-      }}
-    >
-      <ScrollView
-        style={[global.mainContainer, { backgroundColor: bgColor }]}
-        contentContainerStyle={{ paddingBottom: 60 }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
+      <View style={global.mainContainer}>
         <View style={{ marginTop: 10 }}>
-          <Text style={{ marginBottom: 10, color: textColor }}>Add Shop</Text>
+          <Text style={{ marginBottom: 10 }}>Add Shop</Text>
           <TextInput
-            style={[
-              global.input,
-              {
-                backgroundColor: inputBg,
-                borderColor: inputBorder,
-                color: textColor,
-              },
-            ]}
+            style={global.input}
             placeholder="Store Name *"
-            placeholderTextColor={textSecondary}
             value={name}
             onChangeText={setName}
             onFocus={() => setIsNameFocused(true)}
@@ -348,75 +271,39 @@ const ShopManagement = () => {
           {isNameFocused && (
             <>
               <TextInput
-                style={[
-                  global.input,
-                  {
-                    backgroundColor: inputBg,
-                    borderColor: inputBorder,
-                    color: textColor,
-                  },
-                ]}
+                style={global.input}
                 placeholder="Email"
-                placeholderTextColor={textSecondary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
               />
 
               <TextInput
-                style={[
-                  global.input,
-                  {
-                    backgroundColor: inputBg,
-                    borderColor: inputBorder,
-                    color: textColor,
-                  },
-                ]}
+                style={global.input}
                 placeholder="Address"
-                placeholderTextColor={textSecondary}
                 value={address}
                 onChangeText={setAddress}
               />
 
               <TextInput
-                style={[
-                  global.input,
-                  {
-                    backgroundColor: inputBg,
-                    borderColor: inputBorder,
-                    color: textColor,
-                  },
-                ]}
+                style={global.input}
                 placeholder="Contact Number"
-                placeholderTextColor={textSecondary}
                 value={contact_no}
                 onChangeText={setContactNo}
                 keyboardType="phone-pad"
               />
 
               <TextInput
-                style={[
-                  global.input,
-                  {
-                    backgroundColor: inputBg,
-                    borderColor: inputBorder,
-                    color: textColor,
-                  },
-                ]}
+                style={global.input}
                 placeholder="GSTIN (Optional)"
-                placeholderTextColor={textSecondary}
                 value={gstin}
                 onChangeText={setGstin}
+                placeholderTextColor="#999"
               />
 
               <View style={{ alignItems: "flex-end" }}>
                 <TouchableOpacity
-                  style={{
-                    marginTop: 10,
-                    ...global.button1,
-                    width: "30%",
-                    backgroundColor: primaryColor,
-                  }}
+                  style={{ marginTop: 10, ...global.button1, width: "30%" }}
                   onPress={handleCreateShop}
                 >
                   <Text style={global.btnText}>Save</Text>
@@ -425,13 +312,11 @@ const ShopManagement = () => {
             </>
           )}
         </View>
-        <Text style={{ marginBottom: 5,color: textColor }}>
-          Shop List
-        </Text>
+        <Text style={{ marginBottom: 5, marginTop: 20 }}>Shop List</Text>
         {shops.map((shopItem) => (
           <ShopContainer key={shopItem._id} shop={shopItem} />
         ))}
-      </ScrollView>
+      </View>
     </TouchableWithoutFeedback>
   );
 };

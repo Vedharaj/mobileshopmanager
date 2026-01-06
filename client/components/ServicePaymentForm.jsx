@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { global, useThemeColors } from "../../styles/global";
+import { global } from "../styles/global";
 
 export default function ServicePaymentForm({
   primaryColor,
@@ -17,8 +17,6 @@ export default function ServicePaymentForm({
   previewRemaining,
   previewTotalPaid,
 }) {
-  const { textSecondary } = useThemeColors();
-  
   return (
     <View>
       <View
@@ -56,7 +54,6 @@ export default function ServicePaymentForm({
       <TextInput
         style={global.input}
         placeholder="Paid in Cash"
-        placeholderTextColor={textSecondary}
         value={paidInCash}
         onChangeText={setPaidInCash}
         keyboardType="numeric"
@@ -66,7 +63,6 @@ export default function ServicePaymentForm({
       <TextInput
         style={global.input}
         placeholder="Paid in E-Cash"
-        placeholderTextColor={textSecondary}
         value={paidInEcash}
         onChangeText={setPaidInEcash}
         keyboardType="numeric"
@@ -76,7 +72,6 @@ export default function ServicePaymentForm({
       <TextInput
         style={global.input}
         placeholder="Transaction Date (YYYY-MM-DD)"
-        placeholderTextColor={textSecondary}
         value={transactionDate}
         onChangeText={setTransactionDate}
         returnKeyType="done"

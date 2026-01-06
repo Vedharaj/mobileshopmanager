@@ -127,7 +127,6 @@ router.post('/', auth, async (req, res) => {
       online_paid,
       payment_method,
       payment_breakdown,
-      payment_status,
       status,
       notes,
       items
@@ -178,7 +177,7 @@ router.post('/', auth, async (req, res) => {
     let mappedItems = items || [];
     if (Array.isArray(items) && items.length > 0) {
       const productIds = items.map(i => i.product_id).filter(Boolean);
-      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst name');
+      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst');
       const productMap = products.reduce((acc, p) => {
         acc[p._id.toString()] = p;
         return acc;
@@ -193,8 +192,7 @@ router.post('/', auth, async (req, res) => {
         const discount = Number(it.discount || 0);
         const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
         const total_price = it.total_price ?? qty * unit - discount + taxAmount;
-        const product_name = it.product_name ?? prod.name ?? '';
-        return { ...it, cgst, sgst, total_price, product_name };
+        return { ...it, cgst, sgst, total_price };
       });
     }
 
@@ -213,7 +211,6 @@ router.post('/', auth, async (req, res) => {
       online_paid: online_paid || 0,
       payment_method: payment_method || 'cash',
       payment_breakdown: payment_breakdown || {},
-      payment_status: payment_status || 'paid',
       status: status || 'completed',
       notes: notes || '',
       items: mappedItems

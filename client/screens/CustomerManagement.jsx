@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
 } from "react-native";
-import { global, useThemeColors, useThemedStyles } from "../styles/global";
+import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCustomers, createCustomer, deleteCustomer, updateCustomer } from "../store/slices/customerSlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
@@ -20,8 +19,7 @@ const CustomerManagement = () => {
 
   const { customers, status, error } = useSelector((state) => state.customers);
   const { role } = useSelector((state) => state.auth);
-  const { primaryColor, bgColor, textColor, textSecondary, cardBg, inputBg, inputBorder } = useThemeColors();
-  const themedStyles = useThemedStyles();
+  const { primaryColor } = useThemeColors();
   const isStaff = role === "staff";
 
   const [name, setName] = useState("");
@@ -109,8 +107,15 @@ const CustomerManagement = () => {
     };
 
     return (
-      <View key={customer._id} style={themedStyles.listStyle1}>
-
+      <View
+        key={customer._id}
+        style={{
+          ...global.profileRow,
+          paddingVertical: 10,
+          paddingHorizontal: 8,
+          flexDirection: "column",
+        }}
+      >
         <View
           style={{
             flexDirection: "row",
@@ -132,16 +137,16 @@ const CustomerManagement = () => {
                 style={{ marginTop: 5 }}
                 name={showDetails ? "caret-up" : "caret-down"}
                 size={20}
-                color={textColor}
+                color="black"
               />
-              <Text style={{ color: textColor, fontSize: 16 }}>
+              <Text style={{ color: primaryColor, fontSize: 16 }}>
                 {customer.name}
               </Text>
             </TouchableOpacity>
           </View>
           <View style={{ marginLeft: "auto" }}>
             <TouchableOpacity onPress={() => handleDeleteCustomer(customer._id)}>
-              <Text style={{ color: "#ba181b", fontSize: 16 }}>Delete</Text>
+              <MaterialIcons name="delete" size={24} color="#ba181b" />
             </TouchableOpacity>
           </View>
         </View>
@@ -149,18 +154,16 @@ const CustomerManagement = () => {
         {showDetails && (
           <View style={{ marginTop: 10, width: "100%" }}>
             <TextInput
-              style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+              style={global.input}
               placeholder="Customer Name *"
-              placeholderTextColor={textSecondary}
               value={customerName}
               onChangeText={setCustomerName}
               editable={true}
             />
 
             <TextInput
-              style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+              style={global.input}
               placeholder="Phone Number"
-              placeholderTextColor={textSecondary}
               value={customerPhoneNo}
               onChangeText={setCustomerPhoneNo}
               keyboardType="phone-pad"
@@ -168,9 +171,8 @@ const CustomerManagement = () => {
             />
 
             <TextInput
-              style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+              style={global.input}
               placeholder="Address"
-              placeholderTextColor={textSecondary}
               value={customerAddress}
               onChangeText={setCustomerAddress}
               multiline
@@ -180,7 +182,7 @@ const CustomerManagement = () => {
             {true && (
               <View>
                 <TouchableOpacity
-                  style={{ marginTop: 10, ...global.button1, backgroundColor: primaryColor }}
+                  style={{ marginTop: 10, ...global.button1 }}
                   onPress={handleUpdateCustomer}
                 >
                   <Text style={global.btnText1}>Save {customerName}</Text>
@@ -234,18 +236,13 @@ const CustomerManagement = () => {
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
-      <ScrollView
-        style={[global.mainContainer, { backgroundColor: bgColor }]}
-        contentContainerStyle={{ paddingBottom: 60 }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={global.mainContainer}>
         {!isStaff && (
           <View style={{ marginTop: 10 }}>
-            <Text style={{ marginBottom: 10, color: textColor }}>Add Customer</Text>
+            <Text style={{ marginBottom: 10 }}>Add Customer</Text>
             <TextInput
-              style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+              style={global.input}
               placeholder="Customer Name *"
-              placeholderTextColor={textSecondary}
               value={name}
               onChangeText={setName}
               onFocus={() => setIsNameFocused(true)}
@@ -254,18 +251,16 @@ const CustomerManagement = () => {
           {isNameFocused && (
             <>
               <TextInput
-                style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+                style={global.input}
                 placeholder="Phone Number"
-                placeholderTextColor={textSecondary}
                 value={phoneNo}
                 onChangeText={setPhoneNo}
                 keyboardType="phone-pad"
               />
 
               <TextInput
-                style={[global.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textColor }]}
+                style={global.input}
                 placeholder="Address"
-                placeholderTextColor={textSecondary}
                 value={address}
                 onChangeText={setAddress}
                 multiline
@@ -285,7 +280,7 @@ const CustomerManagement = () => {
                   <Text style={global.btnText}>Close</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{ ...global.button1, width: "30%", backgroundColor: primaryColor }}
+                  style={{ ...global.button1, width: "30%" }}
                   onPress={handleAddCustomer}
                 >
                   <Text style={global.btnText}>Add</Text>
@@ -295,11 +290,11 @@ const CustomerManagement = () => {
           )}
           </View>
         )}
-        <Text style={{ marginBottom: 5, color: textColor }}>Customer List</Text>
+        <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Customer List</Text>
         {customers.map((customer) => (
           <CustomerContainer key={customer._id} customer={customer} isStaff={isStaff} />
         ))}
-      </ScrollView>
+      </View>
     </TouchableWithoutFeedback>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { global, useThemeColors } from "../../styles/global";
+import { global } from "../styles/global";
 
 export default function MoneyExpenseForm({
   primaryColor,
@@ -21,8 +21,6 @@ export default function MoneyExpenseForm({
   onSubmitOther,
   onCancel,
 }) {
-  const { textSecondary } = useThemeColors();
-  
   return (
     <View style={{ marginTop: 20 }}>
       <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 10 }}>
@@ -32,7 +30,6 @@ export default function MoneyExpenseForm({
       <TextInput
         style={global.input}
         placeholder="Title *"
-        placeholderTextColor={textSecondary}
         value={txTitle}
         onChangeText={setTxTitle}
       />
@@ -40,7 +37,6 @@ export default function MoneyExpenseForm({
       <TextInput
         style={global.input}
         placeholder="Description"
-        placeholderTextColor={textSecondary}
         value={txDescription}
         onChangeText={setTxDescription}
         multiline
@@ -59,7 +55,6 @@ export default function MoneyExpenseForm({
       <TextInput
         style={global.input}
         placeholder="Amount in Cash"
-        placeholderTextColor={textSecondary}
         value={paidInCash}
         onChangeText={setPaidInCash}
         keyboardType="numeric"
@@ -69,7 +64,6 @@ export default function MoneyExpenseForm({
       <TextInput
         style={global.input}
         placeholder="Amount in E-Cash"
-        placeholderTextColor={textSecondary}
         value={paidInEcash}
         onChangeText={setPaidInEcash}
         keyboardType="numeric"

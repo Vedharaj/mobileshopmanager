@@ -4,13 +4,10 @@ import { global } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../store/slices/authSlice";
 import { showToast } from "../store/slices/toastSlice";
-import { useThemeColors, useThemedStyles } from "../styles/global"; 
 
 const EditProfile = ({ navigation }) => {
   const dispatch = useDispatch();
   const {user, status, error} = useSelector((state) => state.auth);
-  const { bgColor, textColor } = useThemeColors();
-  const themedStyles = useThemedStyles();
 
   const [email, setEmail] = useState(user?.email || "");
   const [username, setUsername] = useState( user?.username || "");
@@ -34,25 +31,25 @@ const EditProfile = ({ navigation }) => {
   };
 
   return (
-    <View style={[global.mainContainer, { backgroundColor: bgColor }]}>
-      <Text style={themedStyles.label}>Username</Text>
+    <View style={global.mainContainer}>
+      <Text style={global.label}>Username</Text>
       <TextInput
-        style={themedStyles.input}
+        style={global.input}
         value={username}
         onChangeText={setUsername}
         autoCapitalize="none"
       />
 
-      <Text style={themedStyles.label}>Email</Text>
+      <Text style={global.label}>Email</Text>
       <TextInput
-        style={themedStyles.input}
+        style={global.input}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
       />
 
-      <TouchableOpacity style={themedStyles.button1} onPress={handleSaveChanges}>
-        <Text style={themedStyles.btnText1}>
+      <TouchableOpacity style={global.button} onPress={handleSaveChanges}>
+        <Text style={global.btnText}>
           {status === "loading" ? "Updating..." : "Save Changes"}
         </Text>
       </TouchableOpacity>

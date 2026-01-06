@@ -1,28 +1,15 @@
 import React from "react";
-import { View, Text, Alert, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { View, Text, Alert, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { global, useThemeColors, useThemedStyles, BAR_HEIGHT } from "../styles/global";
+import { global, useThemeColors, BAR_HEIGHT } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
-import { toggleDarkMode, saveThemeToStorage } from "../store/slices/themeSlice";
 import { AntDesign, Entypo, Ionicons, FontAwesome5 } from "@expo/vector-icons";
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
   const { username, role } = useSelector((state) => state.auth);
-  const themeState = useSelector((state) => state.theme);
-  const { isDarkMode } = themeState;
-  const { primaryColor, textSecondary } = useThemeColors();
-  const themedStyles = useThemedStyles();
-
-  const handleToggleDarkMode = async () => {
-    dispatch(toggleDarkMode());
-    const newTheme = {
-      ...themeState,
-      isDarkMode: !isDarkMode,
-    };
-    dispatch(saveThemeToStorage(newTheme));
-  };
+  const { primaryColor } = useThemeColors();
 
   const ShopManagementData = [
     {
@@ -86,9 +73,9 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={themedStyles.safeArea}>
+    <SafeAreaView style={global.safeArea}>
       <ScrollView
-        style={themedStyles.mainContainer}
+        style={global.mainContainer}
         contentContainerStyle={{ paddingBottom: BAR_HEIGHT + 40 }}
         showsVerticalScrollIndicator={false}
       >
@@ -98,19 +85,19 @@ export default function ProfileScreen({ navigation }) {
           >
             <FontAwesome5 name="user-alt" size={34} color="white" />
           </View>
-          <Text style={[themedStyles.text, { fontSize: 22, fontWeight: "700" }]}>{username}</Text>
+          <Text style={{ fontSize: 22, fontWeight: "700" }}>{username}</Text>
           <Text style={{ fontSize: 14, color: primaryColor }}>{role}</Text>
         </View>
 
         {role !== "staff" && (
           <>
-            <Text style={themedStyles.sectionHeader}>
+            <Text style={{ marginBottom: 10, color: "#aaa" }}>
               Shop Management
             </Text>
 
-            <View style={themedStyles.profileContainer}>
+            <View style={global.profileContainer}>
               <TouchableOpacity
-                style={themedStyles.profileRow}
+                style={global.profileRow}
                 onPress={() => navigation.navigate("EditProfile")}
               >
                 <View
@@ -121,9 +108,9 @@ export default function ProfileScreen({ navigation }) {
                   }}
                 >
                   <AntDesign name="edit" size={24} color={primaryColor} />
-                  <Text style={[themedStyles.text, { fontSize: 16 }]}>Edit Profile</Text>
+                  <Text style={{ fontSize: 16 }}>Edit Profile</Text>
                 </View>
-                <AntDesign name="right" size={20} color={"#999"} />
+                <AntDesign name="right" size={20} color="black" />
               </TouchableOpacity>
 
               {ShopManagementData.map((item, index) => (
@@ -131,10 +118,10 @@ export default function ProfileScreen({ navigation }) {
                   onPress={() => navigation.navigate(item.navigatePage)}
                   key={item.id}
                   style={
-                    index === ShopManagementData.length - 1
-                        ? themedStyles.profileRowLast
-                        : themedStyles.profileRow
-                    }
+                  index === ShopManagementData.length - 1
+                      ? global.profileRowLast
+                      : global.profileRow
+                  }
                 >
                   <View
                     style={{
@@ -144,9 +131,9 @@ export default function ProfileScreen({ navigation }) {
                     }}
                   >
                     {item.icon}
-                    <Text style={[themedStyles.text, { fontSize: 16 }]}>{item.title}</Text>
+                    <Text style={{ fontSize: 16 }}>{item.title}</Text>
                   </View>
-                  <AntDesign name="right" size={20} color={textSecondary} />
+                  <AntDesign name="right" size={20} color="black" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -155,12 +142,12 @@ export default function ProfileScreen({ navigation }) {
 
         {role === "staff" && (
           <>
-            <Text style={{ marginBottom: 10, marginTop: 10, color: textSecondary }}>
+            <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
               Management
             </Text>
-            <View style={themedStyles.profileContainer}>
+            <View style={global.profileContainer}>
               <TouchableOpacity
-                style={themedStyles.profileRow}
+                style={global.profileRow}
                 onPress={() => navigation.navigate("CategoryManagement")}
               >
                 <View
@@ -171,12 +158,12 @@ export default function ProfileScreen({ navigation }) {
                   }}
                 >
                   <AntDesign name="appstore" size={24} color={primaryColor} />
-                  <Text style={[themedStyles.text, { fontSize: 16 }]}>Manage Categories</Text>
+                  <Text style={{ fontSize: 16 }}>Manage Categories</Text>
                 </View>
-                <AntDesign name="right" size={20} color={textSecondary} />
+                <AntDesign name="right" size={20} color="black" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={themedStyles.profileRowLast}
+                style={global.profileRowLast}
                 onPress={() => navigation.navigate("CustomerManagement")}
               >
                 <View
@@ -187,49 +174,31 @@ export default function ProfileScreen({ navigation }) {
                   }}
                 >
                   <AntDesign name="user" size={24} color={primaryColor} />
-                  <Text style={[themedStyles.text, { fontSize: 16 }]}>Manage Customers</Text>
+                  <Text style={{ fontSize: 16 }}>Manage Customers</Text>
                 </View>
-                <AntDesign name="right" size={20} color={textSecondary} />
+                <AntDesign name="right" size={20} color="black" />
               </TouchableOpacity>
             </View>
           </>
         )}
 
-        <Text style={[themedStyles.sectionHeader, { marginTop: 10 }]}>
+        <Text style={{ marginBottom: 10, marginTop: 10, color: "#aaa" }}>
           Preference
         </Text>
-        <View style={themedStyles.profileContainer}>
-          <TouchableOpacity
-            style={themedStyles.profileRow}
-            onPress={handleToggleDarkMode}
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
-            >
-              <Ionicons name="moon-outline" size={24} color={primaryColor} />
-              <Text style={[themedStyles.text, { fontSize: 16 }]}>Dark Mode</Text>
-            </View>
-            <Switch
-              value={isDarkMode}
-              onValueChange={handleToggleDarkMode}
-              trackColor={{ false: "#ddd", true: primaryColor }}
-              thumbColor={isDarkMode ? "#fff" : "#f4f3f4"}
-            />
-          </TouchableOpacity>
-
+        <View style={global.profileContainer}>
           {preferenceData.map((item, index) => (
             <TouchableOpacity
               onPress={() => navigation.navigate(item.navigatePage)}
               key={item.id}
-              style={themedStyles.profileRowLast}
+              style={global.profileRowLast}
             >
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
               >
                 {item.icon}
-                <Text style={[themedStyles.text, { fontSize: 16 }]}>{item.title}</Text>
+                <Text style={{ fontSize: 16 }}>{item.title}</Text>
               </View>
-              <AntDesign name="right" size={20} color={textSecondary} />
+              <AntDesign name="right" size={20} color="black" />
             </TouchableOpacity>
           ))}
 

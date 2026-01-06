@@ -1,16 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, Modal, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Modal, ScrollView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useThemeColors } from "../styles/global";
+import { CARD_BG } from "../styles/global";
 import * as Print from "expo-print";
 import { readAsStringAsync } from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Asset } from "expo-asset";
 
-
 const TransactionDetailModal = ({ visible, onClose, item }) => {
   const [exporting, setExporting] = useState(false);
-  const { cardBg, textColor, textSecondary, borderColor } = useThemeColors();
 
   if (!item) return null;
 
@@ -65,41 +63,35 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", width: "100%", alignSelf: "stretch" }}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={{ backgroundColor: CARD_BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, height: "90%" }}>
               {/* Modal Header */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: borderColor }}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: textColor }}>Transaction Details</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" }}>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>Transaction Details</Text>
                 <TouchableOpacity onPress={onClose}>
-                  <MaterialIcons name="close" size={28} color={textSecondary} />
+                  <MaterialIcons name="close" size={28} color="#666" />
                 </TouchableOpacity>
               </View>
 
               {/* Modal Content */}
-              <ScrollView
-                style={{ flex: 1 }}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled
-                overScrollMode="always"
-                  bounces
-                  alwaysBounceVertical
-                  contentContainerStyle={{ padding: 20, paddingBottom: 80, flexGrow: 1 }}
-              >
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            <View style={{ padding: 20 }}>
               {/* Header */}
               <View style={{ marginBottom: 20, borderBottomWidth: 1, borderBottomColor: "#eee", paddingBottom: 15 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 20, fontWeight: "700", color: textColor, marginBottom: 5 }}>
+                  <Text style={{ fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 5 }}>
                     {item.title}
                   </Text>
                   {sale.invoice_no && (
-                    <Text style={{ fontSize: 12, color: textSecondary, marginBottom: 5 }}>
+                    <Text style={{ fontSize: 12, color: "#888", marginBottom: 5 }}>
                       Invoice #{sale.invoice_no}
                     </Text>
                   )}
                 </View>
-                <Text style={{ fontSize: 14, color: textSecondary }}>
+                <Text style={{ fontSize: 14, color: "#666" }}>
                   {item.timeLabel} · {item.date}
                 </Text>
                 </View>
@@ -107,7 +99,7 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
                   <TouchableOpacity
                     onPress={handleGenerateInvoice}
                     disabled={exporting}
-                    style={{ backgroundColor: "#f1f5f9", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 4, borderWidth: 1, borderColor: "#e5e7eb", flexDirection: "row", alignItems: "center", gap: 8 }}
+                    style={{ backgroundColor: "#f1f5f9", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb", flexDirection: "row", alignItems: "center", gap: 8 }}
                   >
                     {exporting && <ActivityIndicator size="small" color="#2563eb" />}
                     <Text style={{ color: "#2563eb", fontWeight: "700", fontSize: 14, textAlign: "center" }}>
@@ -120,7 +112,7 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
 
               {/* Amount */}
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 14, color: textSecondary, marginBottom: 5 }}>Amount</Text>
+                <Text style={{ fontSize: 14, color: "#666", marginBottom: 5 }}>Amount</Text>
                 <Text style={{ fontSize: 24, fontWeight: "700", color: item.type === "income" ? "#2ecc71" : "#e74c3c" }}>
                   {item.type === "income" ? "+" : "-"}₹{(item.amount || 0).toFixed(2)}
                 </Text>
@@ -148,13 +140,13 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
                   
                   {sale.items && sale.items.length > 0 && (
                     <View style={{ marginTop: 15 }}>
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: textColor, marginBottom: 10 }}>Items</Text>
+                      <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>Items</Text>
                       {sale.items.map((saleItem, idx) => (
-                        <View key={idx} style={{ backgroundColor: cardBg, padding: 10, borderRadius: 6, marginBottom: 8, borderWidth: 1, borderColor: borderColor }}>
-                          <Text style={{ fontSize: 14, fontWeight: "600", color: textColor }}>
+                        <View key={idx} style={{ backgroundColor: "#f9f9f9", padding: 10, borderRadius: 6, marginBottom: 8 }}>
+                          <Text style={{ fontSize: 14, fontWeight: "600", color: "#333" }}>
                             {saleItem.product_id?.name || "Product"}
                           </Text>
-                          <Text style={{ fontSize: 12, color: textSecondary, marginTop: 3 }}>
+                          <Text style={{ fontSize: 12, color: "#666", marginTop: 3 }}>
                             Qty: {saleItem.quantity} × ₹{saleItem.unit_price} = ₹{saleItem.total_price}
                           </Text>
                         </View>
@@ -187,8 +179,8 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
               )}
 
               {/* Payment Details */}
-              <View style={{ marginTop: 20, paddingTop: 15, borderTopWidth: 1, borderTopColor: borderColor }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: textColor, marginBottom: 10 }}>Payment Details</Text>
+              <View style={{ marginTop: 20, paddingTop: 15, borderTopWidth: 1, borderTopColor: "#eee" }}>
+                <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>Payment Details</Text>
                 <DetailRow label="Payment Method" value={sale.payment_method || "N/A"} />
                 {cashAmount > 0 && <DetailRow label="Cash Paid" value={`₹${cashAmount.toFixed(2)}`} />}
                 {onlineAmount > 0 && <DetailRow label="Online Paid" value={`₹${onlineAmount.toFixed(2)}`} />}
@@ -200,9 +192,12 @@ const TransactionDetailModal = ({ visible, onClose, item }) => {
                   <DetailRow label="Shop" value={sale.shop_id.name} />
                 </View>
               )}
+            </View>
               </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -288,14 +283,11 @@ const buildInvoiceItems = (items, sale) => {
 };
 
 // Helper component for detail rows
-const DetailRow = ({ label, value }) => {
-  const { textColor, textSecondary, borderColor } = useThemeColors();
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: borderColor }}>
-      <Text style={{ fontSize: 14, color: textSecondary }}>{label}</Text>
-      <Text style={{ fontSize: 14, fontWeight: "600", color: textColor, maxWidth: "60%", textAlign: "right" }}>{value}</Text>
-    </View>
-  );
-};
+const DetailRow = ({ label, value }) => (
+  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }}>
+    <Text style={{ fontSize: 14, color: "#666" }}>{label}</Text>
+    <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", maxWidth: "60%", textAlign: "right" }}>{value}</Text>
+  </View>
+);
 
 export default TransactionDetailModal;

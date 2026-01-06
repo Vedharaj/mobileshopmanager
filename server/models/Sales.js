@@ -11,7 +11,6 @@ const SalesItemSchema = new mongoose.Schema(
       required: true,
     },
 
-    product_name: { type: String },
     quantity: { type: Number, required: true, default: 1, min: 0.01 },
     unit_price: { type: Number, required: true, min: 0 },
 
@@ -26,32 +25,16 @@ const SalesItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-calc total_price and set product_name BEFORE item validated
-SalesItemSchema.pre("validate", async function (next) {
-  try {
-    const base = this.quantity * this.unit_price;
-    const discountAmount = this.discount || 0;
-    const cgst = this.cgst || 0;
-    const sgst = this.sgst || 0;
-    const taxAmount = ((cgst + sgst) / 100) * base;
+// Auto-calc total_price BEFORE item validated
+SalesItemSchema.pre("validate", function (next) {
+  const base = this.quantity * this.unit_price;
+  const discountAmount = this.discount || 0;
+  const cgst = this.cgst || 0;
+  const sgst = this.sgst || 0;
+  const taxAmount = ((cgst + sgst) / 100) * base;
 
-    this.total_price = base - discountAmount + taxAmount;
-
-    // fill product_name from Product if missing
-    if (!this.product_name && this.product_id) {
-      try {
-        const Product = mongoose.model('Product');
-        const p = await Product.findById(this.product_id).select('name');
-        if (p) this.product_name = p.name;
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    next();
-  } catch (err) {
-    next(err);
-  }
+  this.total_price = base - discountAmount + taxAmount;
+  next();
 });
 
 // ----------------------
@@ -90,7 +73,6 @@ const SalesSchema = new mongoose.Schema(
 
     payment_method: { type: String, default: "cash" },
     payment_breakdown: { type: Object },
-    payment_status: { type: String, enum: ['paid', 'pending'], default: 'paid' },
 
     status: { type: String, default: "completed" },
 

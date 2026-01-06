@@ -13,16 +13,9 @@ const toastSlice = createSlice({
   initialState,
   reducers: {
     showToast: (state, action) => {
-      const payload = action.payload || {};
-      const { message, type = "success", duration = 2000 } = payload;
-      // Normalize message to a string to avoid rendering objects (e.g., Error)
-      const safeMessage = typeof message === "string"
-        ? message
-        : message && typeof message.message === "string"
-        ? message.message
-        : String(message || "");
+      const { message, type = "success", duration = 2000 } = action.payload;
       state.visible = true;
-      state.message = safeMessage || "";
+      state.message = message;
       state.type = type;
       state.duration = duration;
     },

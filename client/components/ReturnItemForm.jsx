@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { global, useThemeColors } from "../../styles/global";
+import { global } from "../styles/global";
 
 export default function ReturnItemForm({
   primaryColor,
@@ -19,8 +19,6 @@ export default function ReturnItemForm({
   onSubmitReturn,
   onCancel,
 }) {
-  const { textSecondary } = useThemeColors();
-  
   return (
     <View style={{ marginTop: 20 }}>
       <View
@@ -56,7 +54,6 @@ export default function ReturnItemForm({
       <TextInput
         style={global.input}
         placeholder="Quantity to return"
-        placeholderTextColor={textSecondary}
         value={returnQty}
         onChangeText={setReturnQty}
         keyboardType="numeric"
@@ -66,7 +63,6 @@ export default function ReturnItemForm({
       <TextInput
         style={global.input}
         placeholder="Cash to refund"
-        placeholderTextColor={textSecondary}
         value={paidInCash}
         onChangeText={setPaidInCash}
         keyboardType="numeric"
@@ -76,7 +72,6 @@ export default function ReturnItemForm({
       <TextInput
         style={global.input}
         placeholder="E-Cash to refund"
-        placeholderTextColor={textSecondary}
         value={paidInEcash}
         onChangeText={setPaidInEcash}
         keyboardType="numeric"

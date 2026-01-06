@@ -78,52 +78,6 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
-// Increment product quantity
-export const incrementProductQty = createAsyncThunk(
-  'products/incrementQty',
-  async ({ productId, amount = 1 }, thunkAPI) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const res = await api.patch(
-        `/products/${productId}/increment`,
-        { amount },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return res.data.products;
-    } catch (error) {
-      const msg = error.response?.data?.msg || error.message || 'Failed to increment product quantity';
-      return thunkAPI.rejectWithValue(msg);
-    }
-  }
-);
-
-// Decrement product quantity
-export const decrementProductQty = createAsyncThunk(
-  'products/decrementQty',
-  async ({ productId, amount = 1 }, thunkAPI) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const res = await api.patch(
-        `/products/${productId}/decrement`,
-        { amount },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return res.data.products;
-    } catch (error) {
-      const msg = error.response?.data?.msg || error.message || 'Failed to decrement product quantity';
-      return thunkAPI.rejectWithValue(msg);
-    }
-  }
-);
-
 const initialState = {
   products: [],
   status: 'idle',
@@ -201,22 +155,6 @@ const productSlice = createSlice({
       })
       .addCase(updateProduct.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
-      })
-
-      // Increment product quantity (does not change status)
-      .addCase(incrementProductQty.fulfilled, (state, action) => {
-        state.products = action.payload;
-      })
-      .addCase(incrementProductQty.rejected, (state, action) => {
-        state.error = action.payload;
-      })
-
-      // Decrement product quantity (does not change status)
-      .addCase(decrementProductQty.fulfilled, (state, action) => {
-        state.products = action.payload;
-      })
-      .addCase(decrementProductQty.rejected, (state, action) => {
         state.error = action.payload;
       });
   }

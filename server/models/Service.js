@@ -14,7 +14,6 @@ const ServiceSchema = new mongoose.Schema({
   received_date: { type: Date, required: true },
   return_date: { type: Date, required: true },
   note: { type: String, default: '' },
-  product_name: { type: String, default: '' },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });

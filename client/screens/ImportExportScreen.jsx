@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { global, useThemeColors, useThemedStyles } from "../styles/global";
+import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
@@ -23,8 +23,7 @@ import api from "../store/api/axiosClient";
 
 const ImportExportScreen = () => {
   const dispatch = useDispatch();
-  const { primaryColor, cardBg, textColor } = useThemeColors();
-  const themedStyles = useThemedStyles();
+  const { primaryColor } = useThemeColors();
   const { token } = useSelector((state) => state.auth);
   const { shops = [] } = useSelector((state) => state.shops);
   const { categories = [] } = useSelector((state) => state.categories);
@@ -446,9 +445,9 @@ const ImportExportScreen = () => {
   };
 
   return (
-    <SafeAreaView style={themedStyles.safeArea}>
+    <SafeAreaView style={global.safeArea}>
       <ScrollView
-        style={themedStyles.container}
+        style={global.container}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Tab Switcher */}
@@ -458,14 +457,14 @@ const ImportExportScreen = () => {
             marginBottom: 20,
             borderRadius: 8,
             overflow: "hidden",
-            backgroundColor: cardBg,
+            backgroundColor: "#f0f0f0",
           }}
         >
           <TouchableOpacity
             style={{
               flex: 1,
               paddingVertical: 12,
-              backgroundColor: activeTab === "import" ? primaryColor : cardBg,
+              backgroundColor: activeTab === "import" ? primaryColor : "#f0f0f0",
             }}
             onPress={() => setActiveTab("import")}
           >
@@ -473,7 +472,7 @@ const ImportExportScreen = () => {
               style={{
                 textAlign: "center",
                 fontWeight: "600",
-                color: activeTab === "import" ? "white" : textColor,
+                color: activeTab === "import" ? "white" : "#666",
               }}
             >
               Import
@@ -483,7 +482,7 @@ const ImportExportScreen = () => {
             style={{
               flex: 1,
               paddingVertical: 12,
-              backgroundColor: activeTab === "export" ? primaryColor : cardBg,
+              backgroundColor: activeTab === "export" ? primaryColor : "#f0f0f0",
             }}
             onPress={() => setActiveTab("export")}
           >
@@ -491,7 +490,7 @@ const ImportExportScreen = () => {
               style={{
                 textAlign: "center",
                 fontWeight: "600",
-                color: activeTab === "export" ? "white" : textColor,
+                color: activeTab === "export" ? "white" : "#666",
               }}
             >
               Export
@@ -502,27 +501,23 @@ const ImportExportScreen = () => {
         {activeTab === "import" && (
           <>
             <Text
-              style={[
-                themedStyles.text,
-                {
-                  fontSize: 18,
-                  fontWeight: "600",
-                  marginBottom: 10,
-                },
-              ]}
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                marginBottom: 10,
+                color: "#333",
+              }}
             >
               Import Products from CSV
             </Text>
 
             <Text
-              style={[
-                themedStyles.textSecondary,
-                {
-                  fontSize: 14,
-                  marginBottom: 20,
-                  lineHeight: 20,
-                },
-              ]}
+              style={{
+                fontSize: 14,
+                color: "#666",
+                marginBottom: 20,
+                lineHeight: 20,
+              }}
             >
               Upload a CSV file with product data. The system will match shops by name
               and create new categories if needed.
@@ -782,7 +777,7 @@ const ImportExportScreen = () => {
                 fontSize: 18,
                 fontWeight: "600",
                 marginBottom: 10,
-                color: textColor,
+                color: "#333",
               }}
             >
               Export Products to CSV
@@ -791,7 +786,7 @@ const ImportExportScreen = () => {
             <Text
               style={{
                 fontSize: 14,
-                color: textColor,
+                color: "#666",
                 marginBottom: 20,
                 lineHeight: 20,
               }}

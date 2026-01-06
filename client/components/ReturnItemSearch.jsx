@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
-import { global } from "../../styles/global";
+import { global } from "../styles/global";
 
 export default function ReturnItemSearch({
   primaryColor,

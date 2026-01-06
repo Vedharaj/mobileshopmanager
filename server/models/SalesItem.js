@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const SalesItemSchema = new mongoose.Schema({
   sales_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Sales', required: true },
   product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  product_name: { type: String },
   quantity: { type: Number, required: true, default: 1, min: 0.01 },
   unit_price: { type: Number, required: true, min: 0 },
   total_price: { type: Number, required: true, min: 0 },
@@ -17,32 +16,16 @@ const SalesItemSchema = new mongoose.Schema({
   updated_at: { type: Date, default: Date.now }
 });
 
-// Auto-calc total_price and set product_name before validation
-SalesItemSchema.pre('validate', async function (next) {
-  try {
-    const base = this.quantity * this.unit_price;
-    const discountAmount = this.discount || 0;
-    const cgstPercent = this.cgst || 0;
-    const sgstPercent = this.sgst || 0;
-    const taxAmount = ((cgstPercent + sgstPercent) / 100) * base;
+// Auto-calc total_price before validation
+SalesItemSchema.pre('validate', function (next) {
+  const base = this.quantity * this.unit_price;
+  const discountAmount = this.discount || 0;
+  const cgstPercent = this.cgst || 0;
+  const sgstPercent = this.sgst || 0;
+  const taxAmount = ((cgstPercent + sgstPercent) / 100) * base;
 
-    this.total_price = base - discountAmount + taxAmount;
-
-    // If product_name not provided, try to fetch from Product model
-    if (!this.product_name && this.product_id) {
-      try {
-        const Product = mongoose.model('Product');
-        const p = await Product.findById(this.product_id).select('name');
-        if (p) this.product_name = p.name;
-      } catch (e) {
-        // ignore lookup errors
-      }
-    }
-
-    next();
-  } catch (err) {
-    next(err);
-  }
+  this.total_price = base - discountAmount + taxAmount;
+  next();
 });
 
 SalesItemSchema.pre('save', function (next) {

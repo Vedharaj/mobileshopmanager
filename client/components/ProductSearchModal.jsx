@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Modal, FlatList } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useThemeColors } from "../../styles/global";
 
 export default function ProductSearchModal({
   visible,
@@ -11,7 +10,6 @@ export default function ProductSearchModal({
   onSelectProduct,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { cardBg } = useThemeColors();
 
   const filteredProducts = products.filter((p) => {
     if (!searchQuery) return true;
