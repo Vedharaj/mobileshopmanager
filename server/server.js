@@ -77,7 +77,7 @@ const mongouri = process.env.MONGO_URI;
 connectDB(mongouri).then(() => {
   const server = app.listen(PORT, HOST, () => {
     console.log(`✅ Server listening on ${HOST}:${PORT}`);
-    console.log(`📡 Access from network: http://10.40.5.238:${PORT}`);
+    // console.log(`📡 Access from network: http://10.40.5.238:${PORT}`);
   });
 
   // Initialize Socket.IO
