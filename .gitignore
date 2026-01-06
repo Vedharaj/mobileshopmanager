@@ -11,6 +11,8 @@ icons/
 Releases/
 
 expo-env.d.ts
+**/package-lock.json
+client/package-lock.json
 
 
 # Native
