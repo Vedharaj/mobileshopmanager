@@ -31,8 +31,18 @@ const StaffManagement = () => {
 
   useEffect(() => {
     const loadStaff = async () => {
-      if (!staff || staff.length === 0) {
-        dispatch(fetchStaff());
+      try {
+        if (!staff || staff.length === 0) {
+          await dispatch(fetchStaff()).unwrap();
+        }
+      } catch (error) {
+        console.error('Error loading staff data:', error);
+        dispatch(
+          showToast({
+            message: error || "Failed to load staff",
+            type: "error",
+          })
+        );
       }
     };
     loadStaff();

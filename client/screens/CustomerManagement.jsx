@@ -29,7 +29,17 @@ const CustomerManagement = () => {
 
   useEffect(() => {
     const loadCustomers = async () => {
-      dispatch(fetchCustomers());
+      try {
+        await dispatch(fetchCustomers()).unwrap();
+      } catch (error) {
+        console.error('Error loading customers data:', error);
+        dispatch(
+          showToast({
+            message: error || "Failed to load customers",
+            type: "error",
+          })
+        );
+      }
     };
     loadCustomers();
   }, [dispatch]);

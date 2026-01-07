@@ -31,7 +31,19 @@ export default function ScannerScreen({ navigation, route }) {
   const lineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    dispatch(fetchProducts());
+    const loadProducts = async () => {
+      try {
+        await dispatch(fetchProducts()).unwrap();
+      } catch (error) {
+        console.error('Error loading products for scanner:', error);
+        setLocalToast({
+          visible: true,
+          message: 'Failed to load products for scanning',
+          type: 'error'
+        });
+      }
+    };
+    loadProducts();
   }, [dispatch]);
 
   // Reset scanning state every time this screen is focused

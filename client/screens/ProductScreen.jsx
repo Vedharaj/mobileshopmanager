@@ -104,9 +104,19 @@ const ProductScreen = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      dispatch(fetchProducts());
-      dispatch(fetchCategories());
-      dispatch(fetchRequestItems());
+      try {
+        await dispatch(fetchProducts()).unwrap();
+        await dispatch(fetchCategories()).unwrap();
+        await dispatch(fetchRequestItems()).unwrap();
+      } catch (error) {
+        console.error('Error loading product screen data:', error);
+        dispatch(
+          showToast({
+            message: error || "Failed to load data",
+            type: "error",
+          })
+        );
+      }
     };
     loadData();
 

@@ -30,7 +30,17 @@ const CategoryManagement = () => {
 
   useEffect(() => {
     const loadCategories = async () => {
-      dispatch(fetchCategories());
+      try {
+        await dispatch(fetchCategories()).unwrap();
+      } catch (error) {
+        console.error('Error loading categories data:', error);
+        dispatch(
+          showToast({
+            message: error || "Failed to load categories",
+            type: "error",
+          })
+        );
+      }
     };
     loadCategories();
 

@@ -14,10 +14,17 @@ const NotificationScreen = () => {
   const { shops } = useSelector((state) => state.shops);
 
   useEffect(() => {
-    if (!products || products.length === 0) {
-      dispatch(fetchProducts());
-    }
-  }, [dispatch]);
+    const loadProducts = async () => {
+      try {
+        if (!products || products.length === 0) {
+          await dispatch(fetchProducts()).unwrap();
+        }
+      } catch (error) {
+        console.error('Error loading products for notifications:', error);
+      }
+    };
+    loadProducts();
+  }, [dispatch, products]);
 
   const lowStockProducts = products
     .filter((p) => {

@@ -79,11 +79,21 @@ const ServicesScreen = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!services || services.length === 0) {
-        dispatch(fetchServices());
-      }
-      if (!customers || customers.length === 0) {
-        dispatch(fetchCustomers());
+      try {
+        if (!services || services.length === 0) {
+          await dispatch(fetchServices()).unwrap();
+        }
+        if (!customers || customers.length === 0) {
+          await dispatch(fetchCustomers()).unwrap();
+        }
+      } catch (error) {
+        console.error('Error loading services screen data:', error);
+        dispatch(
+          showToast({
+            message: error || "Failed to load data",
+            type: "error",
+          })
+        );
       }
     };
     loadData();
@@ -578,6 +588,21 @@ const ServicesScreen = () => {
                   <Text>Balance:{"\n "}</Text>
                   <Text style={{ color: primaryColor }}>
                     ₹{service.balance?.toString() || "0"}
+                  </Text>
+                </Text>
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 80,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  <Text>Total:{"\n "}</Text>
+                  <Text style={{ color: primaryColor }}>
+                    ₹{service.total_amount?.toString() || "0"}
                   </Text>
                 </Text>
               </View>

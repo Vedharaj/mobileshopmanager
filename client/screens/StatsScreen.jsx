@@ -48,10 +48,17 @@ const StatsScreen = () => {
   };
 
   useEffect(() => {
-    if (!sales || sales.length === 0) {
-      dispatch(fetchSales());
-    }
-  }, [dispatch]);
+    const loadSales = async () => {
+      try {
+        if (!sales || sales.length === 0) {
+          await dispatch(fetchSales()).unwrap();
+        }
+      } catch (error) {
+        console.error('Error loading sales data for stats:', error);
+      }
+    };
+    loadSales();
+  }, [dispatch, sales]);
 
   const daysInRange = useMemo(() => {
     const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
