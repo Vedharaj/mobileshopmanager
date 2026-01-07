@@ -158,7 +158,13 @@ export default function HomeScreen({ navigation }) {
         subtitle = sale.name || customerName;
       } else if (saleType === "sales") {
         title = "Sale";
-        subtitle = customerName;
+        const firstSaleItem = sale.items?.[0];
+        if (firstSaleItem) {
+          title = firstSaleItem?.category_name || "Sale";
+          if (firstSaleItem.product_id && firstSaleItem.product_id.name) {
+            title = firstSaleItem?.category_name + " - " + firstSaleItem?.product_id?.name;
+        }
+        }
       } else if (saleType === "add_money") {
         title = "Add Money";
         subtitle = sale.notes || sale.name || "Money Added";

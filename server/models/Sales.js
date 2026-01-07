@@ -20,6 +20,9 @@ const SalesItemSchema = new mongoose.Schema(
 
     total_price: { type: Number, required: true, min: 0 }, // auto-calculated
 
+    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // Product category
+    category_name: { type: String },
+
     notes: { type: String },
   },
   { timestamps: true }

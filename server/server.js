@@ -105,7 +105,7 @@ connectDB(mongouri).then(() => {
       const altPort = PORT + 1;
       const altServer = app.listen(altPort, HOST, () => {
         console.log(`✅ Server listening on alternative port ${HOST}:${altPort}`);
-        console.log(`⚠️ UPDATE CLIENT: Change API URL to http://10.40.5.238:${altPort}/api`);
+        // console.log(`⚠️ UPDATE CLIENT: Change API URL to http://10.40.5.238:${altPort}/api`);
       });
       altServer.on('error', (altErr) => {
         console.error(`Could not bind to port ${altPort}:`, altErr.message);

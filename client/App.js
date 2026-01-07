@@ -30,6 +30,7 @@ import CustomerManagement from "./screens/CustomerManagement.jsx";
 import ThemeSettings from "./screens/ThemeSettings.jsx";
 import ImportExportScreen from "./screens/ImportExportScreen.jsx";
 import TransactionScreen from "./screens/TransactionScreen.jsx";
+import TransactionDetailScreen from "./screens/TransactionDetailScreen.jsx";
 
 // Redux
 import { Provider, useDispatch, useSelector } from "react-redux";
@@ -61,6 +62,7 @@ const HIDE_BOTTOM_NAVBAR_SCREENS = [
   "ThemeSettings",
   "ImportExport",
   "Transaction",
+  "TransactionDetail",
   "Notification",
 ];
 
@@ -355,6 +357,11 @@ function RootNavigator() {
                 name="Transaction"
                 component={TransactionScreen}
                 options={{ headerShown: true, unmountOnBlur: true }}
+              />
+              <Stack.Screen
+                name="TransactionDetail"
+                component={TransactionDetailScreen}
+                options={{ headerShown: false, animationEnabled: true }}
               />
               <Stack.Screen name="Scanner" component={ScannerScreen} />
             </>

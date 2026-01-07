@@ -313,8 +313,8 @@ export default function TransactionScreen() {
         saleData.cash_paid > 0 && saleData.online_paid > 0
           ? "both"
           : saleData.online_paid > 0
-          ? "online"
-          : "cash";
+          ? "E-Cash"
+          : "Cash";
 
       // Reduce product quantities for each sold item
       if (Array.isArray(saleData.items)) {
@@ -355,7 +355,18 @@ export default function TransactionScreen() {
           payment_method: paymentMethod,
           status: balance > 0 ? "pending" : "completed",
           notes: "Sales transaction",
-          items: saleData.items,
+          items: saleData.items.map((item) => {
+            const product = products.find(
+              (p) => p._id === item.product_id || p.id === item.product_id
+            );
+            const categoryId = typeof product?.category_id === 'object' 
+              ? product?.category_id?._id 
+              : product?.category_id || product?.category?._id || null;
+            return {
+              ...item,
+              category_id: categoryId,
+            };
+          }),
         })
       ).unwrap();
 

@@ -9,19 +9,19 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 import { global } from "../styles/global";
 import { deleteSale, fetchSales } from "../store/slices/salesSlice";
 import { fetchProducts, updateProduct } from "../store/slices/productSlice";
-import TransactionDetailModal from "./TransactionDetailModal";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SWIPE_THRESHOLD = 50;
 
 const TransactionRow = ({ item }) => {
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const { products = [] } = useSelector((state) => state.products || {});
   const translateX = useRef(new Animated.Value(0)).current;
-  const [modalVisible, setModalVisible] = useState(false);
 
   const pan = useRef(
     PanResponder.create({
@@ -141,9 +141,6 @@ const TransactionRow = ({ item }) => {
 
   const cashAmount = item.sale?.cash_paid || 0;
   const onlineAmount = item.sale?.online_paid || 0;
-
-  const isSplitPayment = cashAmount > 0 && onlineAmount > 0;
-
   const isService = item.sale?.type === "service";
   const customerName = item.sale?.customer_id?.name || "Walk-in";
   const shortCustomerName =
@@ -185,7 +182,7 @@ const TransactionRow = ({ item }) => {
         style={{ transform: [{ translateX }], width: "100%" }}
       >
         <TouchableOpacity
-          onPress={() => setModalVisible(true)}
+          onPress={() => navigation.navigate("TransactionDetail", { item })}
           activeOpacity={0.7}
         >
           <View
@@ -210,7 +207,7 @@ const TransactionRow = ({ item }) => {
             }}
           >
             <Text style={[global.txnTitle, { marginBottom: 4 }]}>
-              {item.title}{item.title !== "Sale" && ` - ${item.name}`}
+              {item.title}{item.sale?.type !== "sales" && ` - ${item.name}`}
             </Text>
             <Text style={{ color: accent, fontWeight: "700", fontSize: 14 }}>
               {item.type === "income" ? "+" : "-"}₹
@@ -246,7 +243,7 @@ const TransactionRow = ({ item }) => {
               {onlineAmount > 0 && (
                 <View style={{ alignItems: "center" }}>
                   <Text style={{ fontSize: 11, color: "#666" }}>
-                    Online: ₹{onlineAmount.toFixed(2)}
+                    E-Cash: ₹{onlineAmount.toFixed(2)}
                   </Text>
                 </View>
               )}
@@ -255,13 +252,6 @@ const TransactionRow = ({ item }) => {
         </View>
         </TouchableOpacity>
       </Animated.View>
-
-      {/* Details Modal */}
-      <TransactionDetailModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        item={item}
-      />
     </View>
   );
 };

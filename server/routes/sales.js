@@ -43,7 +43,11 @@ router.get('/', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst')
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      })
       // Use createdAt for recency; fallback sort by invoice_no if needed
       .sort({ createdAt: -1 });
 
@@ -71,7 +75,11 @@ router.get('/service/:serviceId', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst');
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      });
 
     res.json({ sales: sales || [] });
   } catch (err) {
@@ -90,7 +98,11 @@ router.get('/:id', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst');
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      });
 
     if (!sale) {
       return res.status(404).json({ msg: 'Sale not found' });
@@ -177,7 +189,9 @@ router.post('/', auth, async (req, res) => {
     let mappedItems = items || [];
     if (Array.isArray(items) && items.length > 0) {
       const productIds = items.map(i => i.product_id).filter(Boolean);
-      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst');
+      const products = await Product.find({ _id: { $in: productIds } })
+        .select('cgst sgst category_id')
+        .populate('category_id', 'name');
       const productMap = products.reduce((acc, p) => {
         acc[p._id.toString()] = p;
         return acc;
@@ -192,7 +206,10 @@ router.post('/', auth, async (req, res) => {
         const discount = Number(it.discount || 0);
         const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
         const total_price = it.total_price ?? qty * unit - discount + taxAmount;
-        return { ...it, cgst, sgst, total_price };
+        const category_id =
+          it.category_id || prod?.category_id?._id || prod?.category_id || null;
+        const category_name = it.category_name || prod?.category_id?.name || null;
+        return { ...it, cgst, sgst, total_price, category_id, category_name };
       });
     }
 
@@ -230,7 +247,11 @@ router.post('/', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst');
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      });
 
     res.status(201).json({ msg: 'Sale created successfully', sales });
   } catch (err) {
@@ -269,7 +290,9 @@ router.put('/:id', auth, async (req, res) => {
     let mappedItems = items;
     if (Array.isArray(items) && items.length > 0) {
       const productIds = items.map(i => i.product_id).filter(Boolean);
-      const products = await Product.find({ _id: { $in: productIds } }).select('cgst sgst');
+      const products = await Product.find({ _id: { $in: productIds } })
+        .select('cgst sgst category_id')
+        .populate('category_id', 'name');
       const productMap = products.reduce((acc, p) => {
         acc[p._id.toString()] = p;
         return acc;
@@ -284,7 +307,10 @@ router.put('/:id', auth, async (req, res) => {
         const discount = Number(it.discount || 0);
         const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
         const total_price = it.total_price ?? qty * unit - discount + taxAmount;
-        return { ...it, cgst, sgst, total_price };
+        const category_id =
+          it.category_id || prod?.category_id?._id || prod?.category_id || null;
+        const category_name = it.category_name || prod?.category_id?.name || null;
+        return { ...it, cgst, sgst, total_price, category_id, category_name };
       });
     }
 
@@ -325,7 +351,11 @@ router.put('/:id', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name address phone_no')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst');
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      });
 
     res.status(200).json({ msg: 'Sale updated successfully', sales });
   } catch (err) {
@@ -377,7 +407,11 @@ router.delete('/:id', auth, async (req, res) => {
       .populate('user_id', 'username')
       .populate('customer_id', 'name')
       .populate('service_id', 'name')
-      .populate('items.product_id', 'name selling_price cgst sgst');
+      .populate({
+        path: 'items.product_id',
+        select: 'name selling_price cgst sgst category_id',
+        populate: { path: 'category_id', select: 'name' },
+      });
 
     res.status(200).json({ msg: 'Sale deleted successfully', sales });
   } catch (err) {
