@@ -1,14 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Keyboard, ActivityIndicator } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useDispatch, useSelector } from 'react-redux';
-import { AntDesign } from '@expo/vector-icons';
-import { global, useThemeColors } from '../../styles/global';
-import { fetchProducts, createProduct, deleteProduct, updateProduct } from '../../store/slices/productSlice';
-import { fetchCategories, createCategory } from '../../store/slices/categorySlice';
-import { showToast } from '../../store/slices/toastSlice';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Keyboard,
+  ActivityIndicator,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { useDispatch, useSelector } from "react-redux";
+import { AntDesign } from "@expo/vector-icons";
+import { global, useThemeColors } from "../../styles/global";
+import {
+  fetchProducts,
+  createProduct,
+  deleteProduct,
+  updateProduct,
+} from "../../store/slices/productSlice";
+import {
+  fetchCategories,
+  createCategory,
+} from "../../store/slices/categorySlice";
+import { showToast } from "../../store/slices/toastSlice";
 
-export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore }) {
+export default function ProductsTab({
+  displayLimit,
+  isLoadingMore,
+  onLoadMore,
+}) {
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
 
@@ -23,8 +42,8 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
   const formatDate = (date) => {
     const d = new Date(date);
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
   const getCurrentDate = () => formatDate(new Date());
@@ -36,25 +55,25 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
     return date instanceof Date && !isNaN(date);
   };
 
-  const [name, setName] = useState('');
-  const [qty, setQty] = useState('');
-  const [costPrice, setCostPrice] = useState('');
-  const [sellingPrice, setSellingPrice] = useState('');
-  const [cgst, setCgst] = useState('');
-  const [sgst, setSgst] = useState('');
-  const [minimumStock, setMinimumStock] = useState('');
-  const [selectedShopId, setSelectedShopId] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [sellingPrice, setSellingPrice] = useState("");
+  const [cgst, setCgst] = useState("");
+  const [sgst, setSgst] = useState("");
+  const [minimumStock, setMinimumStock] = useState("");
+  const [selectedShopId, setSelectedShopId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [productDate, setProductDate] = useState(getCurrentDate());
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState("");
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingProduct, setIsAddingProduct] = useState(false);
 
-  const [filterSearch, setFilterSearch] = useState('');
-  const [filterShopId, setFilterShopId] = useState('');
-  const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterShopId, setFilterShopId] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState("");
 
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -62,13 +81,13 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
 
   useEffect(() => {
     // ensure defaults for shop selection
-    if (role === 'staff' && staffShops.length > 0) {
+    if (role === "staff" && staffShops.length > 0) {
       const staffShopId = staffShops[0]?._id || staffShops[0];
       setSelectedShopId(staffShopId);
       setFilterShopId(staffShopId);
     } else if (shops.length > 0) {
       setSelectedShopId(shops[0]._id);
-      setFilterShopId('');
+      setFilterShopId("");
     }
   }, [role, shops, staffShops]);
 
@@ -79,7 +98,8 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
   }, [dispatch]);
 
   const shopCategories = categories.filter(
-    (cat) => cat.shop_id === selectedShopId || cat.shop_id?._id === selectedShopId
+    (cat) =>
+      cat.shop_id === selectedShopId || cat.shop_id?._id === selectedShopId
   );
 
   const filterCategories = categories.filter((cat) => {
@@ -90,32 +110,51 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
 
   const handleCreateCategory = async () => {
     if (!newCategoryName || !selectedShopId) {
-      dispatch(showToast({ message: 'Please enter category name', type: 'error' }));
+      dispatch(
+        showToast({ message: "Please enter category name", type: "error" })
+      );
       return;
     }
     try {
       const result = await dispatch(
         createCategory({ name: newCategoryName, shop_id: selectedShopId })
       ).unwrap();
-      dispatch(showToast({ message: 'Category created successfully!', type: 'success' }));
+      dispatch(
+        showToast({
+          message: "Category created successfully!",
+          type: "success",
+        })
+      );
       const newCategory = result?.find(
         (cat) =>
-          cat.name === newCategoryName && (cat.shop_id === selectedShopId || cat.shop_id?._id === selectedShopId)
+          cat.name === newCategoryName &&
+          (cat.shop_id === selectedShopId ||
+            cat.shop_id?._id === selectedShopId)
       );
       if (newCategory) setSelectedCategoryId(newCategory._id);
-      setNewCategoryName('');
+      setNewCategoryName("");
       setShowCreateCategory(false);
     } catch (err) {
-      dispatch(showToast({ message: err || 'Failed to create category', type: 'error' }));
+      dispatch(
+        showToast({
+          message: err || "Failed to create category",
+          type: "error",
+        })
+      );
     }
   };
 
   const handleDeleteProduct = async (productId) => {
     try {
       await dispatch(deleteProduct(productId)).unwrap();
-      dispatch(showToast({ message: 'Product deleted!', type: 'success' }));
+      dispatch(showToast({ message: "Product deleted!", type: "success" }));
     } catch (error) {
-      dispatch(showToast({ message: error || 'Failed to delete product', type: 'error' }));
+      dispatch(
+        showToast({
+          message: error || "Failed to delete product",
+          type: "error",
+        })
+      );
     }
   };
 
@@ -153,27 +192,35 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
 
   const handlePickSuggestion = (product) => {
     setSelectedExistingProduct(product);
-    setName(product.name || '');
+    setName(product.name || "");
     const prodShopId = product.shop_id?._id || product.shop_id;
-    if (role !== 'staff' && prodShopId) setSelectedShopId(prodShopId);
+    if (role !== "staff" && prodShopId) setSelectedShopId(prodShopId);
     const catId = product.category_id?._id || product.category_id;
     if (catId) setSelectedCategoryId(catId);
-    setCostPrice(product.cost_price != null ? product.cost_price.toString() : '');
-    setSellingPrice(product.selling_price != null ? product.selling_price.toString() : '');
-    setCgst(product.cgst != null ? product.cgst.toString() : '');
-    setSgst(product.sgst != null ? product.sgst.toString() : '');
-    setMinimumStock(product.minimum_stock != null ? product.minimum_stock.toString() : '');
-    setProductDate(product.date ? formatDate(new Date(product.date)) : getCurrentDate());
-    setNote(product.note || '');
-    setQty('');
+    setCostPrice(
+      product.cost_price != null ? product.cost_price.toString() : ""
+    );
+    setSellingPrice(
+      product.selling_price != null ? product.selling_price.toString() : ""
+    );
+    setCgst(product.cgst != null ? product.cgst.toString() : "");
+    setSgst(product.sgst != null ? product.sgst.toString() : "");
+    setMinimumStock(
+      product.minimum_stock != null ? product.minimum_stock.toString() : ""
+    );
+    setProductDate(
+      product.date ? formatDate(new Date(product.date)) : getCurrentDate()
+    );
+    setNote(product.note || "");
+    setQty("");
     setShowCreateCategory(false);
     setShowSuggestions(false);
     setNameSuggestions([]);
   };
 
   const handleAddProduct = async () => {
-    if (!qty || qty.trim() === '') {
-      dispatch(showToast({ message: 'Please enter Quantity', type: 'error' }));
+    if (!qty || qty.trim() === "") {
+      dispatch(showToast({ message: "Please enter Quantity", type: "error" }));
       return;
     }
     if (selectedExistingProduct) {
@@ -181,7 +228,12 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
       const addQty = parseInt(qty, 10) || 0;
       const newQty = oldQty + addQty;
       if (!productDate || !isValidDate(productDate)) {
-        dispatch(showToast({ message: 'Please enter a valid date (YYYY-MM-DD)', type: 'error' }));
+        dispatch(
+          showToast({
+            message: "Please enter a valid date (YYYY-MM-DD)",
+            type: "error",
+          })
+        );
         return;
       }
       try {
@@ -196,48 +248,74 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               cgst: selectedExistingProduct.cgst || 0,
               sgst: selectedExistingProduct.sgst || 0,
               minimum_stock: selectedExistingProduct.minimum_stock || 0,
-              shop_id: selectedExistingProduct.shop_id?._id || selectedExistingProduct.shop_id,
-              category_id: selectedExistingProduct.category_id?._id || selectedExistingProduct.category_id || null,
+              shop_id:
+                selectedExistingProduct.shop_id?._id ||
+                selectedExistingProduct.shop_id,
+              category_id:
+                selectedExistingProduct.category_id?._id ||
+                selectedExistingProduct.category_id ||
+                null,
               date: productDate || getCurrentDate(),
-              note: selectedExistingProduct.note || '',
+              note: selectedExistingProduct.note || "",
             },
           })
         ).unwrap();
-        dispatch(showToast({ message: `Quantity updated for "${selectedExistingProduct.name}"`, type: 'success' }));
+        dispatch(
+          showToast({
+            message: `Quantity updated for "${selectedExistingProduct.name}"`,
+            type: "success",
+          })
+        );
       } catch (err) {
-        dispatch(showToast({ message: err || 'Failed to update product quantity', type: 'error' }));
+        dispatch(
+          showToast({
+            message: err || "Failed to update product quantity",
+            type: "error",
+          })
+        );
         return;
       }
       setSelectedExistingProduct(null);
-      setName('');
-      setQty('');
-      setCostPrice('');
-      setSellingPrice('');
-      setCgst('');
-      setSgst('');
-      setMinimumStock('');
-      setSelectedCategoryId('');
+      setName("");
+      setQty("");
+      setCostPrice("");
+      setSellingPrice("");
+      setCgst("");
+      setSgst("");
+      setMinimumStock("");
+      setSelectedCategoryId("");
       setProductDate(getCurrentDate());
-      setNote('');
+      setNote("");
       setIsNameFocused(false);
       Keyboard.dismiss();
       return;
     }
 
     if (!name || !selectedShopId) {
-      dispatch(showToast({ message: role === 'staff' ? 'Please enter product name' : 'Please enter product name and select a shop', type: 'error' }));
+      dispatch(
+        showToast({
+          message:
+            role === "staff"
+              ? "Please enter product name"
+              : "Please enter product name and select a shop",
+          type: "error",
+        })
+      );
       return;
     }
-    if (!costPrice || costPrice.trim() === '') {
-      dispatch(showToast({ message: 'Please enter Cost Price', type: 'error' }));
-      return;
-    }
-    if (!sellingPrice || sellingPrice.trim() === '') {
-      dispatch(showToast({ message: 'Please enter Selling Price', type: 'error' }));
+    if (!sellingPrice || sellingPrice.trim() === "") {
+      dispatch(
+        showToast({ message: "Please enter Selling Price", type: "error" })
+      );
       return;
     }
     if (!productDate || !isValidDate(productDate)) {
-      dispatch(showToast({ message: 'Please enter a valid date (YYYY-MM-DD)', type: 'error' }));
+      dispatch(
+        showToast({
+          message: "Please enter a valid date (YYYY-MM-DD)",
+          type: "error",
+        })
+      );
       return;
     }
 
@@ -256,24 +334,26 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
           user_id: userid,
           category_id: selectedCategoryId || null,
           date: productDate || getCurrentDate(),
-          note: note || '',
+          note: note || "",
         })
       ).unwrap();
-      dispatch(showToast({ message: 'Product created successfully!', type: 'success' }));
-      setName('');
-      setQty('');
-      setCostPrice('');
-      setSellingPrice('');
-      setCgst('');
-      setSgst('');
-      setMinimumStock('');
-      setSelectedCategoryId('');
+      dispatch(
+        showToast({ message: "Product created successfully!", type: "success" })
+      );
+      setName("");
+      setQty("");
+      setCostPrice("");
+      setSellingPrice("");
+      setCgst("");
+      setSgst("");
+      setMinimumStock("");
+      setSelectedCategoryId("");
       setProductDate(getCurrentDate());
-      setNote('');
+      setNote("");
       setNameSuggestions([]);
       setShowSuggestions(false);
       setSelectedExistingProduct(null);
-      if (role === 'staff' && staffShops.length > 0) {
+      if (role === "staff" && staffShops.length > 0) {
         const staffShopId = staffShops[0]?._id || staffShops[0];
         setSelectedShopId(staffShopId);
       } else if (shops.length > 0) {
@@ -282,7 +362,9 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
       setIsNameFocused(false);
       Keyboard.dismiss();
     } catch (err) {
-      dispatch(showToast({ message: err || 'Failed to create product', type: 'error' }));
+      dispatch(
+        showToast({ message: err || "Failed to create product", type: "error" })
+      );
     } finally {
       setIsAddingProduct(false);
     }
@@ -294,37 +376,61 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
     const [showDetails, setShowDetails] = useState(false);
     const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
     const [isQuickAdjusting, setIsQuickAdjusting] = useState(false);
-    const [productName, setProductName] = useState(product.name || '');
-    const [productQty, setProductQty] = useState(product.qty?.toString() || '0');
-    const [productCostPrice, setProductCostPrice] = useState(product.cost_price?.toString() || '0');
-    const [productSellingPrice, setProductSellingPrice] = useState(product.selling_price?.toString() || '0');
-    const [productCgst, setProductCgst] = useState(product.cgst?.toString() || '0');
-    const [productSgst, setProductSgst] = useState(product.sgst?.toString() || '0');
-    const [productMinimumStock, setProductMinimumStock] = useState(product.minimum_stock?.toString() || '0');
-    const [productCategoryId, setProductCategoryId] = useState(product.category_id?._id || product.category_id || '');
-    const [productCustomerId, setProductCustomerId] = useState(product.customer_id?._id || product.customer_id || '');
-    const [productDateValue, setProductDateValue] = useState(product.date ? formatDate(new Date(product.date)) : getCurrentDate());
-    const [productNote, setProductNote] = useState(product.note || '');
+    const [productName, setProductName] = useState(product.name || "");
+    const [productQty, setProductQty] = useState(
+      product.qty?.toString() || "0"
+    );
+    const [productCostPrice, setProductCostPrice] = useState(
+      product.cost_price?.toString() || "0"
+    );
+    const [productSellingPrice, setProductSellingPrice] = useState(
+      product.selling_price?.toString() || "0"
+    );
+    const [productCgst, setProductCgst] = useState(
+      product.cgst?.toString() || "0"
+    );
+    const [productSgst, setProductSgst] = useState(
+      product.sgst?.toString() || "0"
+    );
+    const [productMinimumStock, setProductMinimumStock] = useState(
+      product.minimum_stock?.toString() || "0"
+    );
+    const [productCategoryId, setProductCategoryId] = useState(
+      product.category_id?._id || product.category_id || ""
+    );
+    const [productCustomerId, setProductCustomerId] = useState(
+      product.customer_id?._id || product.customer_id || ""
+    );
+    const [productDateValue, setProductDateValue] = useState(
+      product.date ? formatDate(new Date(product.date)) : getCurrentDate()
+    );
+    const [productNote, setProductNote] = useState(product.note || "");
     const productShopId = product.shop_id?._id || product.shop_id;
     const productShopCategories = categories.filter(
-      (cat) => cat.shop_id === productShopId || cat.shop_id?._id === productShopId
+      (cat) =>
+        cat.shop_id === productShopId || cat.shop_id?._id === productShopId
     );
 
     const handleUpdateProduct = async () => {
-      if (!productQty || productQty.trim() === '') {
-        dispatch(showToast({ message: 'Please enter Quantity', type: 'error' }));
+      if (!productQty || productQty.trim() === "") {
+        dispatch(
+          showToast({ message: "Please enter Quantity", type: "error" })
+        );
         return;
       }
-      if (!productCostPrice || productCostPrice.trim() === '') {
-        dispatch(showToast({ message: 'Please enter Cost Price', type: 'error' }));
-        return;
-      }
-      if (!productSellingPrice || productSellingPrice.trim() === '') {
-        dispatch(showToast({ message: 'Please enter Selling Price', type: 'error' }));
+      if (!productSellingPrice || productSellingPrice.trim() === "") {
+        dispatch(
+          showToast({ message: "Please enter Selling Price", type: "error" })
+        );
         return;
       }
       if (!productDateValue || !isValidDate(productDateValue)) {
-        dispatch(showToast({ message: 'Please enter a valid date (YYYY-MM-DD)', type: 'error' }));
+        dispatch(
+          showToast({
+            message: "Please enter a valid date (YYYY-MM-DD)",
+            type: "error",
+          })
+        );
         return;
       }
       setIsUpdatingProduct(true);
@@ -343,15 +449,21 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               category_id: productCategoryId || null,
               customer_id: productCustomerId || null,
               date: productDateValue || getCurrentDate(),
-              note: productNote || '',
+              note: productNote || "",
             },
           })
         ).unwrap();
-        dispatch(showToast({ message: `Product "${productName}" updated successfully!`, type: 'success' }));
+        dispatch(
+          showToast({
+            message: `Product "${productName}" updated successfully!`,
+            type: "success",
+          })
+        );
         setShowDetails(false);
       } catch (error) {
-        const errorMessage = error.message || error.msg || 'Failed to update product';
-        dispatch(showToast({ message: errorMessage, type: 'error' }));
+        const errorMessage =
+          error.message || error.msg || "Failed to update product";
+        dispatch(showToast({ message: errorMessage, type: "error" }));
       } finally {
         setIsUpdatingProduct(false);
       }
@@ -360,9 +472,12 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
     const handleQuickAdjust = async (type) => {
       const delta = 1;
       const oldQty = parseInt(productQty, 10) || 0;
-      const newQty = type === 'add' ? oldQty + delta : Math.max(0, oldQty - delta);
+      const newQty =
+        type === "add" ? oldQty + delta : Math.max(0, oldQty - delta);
       setProductQty(newQty.toString());
-      const effectiveDate = isValidDate(productDateValue) ? productDateValue : getCurrentDate();
+      const effectiveDate = isValidDate(productDateValue)
+        ? productDateValue
+        : getCurrentDate();
       setIsQuickAdjusting(true);
       try {
         await dispatch(
@@ -379,103 +494,286 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               category_id: productCategoryId || null,
               customer_id: productCustomerId || null,
               date: effectiveDate,
-              note: productNote || '',
+              note: productNote || "",
             },
           })
         ).unwrap();
-        dispatch(showToast({ message: type === 'add' ? `Added 1 to "${productName}"` : `Subtracted 1 from "${productName}"`, type: 'success' }));
+        dispatch(
+          showToast({
+            message:
+              type === "add"
+                ? `Added 1 to "${productName}"`
+                : `Subtracted 1 from "${productName}"`,
+            type: "success",
+          })
+        );
       } catch (err) {
-        dispatch(showToast({ message: err || 'Failed to update quantity', type: 'error' }));
+        dispatch(
+          showToast({
+            message: err || "Failed to update quantity",
+            type: "error",
+          })
+        );
         setProductQty(oldQty.toString());
       } finally {
         setIsQuickAdjusting(false);
       }
     };
 
-    const shopName = product.shop_id?.name || 'N/A';
-    const categoryName = product.category_id?.name || product.category_id?.label || 'N/A';
+    const shopName = product.shop_id?.name || "N/A";
+    const categoryName =
+      product.category_id?.name || product.category_id?.label || "N/A";
 
     return (
       <View
         key={product._id}
         style={{
-          ...(index === data.length - 1 ? global.profileRowLast : global.profileRow),
+          ...(index === data.length - 1
+            ? global.profileRowLast
+            : global.profileRow),
           paddingVertical: 6,
           paddingHorizontal: 8,
-          flexDirection: 'column',
+          flexDirection: "column",
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <View style={{ flexDirection: 'row', gap: 10, flex: 1 }}>
-            <View style={{ flexDirection: 'column', gap: 5, flex: 1 }}>
-              <View style={{ flexDirection: 'row', gap: 10, marginLeft: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <View style={{ flexDirection: "row", gap: 10, flex: 1 }}>
+            <View style={{ flexDirection: "column", gap: 5, flex: 1 }}>
+              <View style={{ flexDirection: "row", gap: 10, marginLeft: 10 }}>
                 <Text style={global.productLabel}>{shopName}</Text>
-                {categoryName !== 'N/A' && <Text style={global.productLabel}>{categoryName}</Text>}
+                {categoryName !== "N/A" && (
+                  <Text style={global.productLabel}>{categoryName}</Text>
+                )}
               </View>
-              <TouchableOpacity onPress={() => { setShowDetails(!showDetails); setIsNameFocused(false); Keyboard.dismiss(); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <AntDesign style={{ marginTop: 5 }} name={showDetails ? 'caret-up' : 'caret-down'} size={20} color="black" />
-                <Text style={{ color: primaryColor, fontSize: 16 }}>{product.name}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowDetails(!showDetails);
+                  setIsNameFocused(false);
+                  Keyboard.dismiss();
+                }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+              >
+                <AntDesign
+                  style={{ marginTop: 5 }}
+                  name={showDetails ? "caret-up" : "caret-down"}
+                  size={20}
+                  color="black"
+                />
+                <Text style={{ color: primaryColor, fontSize: 16 }}>
+                  {product.name}
+                </Text>
               </TouchableOpacity>
-              <View style={{ flexDirection: 'row', gap: 20, marginLeft: 10, flexWrap: 'wrap', margin: 0 }}>
-                <Text style={{ color: '#666', fontSize: 12, maxWidth: 60, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
-                  Qty: <Text style={{ color: primaryColor }}>{productQty || '0'}</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 20,
+                  marginLeft: 10,
+                  flexWrap: "wrap",
+                  margin: 0,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#666",
+                    fontSize: 12,
+                    maxWidth: 60,
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Qty:{" "}
+                  <Text style={{ color: primaryColor }}>
+                    {productQty || "0"}
+                  </Text>
                 </Text>
-                <Text style={{ color: '#666', fontSize: 12, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
-                  CP/SP: <Text style={{ color: primaryColor }}>₹{productCostPrice || '0'} / ₹{productSellingPrice || '0'}</Text>
+                <Text
+                  style={{ color: "#666", fontSize: 12, flexShrink: 1 }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  CP/SP:{" "}
+                  <Text style={{ color: primaryColor }}>
+                    ₹{productCostPrice || "0"} / ₹{productSellingPrice || "0"}
+                  </Text>
                 </Text>
-                <Text style={{ color: '#666', fontSize: 12, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
-                  Note: <Text style={{ color: primaryColor }}>{productNote && productNote.length > 5 ? `${productNote.slice(0, 5)}...` : (productNote || '—')}</Text>
+                <Text
+                  style={{ color: "#666", fontSize: 12, flexShrink: 1 }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Note:{" "}
+                  <Text style={{ color: primaryColor }}>
+                    {productNote && productNote.length > 5
+                      ? `${productNote.slice(0, 5)}...`
+                      : productNote || "—"}
+                  </Text>
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 8, gap: 10 }}>
-          <TouchableOpacity onPress={() => handleQuickAdjust('add')} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: primaryColor }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignSelf: "flex-end",
+            marginTop: 8,
+            gap: 10,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => handleQuickAdjust("add")}
+            style={{
+              paddingVertical: 4,
+              paddingHorizontal: 10,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: primaryColor,
+            }}
+          >
             <Text style={{ fontSize: 12, color: primaryColor }}>+ 1</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleQuickAdjust('sub')} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: '#ba181b' }}>
-            <Text style={{ fontSize: 12, color: '#ba181b' }}>- 1</Text>
+          <TouchableOpacity
+            onPress={() => handleQuickAdjust("sub")}
+            style={{
+              paddingVertical: 4,
+              paddingHorizontal: 10,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: "#ba181b",
+            }}
+          >
+            <Text style={{ fontSize: 12, color: "#ba181b" }}>- 1</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDeleteProduct(product._id)} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: '#ba181b', marginLeft: 4 }}>
-            <Text style={{ fontSize: 12, color: '#ba181b' }}>Delete</Text>
+          <TouchableOpacity
+            onPress={() => handleDeleteProduct(product._id)}
+            style={{
+              paddingVertical: 4,
+              paddingHorizontal: 10,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: "#ba181b",
+              marginLeft: 4,
+            }}
+          >
+            <Text style={{ fontSize: 12, color: "#ba181b" }}>Delete</Text>
           </TouchableOpacity>
         </View>
 
         {showDetails && (
-          <View style={{ marginTop: 10, width: '100%' }}>
-            <TextInput style={global.input} placeholder="Product Name *" value={productName} onChangeText={setProductName} />
-            <TextInput style={global.input} placeholder="Quantity *" value={productQty} onChangeText={setProductQty} keyboardType="numeric" />
-            <TextInput style={global.input} placeholder="Cost Price *" value={productCostPrice} onChangeText={setProductCostPrice} keyboardType="decimal-pad" />
-            <TextInput style={global.input} placeholder="Selling Price *" value={productSellingPrice} onChangeText={setProductSellingPrice} keyboardType="decimal-pad" />
-            <TextInput style={global.input} placeholder="CGST (%)" value={productCgst} onChangeText={setProductCgst} keyboardType="decimal-pad" />
-            <TextInput style={global.input} placeholder="SGST (%)" value={productSgst} onChangeText={setProductSgst} keyboardType="decimal-pad" />
-            <TextInput style={global.input} placeholder="Minimum Stock" value={productMinimumStock} onChangeText={setProductMinimumStock} keyboardType="numeric" />
-            <TextInput style={global.input} placeholder="Date (YYYY-MM-DD) *" value={productDateValue} onChangeText={setProductDateValue} />
-            <TextInput style={global.input} placeholder="Note" value={productNote} onChangeText={setProductNote} multiline />
+          <View style={{ marginTop: 10, width: "100%" }}>
+            <TextInput
+              style={global.input}
+              placeholder="Product Name *"
+              value={productName}
+              onChangeText={setProductName}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Quantity *"
+              value={productQty}
+              onChangeText={setProductQty}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Cost Price"
+              value={productCostPrice}
+              onChangeText={setProductCostPrice}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Selling Price *"
+              value={productSellingPrice}
+              onChangeText={setProductSellingPrice}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="CGST (%)"
+              value={productCgst}
+              onChangeText={setProductCgst}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="SGST (%)"
+              value={productSgst}
+              onChangeText={setProductSgst}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Minimum Stock"
+              value={productMinimumStock}
+              onChangeText={setProductMinimumStock}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Date (YYYY-MM-DD) *"
+              value={productDateValue}
+              onChangeText={setProductDateValue}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Note"
+              value={productNote}
+              onChangeText={setProductNote}
+              multiline
+            />
             {productShopCategories.length > 0 && (
               <View style={{ ...global.input, padding: 0 }}>
-                <Picker selectedValue={productCategoryId} onValueChange={(itemValue) => setProductCategoryId(itemValue)} style={{ fontSize: 12 }} itemStyle={{ fontSize: 12 }}>
+                <Picker
+                  selectedValue={productCategoryId}
+                  onValueChange={(itemValue) => setProductCategoryId(itemValue)}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
+                >
                   <Picker.Item label="No Category" value="" />
                   {productShopCategories.map((category) => (
-                    <Picker.Item key={category._id} label={category.name} value={category._id} />
+                    <Picker.Item
+                      key={category._id}
+                      label={category.name}
+                      value={category._id}
+                    />
                   ))}
                 </Picker>
               </View>
             )}
             {customers.length > 0 && (
               <View style={{ ...global.input, padding: 0 }}>
-                <Picker selectedValue={productCustomerId} onValueChange={(itemValue) => setProductCustomerId(itemValue)} style={{ fontSize: 12 }} itemStyle={{ fontSize: 12 }}>
+                <Picker
+                  selectedValue={productCustomerId}
+                  onValueChange={(itemValue) => setProductCustomerId(itemValue)}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
+                >
                   <Picker.Item label="No Customer" value="" />
                   {customers.map((customer) => (
-                    <Picker.Item key={customer._id} label={customer.name} value={customer._id} />
+                    <Picker.Item
+                      key={customer._id}
+                      label={customer.name}
+                      value={customer._id}
+                    />
                   ))}
                 </Picker>
               </View>
             )}
             <View>
-              <TouchableOpacity style={{ marginTop: 10, ...global.button1 }} onPress={handleUpdateProduct}>
+              <TouchableOpacity
+                style={{ marginTop: 10, ...global.button1 }}
+                onPress={handleUpdateProduct}
+              >
                 <Text style={global.btnText1}>Save {productName}</Text>
               </TouchableOpacity>
             </View>
@@ -497,21 +795,64 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
           onChangeText={updateNameAndSuggestions}
           onFocus={() => {
             setIsNameFocused(true);
-            if (!isFormLocked && name && name.length >= 3 && nameSuggestions.length > 0) {
+            if (
+              !isFormLocked &&
+              name &&
+              name.length >= 3 &&
+              nameSuggestions.length > 0
+            ) {
               setShowSuggestions(true);
             }
           }}
         />
 
         {isNameFocused && showSuggestions && nameSuggestions.length > 0 && (
-          <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, marginTop: 4, marginBottom: 8, backgroundColor: '#fafafa' }}>
-            <Text style={{ fontSize: 12, color: '#666', marginBottom: 4, fontWeight: '500' }}>Similar products:</Text>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#ddd",
+              borderRadius: 8,
+              paddingVertical: 6,
+              paddingHorizontal: 8,
+              marginTop: 4,
+              marginBottom: 8,
+              backgroundColor: "#fafafa",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#666",
+                marginBottom: 4,
+                fontWeight: "500",
+              }}
+            >
+              Similar products:
+            </Text>
             {nameSuggestions.map((p) => (
-              <TouchableOpacity key={p._id} onPress={() => handlePickSuggestion(p)} style={{ paddingVertical: 4, borderRadius: 4 }}>
-                <Text style={{ fontSize: 13, color: primaryColor }} numberOfLines={1} ellipsizeMode="tail">{p.name}</Text>
-                <Text style={{ fontSize: 11, color: '#666' }} numberOfLines={1} ellipsizeMode="tail">
-                  {p.shop_id?.name ? `Shop: ${p.shop_id.name}` : p.shop_id ? `Shop: ${p.shop_id}` : 'Shop: -'}
-                  {p.category_id?.name ? `  •  Cat: ${p.category_id.name}` : ''}
+              <TouchableOpacity
+                key={p._id}
+                onPress={() => handlePickSuggestion(p)}
+                style={{ paddingVertical: 4, borderRadius: 4 }}
+              >
+                <Text
+                  style={{ fontSize: 13, color: primaryColor }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {p.name}
+                </Text>
+                <Text
+                  style={{ fontSize: 11, color: "#666" }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {p.shop_id?.name
+                    ? `Shop: ${p.shop_id.name}`
+                    : p.shop_id
+                    ? `Shop: ${p.shop_id}`
+                    : "Shop: -"}
+                  {p.category_id?.name ? `  •  Cat: ${p.category_id.name}` : ""}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -520,17 +861,24 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
 
         {isNameFocused && (
           <>
-            {role !== 'staff' && shops.length > 0 && (
+            {role !== "staff" && shops.length > 0 && (
               <View style={{ ...global.input, padding: 0 }}>
                 <Picker
                   selectedValue={selectedShopId}
                   enabled={!isFormLocked}
-                  onValueChange={(itemValue) => { setSelectedShopId(itemValue); setSelectedCategoryId(''); }}
+                  onValueChange={(itemValue) => {
+                    setSelectedShopId(itemValue);
+                    setSelectedCategoryId("");
+                  }}
                   style={{ fontSize: 12 }}
                   itemStyle={{ fontSize: 12 }}
                 >
                   {shops.map((shop) => (
-                    <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
+                    <Picker.Item
+                      key={shop._id}
+                      label={shop.name}
+                      value={shop._id}
+                    />
                   ))}
                 </Picker>
               </View>
@@ -544,27 +892,63 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
                       selectedValue={selectedCategoryId}
                       enabled={!isFormLocked}
                       onValueChange={(itemValue) => {
-                        if (itemValue === 'create_new') { setShowCreateCategory(true); setSelectedCategoryId(''); } else { setSelectedCategoryId(itemValue); }
+                        if (itemValue === "create_new") {
+                          setShowCreateCategory(true);
+                          setSelectedCategoryId("");
+                        } else {
+                          setSelectedCategoryId(itemValue);
+                        }
                       }}
                       style={{ fontSize: 12 }}
                       itemStyle={{ fontSize: 12 }}
                     >
                       <Picker.Item label="No Category" value="" />
                       {shopCategories.map((category) => (
-                        <Picker.Item key={category._id} label={category.name} value={category._id} />
+                        <Picker.Item
+                          key={category._id}
+                          label={category.name}
+                          value={category._id}
+                        />
                       ))}
-                      <Picker.Item label="+ Create New Category" value="create_new" />
+                      <Picker.Item
+                        label="+ Create New Category"
+                        value="create_new"
+                      />
                     </Picker>
                   </View>
                 ) : (
                   !isFormLocked && (
                     <View>
-                      <TextInput style={global.input} placeholder="New Category Name *" value={newCategoryName} onChangeText={setNewCategoryName} />
-                      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
-                        <TouchableOpacity style={{ ...global.button1, flex: 1, backgroundColor: '#666' }} onPress={() => { setShowCreateCategory(false); setNewCategoryName(''); }}>
+                      <TextInput
+                        style={global.input}
+                        placeholder="New Category Name *"
+                        value={newCategoryName}
+                        onChangeText={setNewCategoryName}
+                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          gap: 10,
+                          marginBottom: 10,
+                        }}
+                      >
+                        <TouchableOpacity
+                          style={{
+                            ...global.button1,
+                            flex: 1,
+                            backgroundColor: "#666",
+                          }}
+                          onPress={() => {
+                            setShowCreateCategory(false);
+                            setNewCategoryName("");
+                          }}
+                        >
                           <Text style={global.btnText}>Cancel</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={{ ...global.button1, flex: 1 }} onPress={handleCreateCategory}>
+                        <TouchableOpacity
+                          style={{ ...global.button1, flex: 1 }}
+                          onPress={handleCreateCategory}
+                        >
                           <Text style={global.btnText}>Create</Text>
                         </TouchableOpacity>
                       </View>
@@ -574,31 +958,98 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               </View>
             )}
 
-            <TextInput style={global.input} placeholder={selectedExistingProduct ? 'Add Qty to existing *' : 'Quantity *'} value={qty} onChangeText={setQty} keyboardType="numeric" />
-            <TextInput style={global.input} placeholder="Cost Price *" value={costPrice} onChangeText={setCostPrice} keyboardType="decimal-pad" editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="Selling Price *" value={sellingPrice} onChangeText={setSellingPrice} keyboardType="decimal-pad" editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="CGST (%)" value={cgst} onChangeText={setCgst} keyboardType="decimal-pad" editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="SGST (%)" value={sgst} onChangeText={setSgst} keyboardType="decimal-pad" editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="Minimum Stock" value={minimumStock} onChangeText={setMinimumStock} keyboardType="numeric" editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="Date (YYYY-MM-DD) *" value={productDate} onChangeText={setProductDate} editable={!isFormLocked} />
-            <TextInput style={global.input} placeholder="Note" value={note} onChangeText={setNote} multiline editable={!isFormLocked} />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
+            <TextInput
+              style={global.input}
+              placeholder={
+                selectedExistingProduct ? "Add Qty to existing *" : "Quantity *"
+              }
+              value={qty}
+              onChangeText={setQty}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Cost Price"
+              value={costPrice}
+              onChangeText={setCostPrice}
+              keyboardType="decimal-pad"
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Selling Price *"
+              value={sellingPrice}
+              onChangeText={setSellingPrice}
+              keyboardType="decimal-pad"
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="CGST (%)"
+              value={cgst}
+              onChangeText={setCgst}
+              keyboardType="decimal-pad"
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="SGST (%)"
+              value={sgst}
+              onChangeText={setSgst}
+              keyboardType="decimal-pad"
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Minimum Stock"
+              value={minimumStock}
+              onChangeText={setMinimumStock}
+              keyboardType="numeric"
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Date (YYYY-MM-DD) *"
+              value={productDate}
+              onChangeText={setProductDate}
+              editable={!isFormLocked}
+            />
+            <TextInput
+              style={global.input}
+              placeholder="Note"
+              value={note}
+              onChangeText={setNote}
+              multiline
+              editable={!isFormLocked}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
+            >
               <TouchableOpacity
-                style={{ ...global.button1, width: '30%', backgroundColor: '#666' }}
+                style={{
+                  ...global.button1,
+                  width: "30%",
+                  backgroundColor: "#666",
+                }}
                 onPress={() => {
                   setIsNameFocused(false);
-                  setName('');
-                  setQty('');
-                  setCostPrice('');
-                  setSellingPrice('');
-                  setCgst('');
-                  setSgst('');
-                  setMinimumStock('');
-                  setSelectedCategoryId('');
+                  setName("");
+                  setQty("");
+                  setCostPrice("");
+                  setSellingPrice("");
+                  setCgst("");
+                  setSgst("");
+                  setMinimumStock("");
+                  setSelectedCategoryId("");
                   setProductDate(getCurrentDate());
-                  setNote('');
+                  setNote("");
                   setShowCreateCategory(false);
-                  setNewCategoryName('');
+                  setNewCategoryName("");
                   setNameSuggestions([]);
                   setShowSuggestions(false);
                   setSelectedExistingProduct(null);
@@ -607,50 +1058,119 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               >
                 <Text style={global.btnText}>Close</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{ ...global.button1, width: '30%', opacity: isAddingProduct ? 0.6 : 1 }} onPress={handleAddProduct} disabled={isAddingProduct}>
-                {isAddingProduct ? <ActivityIndicator color="#fff" /> : <Text style={global.btnText}>{selectedExistingProduct ? 'Update Qty' : 'Add'}</Text>}
+              <TouchableOpacity
+                style={{
+                  ...global.button1,
+                  width: "30%",
+                  opacity: isAddingProduct ? 0.6 : 1,
+                }}
+                onPress={handleAddProduct}
+                disabled={isAddingProduct}
+              >
+                {isAddingProduct ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={global.btnText}>
+                    {selectedExistingProduct ? "Update Qty" : "Add"}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </>
         )}
       </View>
 
-      <Text style={{ marginBottom: 5}}>Product List</Text>
+      <Text style={{ marginBottom: 5 }}>Product List</Text>
 
-      {status === 'loading' && (
-        <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 30 }}>
+      {status === "loading" && (
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 30,
+          }}
+        >
           <ActivityIndicator size="large" color={primaryColor} />
-          <Text style={{ marginTop: 10, color: '#666' }}>Loading products...</Text>
+          <Text style={{ marginTop: 10, color: "#666" }}>
+            Loading products...
+          </Text>
         </View>
       )}
 
-      {status !== 'loading' && (
+      {status !== "loading" && (
         <>
           <View style={{ marginTop: 8, marginBottom: 4 }}>
-            <TextInput style={{ ...global.input, marginBottom: 0, paddingVertical: 4, height: 38, fontSize: 12 }} placeholder="Search by name, category, note..." value={filterSearch} onChangeText={setFilterSearch} />
+            <TextInput
+              style={{
+                ...global.input,
+                marginBottom: 0,
+                paddingVertical: 4,
+                height: 38,
+                fontSize: 12,
+              }}
+              placeholder="Search by name, category, note..."
+              value={filterSearch}
+              onChangeText={setFilterSearch}
+            />
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
             {shops.length > 0 && (
-              <View style={{ ...global.input, flex: 1, paddingVertical: 0, paddingHorizontal: 0, marginBottom: 0, height: 38, justifyContent: 'center' }}>
+              <View
+                style={{
+                  ...global.input,
+                  flex: 1,
+                  paddingVertical: 0,
+                  paddingHorizontal: 0,
+                  marginBottom: 0,
+                  height: 38,
+                  justifyContent: "center",
+                }}
+              >
                 <Picker
                   selectedValue={filterShopId}
                   onValueChange={(itemValue) => {
                     setFilterShopId(itemValue);
-                    setFilterCategoryId('');
+                    setFilterCategoryId("");
                   }}
                   style={{ fontSize: 10 }}
                   itemStyle={{ fontSize: 10 }}
                 >
                   <Picker.Item label="All Shops" value="" />
                   {shops.map((shop) => (
-                    <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
+                    <Picker.Item
+                      key={shop._id}
+                      label={shop.name}
+                      value={shop._id}
+                    />
                   ))}
                 </Picker>
               </View>
             )}
-            <View style={{ ...global.input, flex: 1, paddingVertical: 0, paddingHorizontal: 0, marginBottom: 0, height: 38, justifyContent: 'center' }}>
-              <Picker selectedValue={filterCategoryId} onValueChange={(itemValue) => setFilterCategoryId(itemValue)} style={{ fontSize: 10 }} itemStyle={{ fontSize: 10 }}>
+            <View
+              style={{
+                ...global.input,
+                flex: 1,
+                paddingVertical: 0,
+                paddingHorizontal: 0,
+                marginBottom: 0,
+                height: 38,
+                justifyContent: "center",
+              }}
+            >
+              <Picker
+                selectedValue={filterCategoryId}
+                onValueChange={(itemValue) => setFilterCategoryId(itemValue)}
+                style={{ fontSize: 10 }}
+                itemStyle={{ fontSize: 10 }}
+              >
                 <Picker.Item label="All Categories" value="" />
                 {filterCategories.map((cat) => (
                   <Picker.Item key={cat._id} label={cat.name} value={cat._id} />
@@ -676,17 +1196,19 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
             if (filterSearch.trim()) {
               const q = filterSearch.trim().toLowerCase();
               filteredProducts = filteredProducts.filter((p) => {
-                const name = (p.name || '').toLowerCase();
-                let catName = '';
+                const name = (p.name || "").toLowerCase();
+                let catName = "";
                 if (p.category_id) {
-                  if (typeof p.category_id === 'object') {
-                    catName = (p.category_id.name || p.category_id.label || '').toString().toLowerCase();
+                  if (typeof p.category_id === "object") {
+                    catName = (p.category_id.name || p.category_id.label || "")
+                      .toString()
+                      .toLowerCase();
                   } else {
                     const cat = categories.find((c) => c._id === p.category_id);
                     if (cat?.name) catName = cat.name.toLowerCase();
                   }
                 }
-                const noteText = (p.note || '').toLowerCase();
+                const noteText = (p.note || "").toLowerCase();
                 const combined = `${name} ${catName} ${noteText}`;
                 return combined.includes(q);
               });
@@ -697,7 +1219,13 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               return dateB - dateA;
             });
             if (sortedProducts.length === 0) {
-              return <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>No products found</Text>;
+              return (
+                <Text
+                  style={{ textAlign: "center", color: "#999", marginTop: 20 }}
+                >
+                  No products found
+                </Text>
+              );
             }
             const paginatedProducts = sortedProducts.slice(0, displayLimit);
             const hasMore = sortedProducts.length > displayLimit;
@@ -705,30 +1233,65 @@ export default function ProductsTab({ displayLimit, isLoadingMore, onLoadMore })
               <>
                 <View style={{ ...global.profileContainer, marginTop: 15 }}>
                   {paginatedProducts.map((product, index) => (
-                    <ProductContainer key={product._id} product={product} index={index} data={paginatedProducts} />
+                    <ProductContainer
+                      key={product._id}
+                      product={product}
+                      index={index}
+                      data={paginatedProducts}
+                    />
                   ))}
                 </View>
 
                 {hasMore && isLoadingMore && (
-                  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                  <View style={{ alignItems: "center", paddingVertical: 20 }}>
                     <ActivityIndicator size="small" color={primaryColor} />
-                    <Text style={{ marginTop: 8, color: '#999', fontSize: 12 }}>Loading more products...</Text>
+                    <Text style={{ marginTop: 8, color: "#999", fontSize: 12 }}>
+                      Loading more products...
+                    </Text>
                   </View>
                 )}
 
                 {hasMore && !isLoadingMore && (
-                  <View style={{ alignItems: 'center', paddingVertical: 15, gap: 8 }}>
-                    <Text style={{ textAlign: 'center', color: '#999', fontSize: 12 }}>
-                      Showing {paginatedProducts.length} of {sortedProducts.length} products • Scroll for more
+                  <View
+                    style={{
+                      alignItems: "center",
+                      paddingVertical: 15,
+                      gap: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: "#999",
+                        fontSize: 12,
+                      }}
+                    >
+                      Showing {paginatedProducts.length} of{" "}
+                      {sortedProducts.length} products • Scroll for more
                     </Text>
-                    <TouchableOpacity onPress={onLoadMore} style={{ ...global.button1, paddingVertical: 8, minWidth: 140, alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={onLoadMore}
+                      style={{
+                        ...global.button1,
+                        paddingVertical: 8,
+                        minWidth: 140,
+                        alignItems: "center",
+                      }}
+                    >
                       <Text style={global.btnText}>Load more</Text>
                     </TouchableOpacity>
                   </View>
                 )}
 
                 {!hasMore && sortedProducts.length > 10 && (
-                  <Text style={{ textAlign: 'center', color: '#999', fontSize: 12, paddingVertical: 15 }}>
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      color: "#999",
+                      fontSize: 12,
+                      paddingVertical: 15,
+                    }}
+                  >
                     All {sortedProducts.length} products loaded
                   </Text>
                 )}

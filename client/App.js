@@ -40,7 +40,7 @@ import { fetchShops, clearShops } from "./store/slices/shopsSlice.js"; // Import
 import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-import loadThemeFromStorage
 import { getSocket, disconnectSocket } from './utils/socket';
 import { showToast } from './store/slices/toastSlice';
-import { registerPushToken } from './utils/notifications';
+// import { registerPushToken } from './utils/notifications';
 // import * as ExpoSplashScreen from 'expo-splash-screen';
 
 // Prevent auto-hide
@@ -112,7 +112,7 @@ function RootNavigator() {
             await dispatch(fetchMe()).unwrap();
             await dispatch(fetchShops()).unwrap();
             // Register Expo push token after we know the user is authenticated
-            try { await registerPushToken(); } catch {}
+            // try { await registerPushToken(); } catch {}
             setShopsLoaded(true);
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
@@ -209,41 +209,41 @@ function RootNavigator() {
   };
 
   // Socket listeners for real-time notifications (must run before any early return)
-  useEffect(() => {
-    if (!isAuthenticated) {
-      disconnectSocket();
-      return;
-    }
-    const s = getSocket();
-    if (!s) return;
-    // Join shop rooms so we only get relevant events
-    try {
-      const ids = (shops || []).map((sh) => sh._id || sh.id).filter(Boolean);
-      s.emit('join-shops', ids);
-    } catch {}
-    const onServiceNew = (payload) => {
-      try {
-        const name = payload?.service?.name || 'New Service';
-        dispatch(showToast({ message: `New service: ${name}`, type: 'info' }));
-      } catch {}
-    };
-    const onRequestNew = (payload) => {
-      try {
-        const product = payload?.request?.product_id?.name || 'Request';
-        const qty = payload?.request?.qty ?? '';
-        const msg = qty ? `New request: ${product} x ${qty}` : `New request: ${product}`;
-        dispatch(showToast({ message: msg, type: 'info' }));
-      } catch {}
-    };
-    s.on('service:new', onServiceNew);
-    s.on('request:new', onRequestNew);
-    return () => {
-      try {
-        s.off('service:new', onServiceNew);
-        s.off('request:new', onRequestNew);
-      } catch {}
-    };
-  }, [dispatch, isAuthenticated, shops]);
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     disconnectSocket();
+  //     return;
+  //   }
+  //   const s = getSocket();
+  //   if (!s) return;
+  //   // Join shop rooms so we only get relevant events
+  //   try {
+  //     const ids = (shops || []).map((sh) => sh._id || sh.id).filter(Boolean);
+  //     s.emit('join-shops', ids);
+  //   } catch {}
+  //   const onServiceNew = (payload) => {
+  //     try {
+  //       const name = payload?.service?.name || 'New Service';
+  //       dispatch(showToast({ message: `New service: ${name}`, type: 'info' }));
+  //     } catch {}
+  //   };
+  //   const onRequestNew = (payload) => {
+  //     try {
+  //       const product = payload?.request?.product_id?.name || 'Request';
+  //       const qty = payload?.request?.qty ?? '';
+  //       const msg = qty ? `New request: ${product} x ${qty}` : `New request: ${product}`;
+  //       dispatch(showToast({ message: msg, type: 'info' }));
+  //     } catch {}
+  //   };
+  //   s.on('service:new', onServiceNew);
+  //   s.on('request:new', onRequestNew);
+  //   return () => {
+  //     try {
+  //       s.off('service:new', onServiceNew);
+  //       s.off('request:new', onRequestNew);
+  //     } catch {}
+  //   };
+  // }, [dispatch, isAuthenticated, shops]);
 
   // Show splash screen while loading (only if authenticated or still checking authentication)
   // Don't show splash screen if user is logged out (not authenticated and initial load is complete)

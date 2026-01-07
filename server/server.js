@@ -76,17 +76,17 @@ const mongouri = process.env.MONGO_URI;
 
 connectDB(mongouri).then(() => {
   const server = app.listen(PORT, HOST, () => {
-    console.log(`✅ Server listening on ${HOST}:${PORT}`);
-    console.log(`📡 Access from network: http://10.40.5.238:${PORT}`);
+    console.log(`Server listening on ${HOST}:${PORT}`);
+    console.log(`Access from network: http://10.40.5.238:${PORT}`);
   });
 
   // Initialize Socket.IO
-  try {
-    const { init } = require('./socket');
-    init(server);
-  } catch (e) {
-    console.error('Failed to initialize socket.io:', e.message);
-  }
+  // try {
+  //   const { init } = require('./socket');
+  //   init(server);
+  // } catch (e) {
+  //   console.error('Failed to initialize socket.io:', e.message);
+  // }
 
   // Schedule periodic pruning of malformed/duplicate tokens (daily)
   try {
@@ -104,8 +104,8 @@ connectDB(mongouri).then(() => {
       console.error(`❌ Port ${PORT} is already in use. Trying alternative port...`);
       const altPort = PORT + 1;
       const altServer = app.listen(altPort, HOST, () => {
-        console.log(`✅ Server listening on alternative port ${HOST}:${altPort}`);
-        // console.log(`⚠️ UPDATE CLIENT: Change API URL to http://10.40.5.238:${altPort}/api`);
+        console.log(`Server listening on alternative port ${HOST}:${altPort}`);
+        // console.log(`UPDATE CLIENT: Change API URL to http://10.40.5.238:${altPort}/api`);
       });
       altServer.on('error', (altErr) => {
         console.error(`Could not bind to port ${altPort}:`, altErr.message);
