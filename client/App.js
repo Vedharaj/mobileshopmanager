@@ -38,16 +38,13 @@ import { store } from "./store/store.js";
 import { setCredentials, fetchMe, logout } from "./store/slices/authSlice.js";
 import { fetchShops, clearShops } from "./store/slices/shopsSlice.js"; // Import clearShops
 import { loadThemeFromStorage } from "./store/slices/themeSlice.js"; // Re-import loadThemeFromStorage
-import { getSocket, disconnectSocket } from './utils/socket';
-import { showToast } from './store/slices/toastSlice';
+import { getSocket, disconnectSocket } from "./utils/socket";
+import { showToast } from "./store/slices/toastSlice";
 // import { registerPushToken } from './utils/notifications';
 // import * as ExpoSplashScreen from 'expo-splash-screen';
 
 // Prevent auto-hide
 // ExpoSplashScreen.preventAutoHideAsync();
-
-// Force app to light mode regardless of system setting
-Appearance.setColorScheme("light");
 
 const Stack = createNativeStackNavigator();
 
@@ -92,12 +89,24 @@ function RootNavigator() {
   const [activeIndex, setActiveIndex] = useState(3);
   const [currentRoute, setCurrentRoute] = useState(null);
   const [isWaitingForShops, setIsWaitingForShops] = useState(false);
+  const [splashShown, setSplashShown] = useState(true);
 
   const userToken = useSelector((state) => state.auth.token);
   const userRole = useSelector((state) => state.auth.role);
   const shops = useSelector((state) => state.shops?.shops || []);
   const shopsStatus = useSelector((state) => state.shops.status);
   const authStatus = useSelector((state) => state.auth.status);
+
+  // Safely set color scheme and hide splash when ready
+  useEffect(() => {
+    try {
+      Appearance.setColorScheme("light");
+    } catch {}
+
+    if (!loading && shopsLoaded) {
+      setSplashShown(false);
+    }
+  }, [loading, shopsLoaded]);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -157,6 +166,7 @@ function RootNavigator() {
 
     // Get current route to avoid resetting if user is on a management screen
     const currentRoute = navigationRef.current?.getCurrentRoute?.();
+    if (!currentRoute) return; // Guard against reload crashes
     const currentRouteName = currentRoute?.name;
 
     // Don't reset if user is on a management or settings screen
@@ -245,6 +255,7 @@ function RootNavigator() {
   //   };
   // }, [dispatch, isAuthenticated, shops]);
 
+  // Show splash screen only once on first load
   // Show splash screen while loading (only if authenticated or still checking authentication)
   // Don't show splash screen if user is logged out (not authenticated and initial load is complete)
   // Don't show splash screen if user is on a protected management screen
@@ -257,7 +268,8 @@ function RootNavigator() {
     "EditProfile",
     "Scanner",
   ];
-  const isOnProtectedRoute = currentRoute && protectedRoutes.includes(currentRoute);
+  const isOnProtectedRoute =
+    currentRoute && protectedRoutes.includes(currentRoute);
   const shouldShowSplash =
     loading ||
     (!isAuthenticated && !shopsLoaded) ||
@@ -311,7 +323,11 @@ function RootNavigator() {
               <Stack.Screen
                 name="Notification"
                 component={NotificationScreen}
-                options={{ headerShown: true, headerBackVisible: true, title: "Notifications" }}
+                options={{
+                  headerShown: true,
+                  headerBackVisible: true,
+                  title: "Notifications",
+                }}
               />
               <Stack.Screen
                 name="EditProfile"

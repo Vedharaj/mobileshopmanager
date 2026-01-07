@@ -50,7 +50,7 @@ export default function ProductSearchModal({
             backgroundColor: "#fff",
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            maxHeight: "80%",
+            height: "80%",
             paddingTop: 20,
             paddingHorizontal: 16,
           }}

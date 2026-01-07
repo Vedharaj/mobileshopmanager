@@ -155,7 +155,7 @@ export default function SalesForm({
     const merged = {
       ...current,
       [field]: value,
-      unit_price: field === "product_id" ? nextUnitPrice : current.unit_price,
+      unit_price: field === "product_id" ? nextUnitPrice : (field === "unit_price" ? value : current.unit_price),
       cgst: field === "product_id" ? nextCgst : current.cgst ?? 0,
       sgst: field === "product_id" ? nextSgst : current.sgst ?? 0,
     };
@@ -534,7 +534,7 @@ export default function SalesForm({
                     <TextInput
                       style={[global.input, { marginBottom: 0 }]}
                       placeholder="Qty"
-                      value={item.quantity}
+                      value={String(item.quantity || "")}
                       onChangeText={(value) =>
                         handleItemChange(item.id, "quantity", value)
                       }
@@ -552,7 +552,7 @@ export default function SalesForm({
                     <TextInput
                       style={[global.input, { marginBottom: 0 }]}
                       placeholder="Price"
-                      value={item.unit_price}
+                      value={String(item.unit_price || "")}
                       onChangeText={(value) =>
                         handleItemChange(item.id, "unit_price", value)
                       }

@@ -852,7 +852,7 @@ export default function ProductsTab({
                     : p.shop_id
                     ? `Shop: ${p.shop_id}`
                     : "Shop: -"}
-                  {p.category_id?.name ? `  •  Cat: ${p.category_id.name}` : ""}
+                  {p.category_id?.name ? `  •  ${p.category_id.name}` : ""}
                 </Text>
               </TouchableOpacity>
             ))}

@@ -8,6 +8,7 @@ import {
   Keyboard,
   Alert,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { global, useThemeColors } from "../styles/global";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCustomers, createCustomer, deleteCustomer, updateCustomer } from "../store/slices/customerSlice";
@@ -18,15 +19,18 @@ const CustomerManagement = () => {
   const dispatch = useDispatch();
 
   const { customers, status, error } = useSelector((state) => state.customers);
-  const { role } = useSelector((state) => state.auth);
+  const { shops } = useSelector((state) => state.shops);
+  const { role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
   const isStaff = role === "staff";
 
   const [name, setName] = useState("");
   const [phoneNo, setPhoneNo] = useState("");
   const [address, setAddress] = useState("");
+  const [selectedShopId, setSelectedShopId] = useState("");
   const [isNameFocused, setIsNameFocused] = useState(false);
 
+  // Load customers only once on mount
   useEffect(() => {
     const loadCustomers = async () => {
       try {
@@ -35,7 +39,7 @@ const CustomerManagement = () => {
         console.error('Error loading customers data:', error);
         dispatch(
           showToast({
-            message: error || "Failed to load customers",
+            message: (typeof error === 'string' ? error : error?.message) || "Failed to load customers",
             type: "error",
           })
         );
@@ -43,6 +47,18 @@ const CustomerManagement = () => {
     };
     loadCustomers();
   }, [dispatch]);
+
+  // Set initial shop selection separately
+  useEffect(() => {
+    if (!selectedShopId) {
+      if (role === "staff" && user?.shops?.length > 0) {
+        const staffShopId = user.shops[0]?._id || user.shops[0];
+        setSelectedShopId(staffShopId);
+      } else if (shops.length > 0 && !isStaff) {
+        setSelectedShopId(shops[0]._id);
+      }
+    }
+  }, [shops, role, user, isStaff, selectedShopId]);
 
   const handleDeleteCustomer = async (customerId) => {
     try {
@@ -65,7 +81,7 @@ const CustomerManagement = () => {
     } catch (error) {
       dispatch(
         showToast({
-          message: error || "Failed to delete customer",
+          message: (typeof error === 'string' ? error : error?.message) || "Failed to delete customer",
           type: "error",
         })
       );
@@ -78,12 +94,15 @@ const CustomerManagement = () => {
     const [customerName, setCustomerName] = useState(customer.name || "");
     const [customerPhoneNo, setCustomerPhoneNo] = useState(customer.phone_no || "");
     const [customerAddress, setCustomerAddress] = useState(customer.address || "");
+    const [customerShopId, setCustomerShopId] = useState(customer.shop_id?._id || customer.shop_id || "");
 
     const handleUpdateCustomer = async () => {
+      const currentShopId = customer.shop_id?._id || customer.shop_id || "";
       if (
         customerName === (customer.name || "") &&
         customerPhoneNo === (customer.phone_no || "") &&
-        customerAddress === (customer.address || "")
+        customerAddress === (customer.address || "") &&
+        customerShopId === currentShopId
       ) {
         dispatch(showToast({
           message: "No changes made to customer details",
@@ -99,6 +118,7 @@ const CustomerManagement = () => {
             name: customerName,
             phone_no: customerPhoneNo,
             address: customerAddress,
+            shop_id: customerShopId,
           },
         })).unwrap();
         dispatch(showToast({
@@ -171,6 +191,25 @@ const CustomerManagement = () => {
               editable={true}
             />
 
+            {role !== "staff" && shops.length > 0 && (
+              <View style={{ ...global.input, padding: 0 }}>
+                <Picker
+                  selectedValue={customerShopId}
+                  onValueChange={(itemValue) => setCustomerShopId(itemValue)}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
+                >
+                  {shops.map((shop) => (
+                    <Picker.Item
+                      key={shop._id}
+                      label={shop.name}
+                      value={shop._id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            )}
+
             <TextInput
               style={global.input}
               placeholder="Phone Number"
@@ -216,11 +255,22 @@ const CustomerManagement = () => {
       return;
     }
 
+    if (!selectedShopId) {
+      dispatch(
+        showToast({
+          message: role === "staff" ? "Shop not selected" : "Please select a shop",
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
       await dispatch(createCustomer({
         name,
         phone_no: phoneNo,
         address: address,
+        shop_id: selectedShopId,
       })).unwrap();
 
       dispatch(
@@ -237,7 +287,7 @@ const CustomerManagement = () => {
     } catch (err) {
       dispatch(
         showToast({
-          message: err || "Failed to create customer",
+          message: (typeof err === 'string' ? err : err?.message) || "Failed to create customer",
           type: "error",
         })
       );
@@ -260,6 +310,25 @@ const CustomerManagement = () => {
 
           {isNameFocused && (
             <>
+              {role !== "staff" && shops.length > 0 && (
+                <View style={{ ...global.input, padding: 0 }}>
+                  <Picker
+                    selectedValue={selectedShopId}
+                    onValueChange={(itemValue) => setSelectedShopId(itemValue)}
+                    style={{ fontSize: 12 }}
+                    itemStyle={{ fontSize: 12 }}
+                  >
+                    {shops.map((shop) => (
+                      <Picker.Item
+                        key={shop._id}
+                        label={shop.name}
+                        value={shop._id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              )}
+
               <TextInput
                 style={global.input}
                 placeholder="Phone Number"

@@ -3,10 +3,21 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Customer = require('../models/Customer');
 
-// GET /api/customers - return all customers
+// GET /api/customers - return authenticated user's customers (from their shops)
 router.get('/', auth, async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ created_at: -1 });
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+
+    // Find customers that either belong to user's shops OR don't have shop_id yet (legacy)
+    const customers = await Customer.find({
+      $or: [
+        { shop_id: { $in: shopIds } },
+        { shop_id: { $exists: false } },
+        { shop_id: null }
+      ]
+    }).populate('shop_id', 'name').sort({ created_at: -1 });
+    
     res.json({ customers: customers || [] });
   } catch (err) {
     console.error(err);
@@ -17,22 +28,32 @@ router.get('/', auth, async (req, res) => {
 // POST /api/customers - create a new customer
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, phone_no, address } = req.body;
+    const { name, phone_no, address, shop_id } = req.body;
 
     if (!name) {
       return res.status(400).json({ msg: 'Name is required' });
     }
 
+    if (!shop_id) {
+      return res.status(400).json({ msg: 'Shop is required' });
+    }
+
     const customer = new Customer({
       name,
       phone_no: phone_no || '',
-      address: address || ''
+      address: address || '',
+      shop_id
     });
 
     await customer.save();
 
-    // Return all customers
-    const customers = await Customer.find().sort({ created_at: -1 });
+    // Return all customers from user's shops
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+    const customers = await Customer.find({
+      shop_id: { $in: shopIds }
+    }).populate('shop_id', 'name').sort({ created_at: -1 });
+    
     res.status(201).json({ msg: 'Customer created successfully', customers });
   } catch (err) {
     console.error(err);
@@ -44,7 +65,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const customerId = req.params.id;
-    const { name, phone_no, address } = req.body;
+    const { name, phone_no, address, shop_id } = req.body;
 
     if (!name) {
       return res.status(400).json({ msg: 'Name is required' });
@@ -58,10 +79,18 @@ router.put('/:id', auth, async (req, res) => {
     customer.name = name;
     customer.phone_no = phone_no || '';
     customer.address = address || '';
+    if (shop_id) {
+      customer.shop_id = shop_id;
+    }
     await customer.save();
 
-    // Return all customers
-    const customers = await Customer.find().sort({ created_at: -1 });
+    // Return all customers from user's shops
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+    const customers = await Customer.find({
+      shop_id: { $in: shopIds }
+    }).populate('shop_id', 'name').sort({ created_at: -1 });
+    
     res.status(200).json({ msg: 'Customer updated successfully', customers });
   } catch (err) {
     console.error(err);
@@ -81,8 +110,13 @@ router.delete('/:id', auth, async (req, res) => {
 
     await customer.deleteOne();
 
-    // Return all customers
-    const customers = await Customer.find().sort({ created_at: -1 });
+    // Return all customers from user's shops
+    const user = await req.user.populate('shops');
+    const shopIds = user.shops.map(shop => shop._id);
+    const customers = await Customer.find({
+      shop_id: { $in: shopIds }
+    }).populate('shop_id', 'name').sort({ created_at: -1 });
+    
     res.status(200).json({ msg: 'Customer deleted successfully', customers });
   } catch (err) {
     console.error(err);

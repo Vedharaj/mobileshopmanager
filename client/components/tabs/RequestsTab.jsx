@@ -498,7 +498,7 @@ export default function RequestsTab() {
               <TouchableOpacity key={p._id} onPress={() => handlePickSuggestion(p)} style={{ paddingVertical: 4, borderRadius: 4 }}>
                 <Text style={{ fontSize: 13, color: primaryColor }} numberOfLines={1}>{p.name}</Text>
                 <Text style={{ fontSize: 11, color: '#666' }} numberOfLines={1}>
-                  {p.shop_id?.name ? `Shop: ${p.shop_id.name}` : p.shop_id ? `Shop: ${p.shop_id}` : 'Shop: -'}
+                  {p.category_id?.name ? `${p.category_id.name} · ` : ''}{p.shop_id?.name ? `Shop: ${p.shop_id.name}` : p.shop_id ? `Shop: ${p.shop_id}` : 'Shop: -'}
                 </Text>
               </TouchableOpacity>
             ))}
