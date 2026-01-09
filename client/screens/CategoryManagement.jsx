@@ -171,7 +171,7 @@ const CategoryManagement = () => {
               editable={true}
             />
 
-            {true && (
+            {!isStaff && (
               <View>
                 <TouchableOpacity
                   style={{ marginTop: 10, ...global.button1 }}
@@ -227,9 +227,8 @@ const CategoryManagement = () => {
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <View style={global.mainContainer}>
-        {!isStaff && (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ marginBottom: 10 }}>Add Category</Text>
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ marginBottom: 10 }}>Add Category</Text>
             <TextInput
               style={global.input}
               placeholder="Category Name *"
@@ -245,6 +244,7 @@ const CategoryManagement = () => {
                   <Picker
                     selectedValue={selectedShopId}
                     onValueChange={(itemValue) => setSelectedShopId(itemValue)}
+                    enabled={!isStaff}
                   >
                     {shops.map((shop) => (
                       <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
@@ -273,8 +273,7 @@ const CategoryManagement = () => {
               </View>
             </>
           )}
-          </View>
-        )}
+        </View>
         <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Category List</Text>
         {categories.map((category) => (
           <CategoryContainer key={category._id} category={category} isStaff={isStaff} />

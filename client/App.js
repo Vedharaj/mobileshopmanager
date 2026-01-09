@@ -10,6 +10,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import BottomNavbar from "./components/BottomNavbar.jsx";
 import Toast from "./components/Toast.jsx";
 import SplashScreen from "./components/SplashScreen.jsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 
 // screens
 import LoginScreen from "./screens/LoginScreen.jsx";
@@ -402,10 +403,12 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <SafeAreaProvider>
-        <RootNavigator />
-      </SafeAreaProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <SafeAreaProvider>
+          <RootNavigator />
+        </SafeAreaProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }

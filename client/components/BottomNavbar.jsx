@@ -292,6 +292,19 @@ export default function BottomNavbar({
           />
         </Pressable>
       </Animated.View>
+
+      {/* SAFE AREA BACKGROUND FIX */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: insets.bottom,
+          backgroundColor: "#fff",
+          zIndex: 1,
+        }}
+      />
     </View>
   );
 }
@@ -314,6 +327,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 14,
+    backgroundColor: "#fff",
   },
 
   side: {

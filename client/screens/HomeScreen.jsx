@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }) {
   const [filterShopId, setFilterShopId] = useState("");
 
   // Summary visibility
-  const [showSummary, setShowSummary] = useState(false);
+  const [showSummary, setShowSummary] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const RECENT_DAYS = 14; // Limit fetch to recent days for faster loads
 
@@ -62,10 +62,13 @@ export default function HomeScreen({ navigation }) {
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      await dispatch(fetchSales({ days: RECENT_DAYS })).unwrap();
-      await dispatch(fetchProducts()).unwrap();
-    } catch (e) {
-      // ignore; toasts handled in thunks if needed
+      await Promise.all([
+        dispatch(fetchSales({ days: RECENT_DAYS })).unwrap(),
+        dispatch(fetchProducts()).unwrap()
+      ]);
+    } catch (error) {
+      console.error('❌ Refresh error:', error);
+      // Toast already shown by thunks
     } finally {
       setIsRefreshing(false);
     }
@@ -74,24 +77,40 @@ export default function HomeScreen({ navigation }) {
   // Clear cart items when HomeScreen is focused
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(clearCart());
+      try {
+        dispatch(clearCart());
+      } catch (error) {
+        console.error('❌ Error clearing cart:', error);
+      }
     }, [dispatch])
   );
 
   // Fetch sales on component mount
   useEffect(() => {
-    dispatch(fetchSales({ days: RECENT_DAYS }));
-    dispatch(fetchProducts());
+    try {
+      dispatch(fetchSales({ days: RECENT_DAYS }));
+      dispatch(fetchProducts());
+    } catch (error) {
+      console.error('❌ Error fetching initial data:', error);
+    }
   }, [dispatch]);
 
   // Fetch transactions when date changes
   useEffect(() => {
-    dispatch(fetchSales({ days: RECENT_DAYS }));
+    try {
+      dispatch(fetchSales({ days: RECENT_DAYS }));
+    } catch (error) {
+      console.error('❌ Error fetching sales by date:', error);
+    }
   }, [selectedDate, dispatch]);
 
   // Fetch transactions when shop filter changes
   useEffect(() => {
-    dispatch(fetchSales({ days: RECENT_DAYS }));
+    try {
+      dispatch(fetchSales({ days: RECENT_DAYS }));
+    } catch (error) {
+      console.error('❌ Error fetching filtered sales:', error);
+    }
   }, [filterShopId, dispatch]);
 
   const notificationCount = useMemo(() => {

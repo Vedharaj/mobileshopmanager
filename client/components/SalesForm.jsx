@@ -25,6 +25,7 @@ import {
 } from "../store/slices/salesItemsSlice";
 import { createCustomer } from "../store/slices/customerSlice";
 import { showToast } from "../store/slices/toastSlice";
+import { fetchCategories } from "../store/slices/categorySlice";
 
 export default function SalesForm({
   primaryColor,
@@ -41,6 +42,7 @@ export default function SalesForm({
   const dispatch = useDispatch();
   const items = useSelector(selectCartItems);
   const { total: totalAmount } = useSelector(selectCartTotals);
+  const categories = useSelector((state) => state.categories.categories || []);
 
   const [selectedCustomer, setSelectedCustomer] = React.useState("");
   const [cashPaid, setCashPaid] = React.useState("");
@@ -52,27 +54,69 @@ export default function SalesForm({
   const [newCustomerPhoneNo, setNewCustomerPhoneNo] = React.useState("");
   const [newCustomerAddress, setNewCustomerAddress] = React.useState("");
 
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
   const calculateSubtotal = (qty, price) => {
     const q = parseFloat(qty) || 0;
     const p = parseFloat(price) || 0;
     return q * p;
   };
-  
+
   const handleAddItem = () => {
     const lastItem = items[items.length - 1];
-    if (!lastItem.product_id) {
+    
+    if (!lastItem.category_id) {
       Alert.alert(
         "Incomplete Item",
-        "Please select a product for the current item first"
+        "Please select a category for the current item first"
       );
       return;
     }
+    
+    if (!lastItem.quantity || parseFloat(lastItem.quantity) <= 0) {
+      Alert.alert(
+        "Incomplete Item",
+        "Please enter quantity for the current item"
+      );
+      return;
+    }
+    
+    if (!lastItem.unit_price || parseFloat(lastItem.unit_price) < 0) {
+      Alert.alert(
+        "Incomplete Item",
+        "Please enter price for the current item"
+      );
+      return;
+    }
+    
     dispatch(addCartRow());
   };
 
   const openProductModal = (itemId) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item?.category_id) {
+      Alert.alert("Category Required", "Please select a category first");
+      return;
+    }
     setCurrentItemId(itemId);
     setModalVisible(true);
+  };
+
+  const getFilteredProducts = () => {
+    if (!currentItemId) return products;
+    const item = items.find((i) => i.id === currentItemId);
+    if (!item?.category_id) return products;
+    
+    // Extract category ID from item (should be a string)
+    const selectedCategoryId = item.category_id;
+    
+    // Filter products by matching category_id (handle both string and object formats)
+    return products.filter((p) => {
+      const productCategoryId = p.category_id?._id || p.category_id;
+      return productCategoryId === selectedCategoryId;
+    });
   };
 
   const selectProduct = (product) => {
@@ -155,7 +199,12 @@ export default function SalesForm({
     const merged = {
       ...current,
       [field]: value,
-      unit_price: field === "product_id" ? nextUnitPrice : (field === "unit_price" ? value : current.unit_price),
+      unit_price:
+        field === "product_id"
+          ? nextUnitPrice
+          : field === "unit_price"
+          ? value
+          : current.unit_price,
       cgst: field === "product_id" ? nextCgst : current.cgst ?? 0,
       sgst: field === "product_id" ? nextSgst : current.sgst ?? 0,
     };
@@ -232,10 +281,19 @@ export default function SalesForm({
   const handleSave = () => {
     const filledItems = items.filter((item) => item.product_id);
 
-    if (filledItems.length === 0) {
+    // if (filledItems.length === 0) {
+    //   Alert.alert(
+    //     "Validation Error",
+    //     "Please add at least one item with a product"
+    //   );
+    //   return;
+    // }
+
+    const itemsWithoutCategory = items.filter((item) => !item.category_id);
+    if (itemsWithoutCategory.length > 0) {
       Alert.alert(
         "Validation Error",
-        "Please add at least one item with a product"
+        "Please select a category for all items"
       );
       return;
     }
@@ -296,9 +354,13 @@ export default function SalesForm({
       items: filledItems.map((item) => {
         const qty = parseFloat(item.quantity) || 0;
         const price = parseFloat(item.unit_price) || 0;
-        const product = products.find(
-          (p) => p._id === item.product_id || p.id === item.product_id || p.product_id === item.product_id
-        ) || {};
+        const product =
+          products.find(
+            (p) =>
+              p._id === item.product_id ||
+              p.id === item.product_id ||
+              p.product_id === item.product_id
+          ) || {};
         const cgst = item.cgst ?? product.cgst ?? 0;
         const sgst = item.sgst ?? product.sgst ?? 0;
         return {
@@ -393,14 +455,18 @@ export default function SalesForm({
                   }}
                 >
                   <Picker.Item label="Walk-in" value="" />
-                  {customers && customers.map((c) => (
-                    <Picker.Item
-                      key={c._id || c.id}
-                      label={c.name}
-                      value={c._id || c.id}
-                    />
-                  ))}
-                  <Picker.Item label="+ Create New Customer" value="create_new" />
+                  {customers &&
+                    customers.map((c) => (
+                      <Picker.Item
+                        key={c._id || c.id}
+                        label={c.name}
+                        value={c._id || c.id}
+                      />
+                    ))}
+                  <Picker.Item
+                    label="+ Create New Customer"
+                    value="create_new"
+                  />
                 </Picker>
               </View>
             ) : (
@@ -425,7 +491,9 @@ export default function SalesForm({
                   onChangeText={setNewCustomerAddress}
                   multiline
                 />
-                <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+                <View
+                  style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}
+                >
                   <TouchableOpacity
                     style={{
                       ...global.button,
@@ -451,176 +519,6 @@ export default function SalesForm({
               </View>
             )}
           </View>
-        </View>
-
-        {/* Items Section */}
-        <View style={{ marginBottom: 15 }}>
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "600",
-              color: "#333",
-              marginBottom: 10,
-            }}
-          >
-            Items
-          </Text>
-
-          <View style={{ maxHeight: 320 }}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled={true}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 8 }}
-            >
-              {items.map((item, index) => (
-                <View
-                  key={item.id}
-                  style={{
-                    backgroundColor: "#f9f9f9",
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 10,
-                    borderWidth: 1,
-                    borderColor: "#e0e0e0",
-                  }}
-                >
-                {/* Item Selection */}
-                <View style={{ marginBottom: 10 }}>
-                  <Text
-                    style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
-                  >
-                    Item {index + 1} *
-                  </Text>
-                  <TouchableOpacity
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#ddd",
-                      borderRadius: 8,
-                      padding: 12,
-                      backgroundColor: "#fff",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                    onPress={() => openProductModal(item.id)}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: item.product_name ? "#333" : "#999",
-                      }}
-                    >
-                      {item.product_name || "Select Item"}
-                    </Text>
-                    <MaterialIcons name="search" size={20} color="#666" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Qty and Price Row */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text
-                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
-                    >
-                      Qty *
-                    </Text>
-                    <TextInput
-                      style={[global.input, { marginBottom: 0 }]}
-                      placeholder="Qty"
-                      value={String(item.quantity || "")}
-                      onChangeText={(value) =>
-                        handleItemChange(item.id, "quantity", value)
-                      }
-                      keyboardType="numeric"
-                      maxLength={6}
-                    />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
-                    >
-                      Price *
-                    </Text>
-                    <TextInput
-                      style={[global.input, { marginBottom: 0 }]}
-                      placeholder="Price"
-                      value={String(item.unit_price || "")}
-                      onChangeText={(value) =>
-                        handleItemChange(item.id, "unit_price", value)
-                      }
-                      keyboardType="numeric"
-                      maxLength={8}
-                    />
-                  </View>
-                </View>
-
-                {/* Subtotal and Remove */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginTop: 8,
-                    paddingTop: 8,
-                    borderTopWidth: 1,
-                    borderTopColor: "#e0e0e0",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "700",
-                      color: primaryColor,
-                    }}
-                  >
-                    Subtotal: ₹{item.subtotal.toFixed(2)}
-                  </Text>
-                  {items.length > 1 && (
-                    <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                      <MaterialIcons name="close" size={24} color="#e74c3c" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Add Item Button */}
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 10,
-              borderWidth: 1.5,
-              borderColor: primaryColor,
-              borderRadius: 8,
-              borderStyle: "dashed",
-              marginTop: 10,
-            }}
-            onPress={handleAddItem}
-          >
-            <MaterialIcons name="add" size={20} color={primaryColor} />
-            <Text
-              style={{
-                marginLeft: 6,
-                fontSize: 14,
-                fontWeight: "600",
-                color: primaryColor,
-              }}
-            >
-              Add Item
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Items Summary Section */}
@@ -670,7 +568,8 @@ export default function SalesForm({
                       {item.product_name}
                     </Text>
                     <Text style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-                      {item.quantity} × ₹{parseFloat(item.unit_price).toFixed(2)}
+                      {item.quantity} × ₹
+                      {parseFloat(item.unit_price).toFixed(2)}
                     </Text>
                   </View>
                   <Text
@@ -813,10 +712,217 @@ export default function SalesForm({
           </TouchableOpacity>
         </View>
 
+        {/* Items Section */}
+        <View style={{ marginBottom: 15, backgroundColor: primaryColor + "10", padding: 6, borderRadius: 8, borderWidth: 1, borderColor: primaryColor + "30"   }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: "#333",
+              marginBottom: 10,
+            }}
+          >
+            Items Details - {items.length} item{items.length !== 1 ? "s" : ""}
+          </Text>
+
+          <View style={{ maxHeight: 320 }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              {items.map((item, index) => (
+                <View
+                  key={item.id}
+                  style={{
+                    backgroundColor: "#f9f9f9",
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 10,
+                    borderWidth: 1,
+                    borderColor: "#e0e0e0",
+                  }}
+                >
+                  {/* Category Selection */}
+                  <View style={{ marginBottom: 10 }}>
+                    <Text
+                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                    >
+                      Category *
+                    </Text>
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#ddd",
+                        borderRadius: 8,
+                        backgroundColor: "#fff",
+                      }}
+                    >
+                      <Picker
+                        selectedValue={item.category_id || ""}
+                        onValueChange={(value) =>
+                          handleItemChange(item.id, "category_id", value)
+                        }
+                        style={{ padding: 0 }}
+                      >
+                        <Picker.Item label="Select Category" value="" />
+                        {categories &&
+                          categories.map((cat) => (
+                            <Picker.Item
+                              key={cat._id || cat.id}
+                              label={cat.name}
+                              value={cat._id || cat.id}
+                            />
+                          ))}
+                      </Picker>
+                    </View>
+                  </View>
+
+                  {/* Item Selection */}
+                  <View style={{ marginBottom: 10 }}>
+                    <Text
+                      style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                    >
+                      Item {index + 1}
+                    </Text>
+                    <TouchableOpacity
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#ddd",
+                        borderRadius: 8,
+                        padding: 12,
+                        backgroundColor: "#fff",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                      onPress={() => openProductModal(item.id)}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: item.product_name ? "#333" : "#999",
+                        }}
+                      >
+                        {item.product_name || "Select Item"}
+                      </Text>
+                      <MaterialIcons name="search" size={20} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Qty and Price Row */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text
+                        style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                      >
+                        Qty *
+                      </Text>
+                      <TextInput
+                        style={[global.input, { marginBottom: 0 }]}
+                        placeholder="Qty"
+                        value={String(item.quantity || "")}
+                        onChangeText={(value) =>
+                          handleItemChange(item.id, "quantity", value)
+                        }
+                        keyboardType="numeric"
+                        maxLength={6}
+                      />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
+                      >
+                        Price *
+                      </Text>
+                      <TextInput
+                        style={[global.input, { marginBottom: 0 }]}
+                        placeholder="Price"
+                        value={String(item.unit_price || "")}
+                        onChangeText={(value) =>
+                          handleItemChange(item.id, "unit_price", value)
+                        }
+                        keyboardType="numeric"
+                        maxLength={8}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Subtotal and Remove */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTopWidth: 1,
+                      borderTopColor: "#e0e0e0",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: primaryColor,
+                      }}
+                    >
+                      Subtotal: ₹{item.subtotal.toFixed(2)}
+                    </Text>
+                    {items.length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => handleRemoveItem(item.id)}
+                      >
+                        <MaterialIcons name="close" size={24} color="#e74c3c" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          {/* Add Item Button */}
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 10,
+              borderWidth: 1.5,
+              borderColor: primaryColor,
+              borderRadius: 8,
+              borderStyle: "dashed",
+              marginTop: 10,
+            }}
+            onPress={handleAddItem}
+          >
+            <MaterialIcons name="add" size={20} color={primaryColor} />
+            <Text
+              style={{
+                marginLeft: 6,
+                fontSize: 14,
+                fontWeight: "600",
+                color: primaryColor,
+              }}
+            >
+              Add Item
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+
         {/* Product Search Modal */}
         <ProductSearchModal
           visible={modalVisible}
-          products={products}
+          products={getFilteredProducts()}
           primaryColor={primaryColor}
           onClose={() => setModalVisible(false)}
           onSelectProduct={selectProduct}

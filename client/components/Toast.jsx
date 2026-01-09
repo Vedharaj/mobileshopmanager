@@ -7,87 +7,116 @@ import { hideToast } from "../store/slices/toastSlice";
 const { width } = Dimensions.get("window");
 
 const Toast = () => {
-  const dispatch = useDispatch();
-  const { visible, message, type, duration } = useSelector(
-    (state) => state.toast
-  );
+  try {
+    const dispatch = useDispatch();
+    const { visible, message, type, duration } = useSelector(
+      (state) => state.toast
+    );
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(40)).current;
-  const timerRef = useRef(null);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const translateY = useRef(new Animated.Value(40)).current;
+    const timerRef = useRef(null);
 
-  useEffect(() => {
-    if (visible) {
-      // clear previous timer if any
-      if (timerRef.current) clearTimeout(timerRef.current);
+    useEffect(() => {
+      try {
+        if (visible) {
+          // clear previous timer if any
+          if (timerRef.current) clearTimeout(timerRef.current);
 
-      // animate in
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+          // animate in
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(translateY, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
 
-      // auto hide
-      timerRef.current = setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 40,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          dispatch(hideToast());
-        });
-      }, duration);
-    }
+          // auto hide
+          timerRef.current = setTimeout(() => {
+            try {
+              Animated.parallel([
+                Animated.timing(fadeAnim, {
+                  toValue: 0,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(translateY, {
+                  toValue: 40,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+              ]).start(() => {
+                try {
+                  dispatch(hideToast());
+                } catch (dispatchError) {
+                  console.error('❌ Error dispatching hideToast:', dispatchError);
+                }
+              });
+            } catch (animError) {
+              console.error('❌ Error in toast animation:', animError);
+            }
+          }, duration || 3000);
+        }
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+        return () => {
+          try {
+            if (timerRef.current) clearTimeout(timerRef.current);
+          } catch (cleanupError) {
+            console.error('❌ Error in toast cleanup:', cleanupError);
+          }
+        };
+      } catch (effectError) {
+        console.error('❌ Error in toast useEffect:', effectError);
+        return () => {};
+      }
+    }, [visible, duration, fadeAnim, translateY, dispatch]);
+
+    if (!visible) return null;
+
+    const getBgColor = () => {
+      try {
+        switch (type) {
+          case "error":
+            return "#ff6459ff";
+          case "warning":
+            return "#ff9800";
+          case "info":
+            return "#2196f3";
+          default:
+            return "#4caf50"; // success
+        }
+      } catch (error) {
+        console.error('❌ Error in getBgColor:', error);
+        return "#4caf50";
+      }
     };
-  }, [visible, duration, fadeAnim, translateY, dispatch]);
 
-  if (!visible) return null;
-
-  const getBgColor = () => {
-    switch (type) {
-      case "error":
-        return "#ff6459ff";
-      case "warning":
-        return "#ff9800";
-      case "info":
-        return "#2196f3";
-      default:
-        return "#4caf50"; // success
-    }
-  };
-
-  return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY }],
-          backgroundColor: getBgColor(),
-        },
-      ]}
-    >
-      <Text style={styles.text}>{message}</Text>
-    </Animated.View>
-  );
+    return (
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY }],
+            backgroundColor: getBgColor(),
+          },
+        ]}
+      >
+        <Text style={styles.text} numberOfLines={2}>
+          {message || 'Notification'}
+        </Text>
+      </Animated.View>
+    );
+  } catch (error) {
+    console.error('❌ Toast component error:', error);
+    return null;
+  }
 };
 
 const styles = StyleSheet.create({

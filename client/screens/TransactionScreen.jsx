@@ -78,21 +78,26 @@ export default function TransactionScreen() {
 
   // Normalize scanned product data
   const normalizeScannedProduct = (raw) => {
-    if (!raw) return null;
+    try {
+      if (!raw) return null;
 
-    const candidate = raw.product || raw;
-    const productId =
-      candidate._id || candidate.id || candidate.product_id || candidate.code;
+      const candidate = raw.product || raw;
+      const productId =
+        candidate._id || candidate.id || candidate.product_id || candidate.code;
 
-    if (!productId) return null;
+      if (!productId) return null;
 
-    return {
-      _id: productId,
-      name: candidate.name || candidate.product_name || "Item",
-      selling_price:
-        candidate.selling_price ?? candidate.price ?? candidate.unit_price ?? 0,
-      scannedAt: raw.scannedAt || candidate.scannedAt || null,
-    };
+      return {
+        _id: productId,
+        name: candidate.name || candidate.product_name || "Item",
+        selling_price:
+          candidate.selling_price ?? candidate.price ?? candidate.unit_price ?? 0,
+        scannedAt: raw.scannedAt || candidate.scannedAt || null,
+      };
+    } catch (error) {
+      console.error('❌ Error normalizing scanned product:', error);
+      return null;
+    }
   };
 
   // Preload sales so return search has data even before switching tabs
@@ -104,36 +109,41 @@ export default function TransactionScreen() {
 
   // Handle scanned product - add or increment quantity
   useEffect(() => {
-    if (!scannedProduct) {
-      return;
-    }
+    try {
+      if (!scannedProduct) {
+        return;
+      }
 
-    const normalized = normalizeScannedProduct(scannedProduct);
-    if (!normalized) {
-      console.log("❌ Scanned product missing id, ignoring:", scannedProduct);
-      return;
-    }
+      const normalized = normalizeScannedProduct(scannedProduct);
+      if (!normalized) {
+        console.log("❌ Scanned product missing id, ignoring:", scannedProduct);
+        return;
+      }
 
-    const { _id: productId, name, selling_price, scannedAt } = normalized;
-    // Use the scannedAt timestamp from scanner, or current time if missing
-    const timestamp = scannedAt || Date.now();
-    const scanId = `${productId}-${timestamp}`;
+      const { _id: productId, name, selling_price, scannedAt } = normalized;
+      // Use the scannedAt timestamp from scanner, or current time if missing
+      const timestamp = scannedAt || Date.now();
+      const scanId = `${productId}-${timestamp}`;
 
-    // Skip if we've already processed this exact scan
-    if (lastScanId === scanId) {
-      console.log("⏭️ Scan already processed, skipping:", scanId);
-      return;
+      // Skip if we've already processed this exact scan
+      if (lastScanId === scanId) {
+        console.log("⏭️ Scan already processed, skipping:", scanId);
+        return;
+      }
+      dispatch(
+        addOrUpdateFromScan({
+          product_id: productId,
+          product_name: name,
+          unit_price: selling_price || 0,
+          scanId,
+        })
+      );
+      dispatch(setLastScanId(scanId));
+    } catch (error) {
+      console.error('❌ Error processing scanned product:', error);
+      dispatch(showToast({ message: 'Error processing scanned item', type: 'error' }));
     }
-    dispatch(
-      addOrUpdateFromScan({
-        product_id: productId,
-        product_name: name,
-        unit_price: selling_price || 0,
-        scanId,
-      })
-    );
-    dispatch(setLastScanId(scanId));
-  }, [scannedProduct]);
+  }, [scannedProduct, lastScanId, dispatch]);
 
   // Handle back button - navigate to Home screen
   useEffect(() => {
@@ -308,70 +318,109 @@ export default function TransactionScreen() {
 
     setIsSubmitting(true);
     try {
-      const balance = saleData.total_amount - saleData.paid_amount;
+      // Validate sale data
+      if (!saleData || !saleData.items || saleData.items.length === 0) {
+        throw new Error("Invalid sale data");
+      }
+
+      const balance = (saleData.total_amount || 0) - (saleData.paid_amount || 0);
       const paymentMethod =
-        saleData.cash_paid > 0 && saleData.online_paid > 0
+        (saleData.cash_paid || 0) > 0 && (saleData.online_paid || 0) > 0
           ? "both"
-          : saleData.online_paid > 0
+          : (saleData.online_paid || 0) > 0
           ? "E-Cash"
           : "Cash";
 
-      // Reduce product quantities for each sold item
-      if (Array.isArray(saleData.items)) {
+      // Reduce product quantities for each sold item with error handling
+      if (Array.isArray(saleData.items) && Array.isArray(products)) {
         for (const item of saleData.items) {
-          const product = products.find(
-            (p) => p._id === item.product_id || p.id === item.product_id
-          );
-          if (product) {
-            const currentQty = product.qty || 0;
-            const newQty = Math.max(0, currentQty - (item.quantity || 0));
-            // console.log(
-            //   `📄 SALE: Reducing "${product.name}" qty: ${currentQty} → ${newQty} (sold: ${item.quantity})`
-            // );
-            await dispatch(
-              updateProduct({
-                productId: product._id || product.id,
-                productData: { qty: newQty },
-              })
-            ).unwrap();
+          try {
+            if (!item || !item.product_id) continue;
+            
+            const product = products.find(
+              (p) => p && (p._id === item.product_id || p.id === item.product_id)
+            );
+            
+            if (product && (product._id || product.id)) {
+              const currentQty = parseInt(product.qty) || 0;
+              const soldQty = parseInt(item.quantity) || 0;
+              const newQty = Math.max(0, currentQty - soldQty);
+              
+              await dispatch(
+                updateProduct({
+                  productId: product._id || product.id,
+                  productData: { qty: newQty },
+                })
+              ).unwrap();
+            }
+          } catch (productErr) {
+            console.error("Error updating product quantity:", productErr);
+            // Continue with other products even if one fails
           }
         }
       }
 
+      // Create sale with validated data
       await dispatch(
         createSale({
           shop_id: selectedShopForTx,
-          user_id: user?._id,
-          customer_id: saleData.customer_id,
+          user_id: user?._id || null,
+          customer_id: saleData.customer_id || null,
           service_id: null,
           name: "Sale",
           type: "sales",
           order_date: new Date().toISOString(),
-          total_amount: saleData.total_amount,
-          paid_amount: saleData.paid_amount,
-          cash_paid: saleData.cash_paid,
-          online_paid: saleData.online_paid,
+          total_amount: saleData.total_amount || 0,
+          paid_amount: saleData.paid_amount || 0,
+          cash_paid: saleData.cash_paid || 0,
+          online_paid: saleData.online_paid || 0,
           balance: balance,
           payment_method: paymentMethod,
           status: balance > 0 ? "pending" : "completed",
           notes: "Sales transaction",
-          items: saleData.items.map((item) => {
-            const product = products.find(
-              (p) => p._id === item.product_id || p.id === item.product_id
-            );
-            const categoryId = typeof product?.category_id === 'object' 
-              ? product?.category_id?._id 
-              : product?.category_id || product?.category?._id || null;
-            return {
-              ...item,
-              category_id: categoryId,
-            };
+        items: saleData.items.map((item) => {
+            try {
+              const product = Array.isArray(products) ? products.find(
+                (p) => p && (p._id === item.product_id || p.id === item.product_id)
+              ) : null;
+              
+              const categoryId = product?.category_id 
+                ? (typeof product.category_id === 'object' 
+                    ? product.category_id._id 
+                    : product.category_id)
+                : "NO CATEGORY";
+              
+              return {
+                product_id: item.product_id,
+                quantity: item.quantity || 0,
+                unit_price: item.unit_price || 0,
+                cgst: item.cgst || 0,
+                sgst: item.sgst || 0,
+                total_price: item.total_price || 0,
+                category_id: categoryId,
+              };
+            } catch (itemErr) {
+              console.error("Error mapping item:", itemErr);
+              return {
+                product_id: item.product_id,
+                quantity: item.quantity || 0,
+                unit_price: item.unit_price || 0,
+                cgst: item.cgst || 0,
+                sgst: item.sgst || 0,
+                total_price: item.total_price || 0,
+                category_id: null,
+              };
+            }
           }),
         })
       ).unwrap();
 
-      dispatch(fetchProducts());
-      dispatch(fetchSales());
+      // Refresh data
+      await Promise.all([
+        dispatch(fetchProducts()),
+        dispatch(fetchSales())
+      ]);
+
       dispatch(
         showToast({ message: "Sale recorded successfully!", type: "success" })
       );
@@ -385,7 +434,10 @@ export default function TransactionScreen() {
       navigation.navigate("Home");
     } catch (err) {
       console.error("Sales submission error:", err);
-      const errorMsg = typeof err === 'string' ? err : err?.payload || err?.message || "Failed to submit sale";
+      const errorMsg = typeof err === 'string' 
+        ? err 
+        : err?.payload?.message || err?.payload || err?.message || "Failed to submit sale";
+      
       dispatch(
         showToast({
           message: errorMsg,

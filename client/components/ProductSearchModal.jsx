@@ -43,6 +43,7 @@ export default function ProductSearchModal({
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.5)",
           justifyContent: "flex-end",
+          paddingBottom: 20,
         }}
       >
         <View
@@ -83,7 +84,7 @@ export default function ProductSearchModal({
               marginBottom: 15,
               backgroundColor: "#f9f9f9",
             }}
-            placeholder="Search by name, category, or barcode..."
+            placeholder="Search by name"
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus

@@ -191,11 +191,12 @@ const CustomerManagement = () => {
               editable={true}
             />
 
-            {role !== "staff" && shops.length > 0 && (
+            {shops.length > 0 && (
               <View style={{ ...global.input, padding: 0 }}>
                 <Picker
                   selectedValue={customerShopId}
                   onValueChange={(itemValue) => setCustomerShopId(itemValue)}
+                  enabled={!isStaff}
                   style={{ fontSize: 12 }}
                   itemStyle={{ fontSize: 12 }}
                 >
@@ -227,7 +228,7 @@ const CustomerManagement = () => {
               multiline
               editable={true}
             />
-
+!isStaff
             {true && (
               <View>
                 <TouchableOpacity
@@ -297,9 +298,8 @@ const CustomerManagement = () => {
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
       <View style={global.mainContainer}>
-        {!isStaff && (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ marginBottom: 10 }}>Add Customer</Text>
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ marginBottom: 10 }}>Add Customer</Text>
             <TextInput
               style={global.input}
               placeholder="Customer Name *"
@@ -308,26 +308,27 @@ const CustomerManagement = () => {
               onFocus={() => setIsNameFocused(true)}
             />
 
-          {isNameFocused && (
-            <>
-              {role !== "staff" && shops.length > 0 && (
-                <View style={{ ...global.input, padding: 0 }}>
-                  <Picker
-                    selectedValue={selectedShopId}
-                    onValueChange={(itemValue) => setSelectedShopId(itemValue)}
-                    style={{ fontSize: 12 }}
-                    itemStyle={{ fontSize: 12 }}
-                  >
-                    {shops.map((shop) => (
-                      <Picker.Item
-                        key={shop._id}
-                        label={shop.name}
-                        value={shop._id}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              )}
+        {isNameFocused && (
+          <>
+            {shops.length > 0 && (
+              <View style={{ ...global.input, padding: 0 }}>
+                <Picker
+                  selectedValue={selectedShopId}
+                  onValueChange={(itemValue) => setSelectedShopId(itemValue)}
+                  enabled={!isStaff}
+                  style={{ fontSize: 12 }}
+                  itemStyle={{ fontSize: 12 }}
+                >
+                  {shops.map((shop) => (
+                    <Picker.Item
+                      key={shop._id}
+                      label={shop.name}
+                      value={shop._id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            )}
 
               <TextInput
                 style={global.input}
@@ -367,8 +368,7 @@ const CustomerManagement = () => {
               </View>
             </>
           )}
-          </View>
-        )}
+        </View>
         <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Customer List</Text>
         {customers.map((customer) => (
           <CustomerContainer key={customer._id} customer={customer} isStaff={isStaff} />
