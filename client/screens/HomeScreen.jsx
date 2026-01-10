@@ -84,33 +84,14 @@ export default function HomeScreen({ navigation }) {
     }, [dispatch])
   );
 
-  // Fetch sales on component mount
-  useEffect(() => {
-    try {
-      dispatch(fetchSales({ days: RECENT_DAYS }));
-      dispatch(fetchProducts());
-    } catch (error) {
-      console.error('❌ Error fetching initial data:', error);
-    }
-  }, [dispatch]);
+  // Data is now pre-loaded in App.js on initial mount
+  // Only fetch on manual refresh via handleRefresh function
 
-  // Fetch transactions when date changes
-  useEffect(() => {
-    try {
-      dispatch(fetchSales({ days: RECENT_DAYS }));
-    } catch (error) {
-      console.error('❌ Error fetching sales by date:', error);
-    }
-  }, [selectedDate, dispatch]);
+  // Date filtering is handled client-side using the already-loaded sales data
+  // No need to refetch from server on date change
 
-  // Fetch transactions when shop filter changes
-  useEffect(() => {
-    try {
-      dispatch(fetchSales({ days: RECENT_DAYS }));
-    } catch (error) {
-      console.error('❌ Error fetching filtered sales:', error);
-    }
-  }, [filterShopId, dispatch]);
+  // Shop filtering is handled client-side using the already-loaded sales data
+  // No need to refetch from server on filter change
 
   const notificationCount = useMemo(() => {
     return products.filter((p) => {

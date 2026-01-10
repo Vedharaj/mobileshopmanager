@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -76,37 +76,22 @@ const ServicesScreen = () => {
   const [amountInEcash, setAmountInEcash] = useState("");
   const [displayLimitServices, setDisplayLimitServices] = useState(10);
   const [isLoadingMoreServices, setIsLoadingMoreServices] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (!services || services.length === 0) {
-          await dispatch(fetchServices()).unwrap();
-        }
-        if (!customers || customers.length === 0) {
-          await dispatch(fetchCustomers()).unwrap();
-        }
-      } catch (error) {
-        console.error('Error loading services screen data:', error);
-        dispatch(
-          showToast({
-            message: error || "Failed to load data",
-            type: "error",
-          })
-        );
-      }
-    };
-    loadData();
+    // Only run once on mount - data is pre-loaded in App.js
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-    if (role === "staff" && staffShops.length > 0) {
+    if (role === "staff" && staffShops && staffShops.length > 0) {
       const staffShopId = staffShops[0]?._id || staffShops[0];
       setSelectedShopId(staffShopId);
       setFilterShopId(staffShopId); // staff only sees their shop
-    } else if (shops.length > 0) {
+    } else if (shops && shops.length > 0) {
       setSelectedShopId(shops[0]._id);
       setFilterShopId(""); // owner default: all shops
     }
-  }, [dispatch, shops, role, staffShops]);
+  }, []);
 
   const handleCreateCustomer = async () => {
     if (!newCustomerName) {
@@ -641,7 +626,7 @@ const ServicesScreen = () => {
                     enabled={!isUpdatingService}
                   >
                     <Picker.Item label="No Customer" value="" />
-                    {customers.map((customer) => (
+                    {Array.isArray(customers) && customers.map((customer) => (
                       <Picker.Item
                         key={customer._id}
                         label={customer.name}
@@ -997,7 +982,7 @@ const ServicesScreen = () => {
                     }}
                   >
                     <Picker.Item label="No Customer" value="" />
-                    {customers.map((customer) => (
+                    {Array.isArray(customers) && customers.map((customer) => (
                       <Picker.Item
                         key={customer._id}
                         label={customer.name}
@@ -1125,13 +1110,13 @@ const ServicesScreen = () => {
                 </Picker>
               </View>
 
-              {role !== "staff" && shops.length > 0 && (
+              {role !== "staff" && shops && shops.length > 0 && (
                 <View style={{ ...global.input, padding: 0, marginTop: 10 }}>
                   <Picker
                     selectedValue={selectedShopId}
                     onValueChange={(itemValue) => setSelectedShopId(itemValue)}
                   >
-                    {shops.map((shop) => (
+                    {Array.isArray(shops) && shops.map((shop) => (
                       <Picker.Item
                         key={shop._id}
                         label={shop.name}
@@ -1237,7 +1222,7 @@ const ServicesScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            {shops.map((shop) => {
+            {Array.isArray(shops) && shops.map((shop) => {
               const id = shop._id;
               const isActive = filterShopId === id;
               return (
@@ -1313,6 +1298,17 @@ const ServicesScreen = () => {
         </View>
 
         {(() => {
+          // Ensure services is an array before filtering
+          if (!services || !Array.isArray(services)) {
+            return (
+              <Text
+                style={{ textAlign: "center", color: "#999", marginTop: 20 }}
+              >
+                Loading services...
+              </Text>
+            );
+          }
+
           const baseServices =
             activeTab === 0
               ? services.filter(

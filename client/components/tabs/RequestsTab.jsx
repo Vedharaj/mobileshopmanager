@@ -12,12 +12,33 @@ export default function RequestsTab() {
   const dispatch = useDispatch();
   const { primaryColor } = useThemeColors();
 
-  const { products } = useSelector((state) => state.products);
-  const { shops } = useSelector((state) => state.shops);
-  const { role, user } = useSelector((state) => state.auth);
-  const { items: requestItems, status: requestStatus } = useSelector((state) => state.requestItems);
+  const { products = [] } = useSelector((state) => state.products) || {};
+  const { shops = [] } = useSelector((state) => state.shops) || {};
+  const { role, user } = useSelector((state) => state.auth) || {};
+  const { items: requestItems = [], status: requestStatus = 'idle' } = useSelector((state) => state.requestItems) || {};
 
   const staffShops = user?.shops || [];
+  const isStaff = role === "staff";
+  
+  // Get user's shop IDs based on role
+  const userShopIds = isStaff && staffShops.length > 0 
+    ? staffShops.map(s => s._id || s) 
+    : shops.map(s => s._id);
+  
+  // Filter shops to only show user's shops
+  const userShops = shops.filter(shop => userShopIds.includes(shop._id));
+  
+  // Filter products to only show those belonging to user's shops
+  const userProducts = products.filter(prod => {
+    const prodShopId = prod.shop_id?._id || prod.shop_id;
+    return userShopIds.includes(prodShopId);
+  });
+  
+  // Filter request items to only show those belonging to user's shops
+  const userRequestItems = requestItems.filter(item => {
+    const itemShopId = item.shop_id?._id || item.shop_id;
+    return userShopIds.includes(itemShopId);
+  });
 
   const [name, setName] = useState('');
   const [qty, setQty] = useState('');
@@ -30,107 +51,160 @@ export default function RequestsTab() {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    if (!requestItems || requestItems.length === 0) {
-      dispatch(fetchRequestItems());
+    try {
+      if (!requestItems || requestItems.length === 0) {
+        dispatch(fetchRequestItems()).catch((err) => {
+          console.error('Failed to fetch request items:', err);
+        });
+      }
+    } catch (err) {
+      console.error('Error in requestItems effect:', err);
     }
-    if (role === 'staff' && staffShops.length > 0) {
-      const staffShopId = staffShops[0]?._id || staffShops[0];
-      setSelectedShopId(staffShopId);
-    } else if (shops.length > 0) {
-      setSelectedShopId(shops[0]._id);
+  }, [dispatch]);
+
+  // Separate effect for shop selection to avoid unnecessary dependencies
+  useEffect(() => {
+    try {
+      if (userShops.length > 0) {
+        setSelectedShopId(userShops[0]._id);
+      }
+    } catch (err) {
+      console.error('Error setting shop:', err);
     }
-  }, [dispatch, role, shops, staffShops]);
+  }, [role, shops, staffShops]);
 
   const updateNameAndSuggestions = (text) => {
-    setName(text);
-    if (!text || text.trim().length < 3) {
+    try {
+      setName(text);
+      if (!text || text.trim().length < 3) {
+        setSelectedExistingProduct(null);
+        setNameSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      const search = text.toLowerCase();
+      let base = userProducts && Array.isArray(userProducts) ? [...userProducts] : [];
+      
+      if (selectedShopId && base.length > 0) {
+        base = base.filter((p) => {
+          if (!p) return false;
+          const psid = p.shop_id?._id || p.shop_id;
+          return psid === selectedShopId;
+        });
+      }
+      
+      const seen = new Set();
+      const matches = [];
+      for (const p of base) {
+        if (!p || !p.name) continue;
+        const n = p.name.toLowerCase();
+        if (n.includes(search) && !seen.has(n)) {
+          seen.add(n);
+          matches.push(p);
+        }
+        if (matches.length >= 5) break;
+      }
+      setNameSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
       setSelectedExistingProduct(null);
+    } catch (err) {
+      console.error('Error in updateNameAndSuggestions:', err);
       setNameSuggestions([]);
       setShowSuggestions(false);
-      return;
     }
-
-    const search = text.toLowerCase();
-    let base = products;
-    if (selectedShopId) {
-      base = base.filter((p) => {
-        const psid = p.shop_id?._id || p.shop_id;
-        return psid === selectedShopId;
-      });
-    }
-    const seen = new Set();
-    const matches = [];
-    for (const p of base) {
-      if (!p.name) continue;
-      const n = p.name.toLowerCase();
-      if (n.includes(search) && !seen.has(n)) {
-        seen.add(n);
-        matches.push(p);
-      }
-      if (matches.length >= 5) break;
-    }
-    setNameSuggestions(matches);
-    setShowSuggestions(matches.length > 0);
-    setSelectedExistingProduct(null);
   };
 
   const handlePickSuggestion = (product) => {
-    setSelectedExistingProduct(product);
-    setName(product.name || '');
-    const prodShopId = product.shop_id?._id || product.shop_id;
-    if (role !== 'staff' && prodShopId) setSelectedShopId(prodShopId);
-    setShowSuggestions(false);
-    setIsNameFocused(false);
+    try {
+      if (!product) return;
+      setSelectedExistingProduct(product);
+      setName(product.name || '');
+      const prodShopId = product.shop_id?._id || product.shop_id;
+      if (role !== 'staff' && prodShopId) setSelectedShopId(prodShopId);
+      setShowSuggestions(false);
+      setIsNameFocused(false);
+    } catch (err) {
+      console.error('Error in handlePickSuggestion:', err);
+    }
   };
 
   const handleSubmit = () => {
-    if (!selectedExistingProduct || !qty) {
-      dispatch(showToast({ message: 'Please select a product and enter quantity', type: 'error' }));
-      return;
+    try {
+      if (!selectedExistingProduct || !qty) {
+        dispatch(showToast({ message: 'Please select a product and enter quantity', type: 'error' }));
+        return;
+      }
+      
+      const shopId = role === 'staff'
+        ? selectedShopId
+        : selectedShopId || selectedExistingProduct.shop_id?._id || selectedExistingProduct.shop_id;
+      
+      if (!shopId) {
+        dispatch(showToast({ message: 'Please select a shop', type: 'error' }));
+        return;
+      }
+      
+      const payload = {
+        product_id: selectedExistingProduct._id || selectedExistingProduct.id,
+        shop_id: shopId,
+        qty: parseInt(qty, 10) || 0,
+        note: note || '',
+      };
+      
+      dispatch(createRequestItem(payload))
+        .unwrap()
+        .then(() => {
+          dispatch(showToast({ message: 'Request submitted!', type: 'success' }));
+          setName('');
+          setQty('');
+          setNote('');
+          setSelectedExistingProduct(null);
+          setShowForm(false);
+        })
+        .catch((err) => {
+          const errMsg = err?.message || err || 'Failed to submit request';
+          dispatch(showToast({ message: errMsg, type: 'error' }));
+        });
+    } catch (err) {
+      console.error('Error in handleSubmit:', err);
+      dispatch(showToast({ message: 'Error submitting request', type: 'error' }));
     }
-    const payload = {
-      product_id: selectedExistingProduct._id,
-      shop_id:
-        role === 'staff'
-          ? selectedShopId
-          : selectedShopId || selectedExistingProduct.shop_id?._id || selectedExistingProduct.shop_id,
-      qty: parseInt(qty, 10) || 0,
-      note: note || '',
-    };
-    dispatch(createRequestItem(payload))
-      .unwrap()
-      .then(() => {
-        dispatch(showToast({ message: 'Request submitted!', type: 'success' }));
-        setName('');
-        setQty('');
-        setNote('');
-        setSelectedExistingProduct(null);
-        setShowForm(false);
-      })
-      .catch((err) => {
-        dispatch(showToast({ message: err || 'Failed to submit request', type: 'error' }));
-      });
   };
 
   const handleDeleteRequest = (requestId) => {
-    Alert.alert('Delete Request', 'Are you sure you want to delete this request?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await dispatch(deleteRequestItem(requestId)).unwrap();
-            dispatch(showToast({ message: 'Request deleted!', type: 'success' }));
-          } catch (err) {
-            dispatch(showToast({ message: err || 'Failed to delete request', type: 'error' }));
-          }
+    try {
+      if (!requestId) {
+        dispatch(showToast({ message: 'Invalid request ID', type: 'error' }));
+        return;
+      }
+      Alert.alert('Delete Request', 'Are you sure you want to delete this request?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(deleteRequestItem(requestId)).unwrap();
+              dispatch(showToast({ message: 'Request deleted!', type: 'success' }));
+            } catch (err) {
+              const errMsg = err?.message || err || 'Failed to delete request';
+              dispatch(showToast({ message: errMsg, type: 'error' }));
+            }
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      console.error('Error in handleDeleteRequest:', err);
+    }
   };
 
   const RequestItemRow = ({ requestItem, index, data }) => {
+    if (!requestItem) {
+      console.warn('RequestItemRow: Invalid requestItem');
+      return null;
+    }
+
     const [showDetails, setShowDetails] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [editQty, setEditQty] = useState(requestItem.qty?.toString() || '0');
@@ -151,11 +225,12 @@ export default function RequestsTab() {
     const productName = product?.name || 'Unknown Product';
     const shopName = requestItem.shop_id?.name || 'N/A';
 
-    // find full product from store to get current qty
+    // find full product from store to get current qty - with null safety
     const fullProduct = React.useMemo(() => {
+      if (!product) return null;
       const pid = product?._id || product?.id;
-      if (!pid) return null;
-      return products.find((p) => p._id === pid || p.id === pid) || null;
+      if (!pid || !Array.isArray(products)) return null;
+      return products.find((p) => p && (p._id === pid || p.id === pid)) || null;
     }, [products, product]);
 
     const statusColors = {
@@ -186,62 +261,75 @@ export default function RequestsTab() {
     const timeLabel = formatDate(requestItem.createdAt);
 
     const handleUpdate = async (statusOverride) => {
-      if (!editQty || editQty.trim() === '') {
-        dispatch(showToast({ message: 'Please enter quantity', type: 'error' }));
-        return;
-      }
-      
-      const requestId = requestItem._id || requestItem.id;
-      if (!requestId) {
-        dispatch(showToast({ message: 'Invalid request item ID', type: 'error' }));
-        return;
-      }
-      
-      const statusToSave = statusOverride || editStatus;
-      const wasNotFulfilled = requestItem.status !== 'fulfilled';
-      const nowFulfilled = statusToSave === 'fulfilled';
-      
-      setIsUpdating(true);
       try {
-        // Update the request item
-        await dispatch(
-          updateRequestItem({
-            id: requestId,
-            data: {
-              qty: parseInt(editQty, 10) || 0,
-              note: editNote || '',
-              status: statusToSave,
-            },
-          })
-        ).unwrap();
+        if (!editQty || editQty.trim() === '') {
+          dispatch(showToast({ message: 'Please enter quantity', type: 'error' }));
+          return;
+        }
+        
+        const requestId = requestItem._id || requestItem.id;
+        if (!requestId) {
+          dispatch(showToast({ message: 'Invalid request item ID', type: 'error' }));
+          return;
+        }
+        
+        const statusToSave = statusOverride || editStatus;
+        const wasNotFulfilled = requestItem.status !== 'fulfilled';
+        const nowFulfilled = statusToSave === 'fulfilled';
+        
+        setIsUpdating(true);
+        try {
+          // Update the request item
+          await dispatch(
+            updateRequestItem({
+              id: requestId,
+              data: {
+                qty: parseInt(editQty, 10) || 0,
+                note: editNote || '',
+                status: statusToSave,
+              },
+            })
+          ).unwrap();
 
-        // If status changed to fulfilled, add qty to product
-        if (wasNotFulfilled && nowFulfilled && product) {
-          const productId = product._id || product.id;
-          if (productId) {
-            const currentQty = fullProduct?.qty || 0;
-            const addQty = parseInt(editQty, 10) || 0;
-            const newQty = currentQty + addQty;
+          // If status changed to fulfilled, add qty to product
+          if (wasNotFulfilled && nowFulfilled && product) {
+            const productId = product._id || product.id;
+            if (productId && fullProduct) {
+              const currentQty = fullProduct?.qty || 0;
+              const addQty = parseInt(editQty, 10) || 0;
+              const newQty = currentQty + addQty;
 
-            await dispatch(
-              updateProduct({
-                productId: productId,
-                productData: { qty: newQty },
-              })
-            ).unwrap();
+              try {
+                await dispatch(
+                  updateProduct({
+                    productId: productId,
+                    productData: { qty: newQty },
+                  })
+                ).unwrap();
 
-            dispatch(showToast({ message: `Request fulfilled! Added ${addQty} to "${product.name}"`, type: 'success' }));
+                const productNameDisplay = product?.name || 'Product';
+                dispatch(showToast({ message: `Request fulfilled! Added ${addQty} to "${productNameDisplay}"`, type: 'success' }));
+              } catch (err) {
+                console.warn('Failed to update product quantity:', err);
+                dispatch(showToast({ message: 'Request updated! (qty update failed)', type: 'warning' }));
+              }
+            } else {
+              dispatch(showToast({ message: 'Request updated!', type: 'success' }));
+            }
           } else {
             dispatch(showToast({ message: 'Request updated!', type: 'success' }));
           }
-        } else {
-          dispatch(showToast({ message: 'Request updated!', type: 'success' }));
+          
+          setShowDetails(false);
+        } catch (err) {
+          const errMsg = err?.message || err || 'Failed to update request';
+          dispatch(showToast({ message: errMsg, type: 'error' }));
+        } finally {
+          setIsUpdating(false);
         }
-        
-        setShowDetails(false);
       } catch (err) {
-        dispatch(showToast({ message: err || 'Failed to update request', type: 'error' }));
-      } finally {
+        console.error('Error in handleUpdate:', err);
+        dispatch(showToast({ message: 'Error updating request', type: 'error' }));
         setIsUpdating(false);
       }
     };
@@ -437,14 +525,25 @@ export default function RequestsTab() {
   };
 
   // Sort by creation date - most recent first
-  const sortedRequests = [...(requestItems || [])].sort((a, b) => {
-    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return dateB - dateA;
-  });
+  const sortedRequests = React.useMemo(() => {
+    try {
+      if (!Array.isArray(userRequestItems)) return [];
+      return [...userRequestItems].sort((a, b) => {
+        if (!a || !b) return 0;
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    } catch (err) {
+      console.error('Error sorting requests:', err);
+      return userRequestItems || [];
+    }
+  }, [userRequestItems]);
 
   // Hide fulfilled items from the list
-  const pendingRequests = sortedRequests.filter((item) => item.status !== 'fulfilled');
+  const pendingRequests = React.useMemo(() => {
+    return sortedRequests.filter((item) => item && item.status !== 'fulfilled');
+  }, [sortedRequests]);
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); setShowSuggestions(false); }}>
@@ -507,12 +606,22 @@ export default function RequestsTab() {
 
         <TextInput style={global.input} placeholder="Quantity *" value={qty} onChangeText={setQty} keyboardType="numeric" />
 
-        {role !== 'staff' && shops.length > 0 && (
+        {role !== 'staff' && userShops && Array.isArray(userShops) && userShops.length > 0 && (
           <View style={{ ...global.input, padding: 0 }}>
-            <Picker selectedValue={selectedShopId} onValueChange={(val) => setSelectedShopId(val)} style={{ fontSize: 12 }} itemStyle={{ fontSize: 12 }}>
-              {shops.map((shop) => (
-                <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
-              ))}
+            <Picker 
+              selectedValue={selectedShopId} 
+              onValueChange={(val) => setSelectedShopId(val)} 
+              style={{ fontSize: 12 }} 
+              itemStyle={{ fontSize: 12 }}
+            >
+              {userShops.map((shop) => {
+                if (!shop) return null;
+                const shopId = shop._id || shop.id;
+                const shopName = shop.name || 'Unknown Shop';
+                return (
+                  <Picker.Item key={shopId} label={shopName} value={shopId} />
+                );
+              })}
             </Picker>
           </View>
         )}

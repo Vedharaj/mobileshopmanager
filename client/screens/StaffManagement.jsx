@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -28,8 +28,15 @@ const StaffManagement = () => {
   const [contactNo, setContactNo] = useState(""); // New state for contact number
   const [selectedShopId, setSelectedShopId] = useState(""); // State for selected shop
   const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    // Only run once on mount
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    // Staff is not pre-loaded in App.js (owner-specific data)
+    // Fetch if not already loaded
     const loadStaff = async () => {
       try {
         if (!staff || staff.length === 0) {
@@ -51,7 +58,7 @@ const StaffManagement = () => {
     if (shops.length > 0) {
       setSelectedShopId(shops[0]._id);
     }
-  }, [dispatch, shops]); // Add shops to dependency array
+  }, []); // Add shops to dependency array
 
   const handleDeleteStaff = async (staffId) => {
     try {

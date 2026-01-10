@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -20,35 +20,37 @@ const CategoryManagement = () => {
 
   const { categories, status, error } = useSelector((state) => state.categories);
   const { shops } = useSelector((state) => state.shops);
-  const { role } = useSelector((state) => state.auth);
+  const { role, user } = useSelector((state) => state.auth);
   const { primaryColor } = useThemeColors();
   const isStaff = role === "staff";
+
+  // Get user's shop IDs based on role
+  const userShopIds = isStaff && user?.shops ? user.shops.map(s => s._id || s) : shops.map(s => s._id);
+  
+  // Filter shops to only show user's shops
+  const userShops = shops.filter(shop => userShopIds.includes(shop._id));
+  
+  // Filter categories to only show those belonging to user's shops
+  const userCategories = categories.filter(cat => {
+    const catShopId = cat.shop_id?._id || cat.shop_id;
+    return userShopIds.includes(catShopId);
+  });
 
   const [name, setName] = useState("");
   const [selectedShopId, setSelectedShopId] = useState("");
   const [isNameFocused, setIsNameFocused] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        await dispatch(fetchCategories()).unwrap();
-      } catch (error) {
-        console.error('Error loading categories data:', error);
-        dispatch(
-          showToast({
-            message: error || "Failed to load categories",
-            type: "error",
-          })
-        );
-      }
-    };
-    loadCategories();
+    // Only run once on mount - data is pre-loaded in App.js
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-    // Set initial selected shop if shops are available
-    if (shops.length > 0) {
-      setSelectedShopId(shops[0]._id);
+    // Set initial selected shop if user shops are available
+    if (userShops.length > 0) {
+      setSelectedShopId(userShops[0]._id);
     }
-  }, [dispatch, shops]);
+  }, []);
 
   const handleDeleteCategory = async (categoryId) => {
     try {
@@ -239,14 +241,14 @@ const CategoryManagement = () => {
 
           {isNameFocused && (
             <>
-              {shops.length > 0 && (
+              {userShops.length > 0 && (
                 <View style={{ ...global.input, padding: 0 }}>
                   <Picker
                     selectedValue={selectedShopId}
                     onValueChange={(itemValue) => setSelectedShopId(itemValue)}
                     enabled={!isStaff}
                   >
-                    {shops.map((shop) => (
+                    {userShops.map((shop) => (
                       <Picker.Item key={shop._id} label={shop.name} value={shop._id} />
                     ))}
                   </Picker>
@@ -275,7 +277,7 @@ const CategoryManagement = () => {
           )}
         </View>
         <Text style={{ marginBottom: 5, marginTop: isStaff ? 10 : 20 }}>Category List</Text>
-        {categories.map((category) => (
+        {userCategories.map((category) => (
           <CategoryContainer key={category._id} category={category} isStaff={isStaff} />
         ))}
       </View>

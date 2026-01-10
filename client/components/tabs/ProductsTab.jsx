@@ -38,6 +38,27 @@ export default function ProductsTab({
   const { userid, role, user } = useSelector((state) => state.auth);
 
   const staffShops = user?.shops || [];
+  const isStaff = role === "staff";
+  
+  // Get user's shop IDs based on role
+  const userShopIds = isStaff && staffShops.length > 0 
+    ? staffShops.map(s => s._id || s) 
+    : shops.map(s => s._id);
+  
+  // Filter shops to only show user's shops
+  const userShops = shops.filter(shop => userShopIds.includes(shop._id));
+  
+  // Filter categories to only show those belonging to user's shops
+  const userCategories = categories.filter(cat => {
+    const catShopId = cat.shop_id?._id || cat.shop_id;
+    return userShopIds.includes(catShopId);
+  });
+  
+  // Filter products to only show those belonging to user's shops
+  const userProducts = products.filter(prod => {
+    const prodShopId = prod.shop_id?._id || prod.shop_id;
+    return userShopIds.includes(prodShopId);
+  });
 
   const formatDate = (date) => {
     const d = new Date(date);
@@ -81,13 +102,11 @@ export default function ProductsTab({
 
   useEffect(() => {
     // ensure defaults for shop selection
-    if (role === "staff" && staffShops.length > 0) {
-      const staffShopId = staffShops[0]?._id || staffShops[0];
-      setSelectedShopId(staffShopId);
-      setFilterShopId(staffShopId);
-    } else if (shops.length > 0) {
-      setSelectedShopId(shops[0]._id);
-      setFilterShopId("");
+    if (userShops.length > 0) {
+      setSelectedShopId(userShops[0]._id);
+      if (isStaff) {
+        setFilterShopId(userShops[0]._id);
+      }
     }
   }, [role, shops, staffShops]);
 
@@ -97,12 +116,12 @@ export default function ProductsTab({
     if (!categories?.length) dispatch(fetchCategories());
   }, [dispatch]);
 
-  const shopCategories = categories.filter(
+  const shopCategories = userCategories.filter(
     (cat) =>
       cat.shop_id === selectedShopId || cat.shop_id?._id === selectedShopId
   );
 
-  const filterCategories = categories.filter((cat) => {
+  const filterCategories = userCategories.filter((cat) => {
     const sid = cat.shop_id?._id || cat.shop_id;
     if (!filterShopId) return true;
     return sid === filterShopId;
@@ -167,7 +186,7 @@ export default function ProductsTab({
       return;
     }
     const search = text.toLowerCase();
-    let base = products;
+    let base = userProducts;
     if (selectedShopId) {
       base = base.filter((p) => {
         const psid = p.shop_id?._id || p.shop_id;
@@ -353,11 +372,8 @@ export default function ProductsTab({
       setNameSuggestions([]);
       setShowSuggestions(false);
       setSelectedExistingProduct(null);
-      if (role === "staff" && staffShops.length > 0) {
-        const staffShopId = staffShops[0]?._id || staffShops[0];
-        setSelectedShopId(staffShopId);
-      } else if (shops.length > 0) {
-        setSelectedShopId(shops[0]._id);
+      if (userShops.length > 0) {
+        setSelectedShopId(userShops[0]._id);
       }
       setIsNameFocused(false);
       Keyboard.dismiss();
@@ -406,7 +422,7 @@ export default function ProductsTab({
     );
     const [productNote, setProductNote] = useState(product.note || "");
     const productShopId = product.shop_id?._id || product.shop_id;
-    const productShopCategories = categories.filter(
+    const productShopCategories = userCategories.filter(
       (cat) =>
         cat.shop_id === productShopId || cat.shop_id?._id === productShopId
     );
@@ -876,7 +892,7 @@ export default function ProductsTab({
 
         {isNameFocused && (
           <>
-            {role !== "staff" && shops.length > 0 && (
+            {role !== "staff" && userShops.length > 0 && (
               <View style={{ ...global.input, padding: 0 }}>
                 <Picker
                   selectedValue={selectedShopId}
@@ -888,7 +904,7 @@ export default function ProductsTab({
                   style={{ fontSize: 12 }}
                   itemStyle={{ fontSize: 12 }}
                 >
-                  {shops.map((shop) => (
+                  {userShops.map((shop) => (
                     <Picker.Item
                       key={shop._id}
                       label={shop.name}
@@ -1137,7 +1153,7 @@ export default function ProductsTab({
               marginBottom: 8,
             }}
           >
-            {shops.length > 0 && (
+            {userShops.length > 0 && (
               <View
                 style={{
                   ...global.input,
@@ -1159,7 +1175,7 @@ export default function ProductsTab({
                   itemStyle={{ fontSize: 10 }}
                 >
                   <Picker.Item label="All Shops" value="" />
-                  {shops.map((shop) => (
+                  {userShops.map((shop) => (
                     <Picker.Item
                       key={shop._id}
                       label={shop.name}
@@ -1195,7 +1211,7 @@ export default function ProductsTab({
           </View>
 
           {(() => {
-            let filteredProducts = products;
+            let filteredProducts = userProducts;
             if (filterShopId) {
               filteredProducts = filteredProducts.filter((p) => {
                 const sid = p.shop_id?._id || p.shop_id;
@@ -1219,7 +1235,7 @@ export default function ProductsTab({
                       .toString()
                       .toLowerCase();
                   } else {
-                    const cat = categories.find((c) => c._id === p.category_id);
+                    const cat = userCategories.find((c) => c._id === p.category_id);
                     if (cat?.name) catName = cat.name.toLowerCase();
                   }
                 }

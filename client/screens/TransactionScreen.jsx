@@ -100,12 +100,8 @@ export default function TransactionScreen() {
     }
   };
 
-  // Preload sales so return search has data even before switching tabs
-  useEffect(() => {
-    if (!sales || sales.length === 0) {
-      dispatch(fetchSales());
-    }
-  }, [dispatch]);
+  // Data is pre-loaded in App.js - no need to fetch on mount
+  // Sales data is already available for return search
 
   // Handle scanned product - add or increment quantity
   useEffect(() => {
@@ -174,11 +170,14 @@ export default function TransactionScreen() {
         // Pass product to local state
         setScannedProduct(scanned);
 
-        // Ensure data
+        // Data should already be loaded from App.js
+        // Only fetch if completely missing (edge case)
         if (!products || products.length === 0) {
+          console.log('⚠️ TransactionScreen: Products missing on scan, fetching...');
           dispatch(fetchProducts());
         }
         if (!customers || customers.length === 0) {
+          console.log('⚠️ TransactionScreen: Customers missing on scan, fetching...');
           dispatch(fetchCustomers());
         }
 
@@ -202,17 +201,24 @@ export default function TransactionScreen() {
   );
 
   useEffect(() => {
+    // Data is pre-loaded in App.js
+    // Only fetch if data is completely missing (shouldn't happen in normal flow)
     if (selectedType?.id === "service" && (!services || services.length === 0)) {
+      console.log('⚠️ TransactionScreen: Services missing, fetching...');
       dispatch(fetchServices());
     }
     if (selectedType?.id === "return_item" && (!sales || sales.length === 0)) {
+      console.log('⚠️ TransactionScreen: Sales missing for return, fetching...');
       dispatch(fetchSales());
     }
     if (selectedType?.id === "sales") {
+      // Products and customers should already be loaded
       if (!products || products.length === 0) {
+        console.log('⚠️ TransactionScreen: Products missing, fetching...');
         dispatch(fetchProducts());
       }
       if (!customers || customers.length === 0) {
+        console.log('⚠️ TransactionScreen: Customers missing, fetching...');
         dispatch(fetchCustomers());
       }
     }

@@ -109,26 +109,88 @@ function RootNavigator() {
     }
   }, [loading, shopsLoaded]);
 
+  // Load all initial data once on app start
   useEffect(() => {
     const loadToken = async () => {
       try {
         // Load theme first
-        await dispatch(loadThemeFromStorage()).unwrap(); // Re-add loadThemeFromStorage
+        await dispatch(loadThemeFromStorage()).unwrap();
 
         const token = await AsyncStorage.getItem("token");
         if (token) {
           dispatch(setCredentials(token));
           try {
-            await dispatch(fetchMe()).unwrap();
-            await dispatch(fetchShops()).unwrap();
+            // Fetch user info with retry
+            let meAttempts = 0;
+            let meSuccess = false;
+            while (meAttempts < 3 && !meSuccess) {
+              try {
+                await dispatch(fetchMe()).unwrap();
+                meSuccess = true;
+              } catch (err) {
+                meAttempts++;
+                if (meAttempts < 3) {
+                  console.warn(`Retry fetchMe (${meAttempts}/3):`, err.message);
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                  throw err;
+                }
+              }
+            }
+            
+            // Fetch shops first - critical for role-based data filtering with retry
+            let shopsAttempts = 0;
+            let shopsSuccess = false;
+            while (shopsAttempts < 3 && !shopsSuccess) {
+              try {
+                await dispatch(fetchShops()).unwrap();
+                shopsSuccess = true;
+              } catch (err) {
+                shopsAttempts++;
+                if (shopsAttempts < 3) {
+                  console.warn(`Retry fetchShops (${shopsAttempts}/3):`, err.message);
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                  throw err;
+                }
+              }
+            }
+            
+            // Import and use the centralized data loading hook inline
+            const { fetchProducts } = await import('./store/slices/productSlice.js');
+            const { fetchCategories } = await import('./store/slices/categorySlice.js');
+            const { fetchCustomers } = await import('./store/slices/customerSlice.js');
+            const { fetchServices } = await import('./store/slices/serviceSlice.js');
+            const { fetchSales } = await import('./store/slices/salesSlice.js');
+            const { fetchRequestItems } = await import('./store/slices/requestItemsSlice.js');
+            
+            // Fetch all other data in parallel for faster loading (non-critical failures are OK)
+            const results = await Promise.allSettled([
+              dispatch(fetchProducts()),
+              dispatch(fetchCategories()),
+              dispatch(fetchCustomers()),
+              dispatch(fetchServices()),
+              dispatch(fetchSales({ days: 7 })),
+              dispatch(fetchRequestItems()),
+            ]);
+            
+            // Log which fetches failed (for debugging)
+            const fetchNames = ['products', 'categories', 'customers', 'services', 'sales', 'requestItems'];
+            results.forEach((result, idx) => {
+              if (result.status === 'rejected') {
+                console.warn(`⚠️ Failed to load ${fetchNames[idx]}:`, result.reason);
+              }
+            });
+            
+            console.log('✅ Critical data loaded successfully');
             // Register Expo push token after we know the user is authenticated
             // try { await registerPushToken(); } catch {}
             setShopsLoaded(true);
           } catch (err) {
             // invalid token or fetch failed -> clear credentials
-            console.warn("Token invalid or fetchMe failed, logging out", err);
+            console.warn("Token invalid or fetchMe/fetchShops failed, logging out", err);
             dispatch(logout());
-            dispatch(clearShops()); // Dispatch clearShops after logout
+            dispatch(clearShops());
             setShopsLoaded(true);
           }
         } else {

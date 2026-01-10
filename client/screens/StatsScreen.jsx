@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Platform, Dimensions, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { global } from '../styles/global';
@@ -16,6 +16,7 @@ const StatsScreen = () => {
   const [showToPicker, setShowToPicker] = useState(false);
   const dispatch = useDispatch();
   const { sales = [] } = useSelector((state) => state.sales || {});
+  const initializedRef = useRef(false);
 
   const fmt = (d) => {
     try {
@@ -48,17 +49,10 @@ const StatsScreen = () => {
   };
 
   useEffect(() => {
-    const loadSales = async () => {
-      try {
-        if (!sales || sales.length === 0) {
-          await dispatch(fetchSales()).unwrap();
-        }
-      } catch (error) {
-        console.error('Error loading sales data for stats:', error);
-      }
-    };
-    loadSales();
-  }, [dispatch, sales]);
+    // Only run once on mount - data is pre-loaded in App.js
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+  }, []);
 
   const daysInRange = useMemo(() => {
     const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());

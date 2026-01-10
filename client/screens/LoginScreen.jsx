@@ -40,11 +40,47 @@ export default function LoginScreen({ navigation }) {
     }
     
     try {
-      await dispatch(login({ identifier: cleanIdentifier, password: cleanPassword })).unwrap();
-      // Fetch shops after successful login
-      await dispatch(fetchShops()).unwrap();
+      // Login with retry logic
+      let loginAttempts = 0;
+      let loginSuccess = false;
+      let lastErr = null;
+      
+      while (loginAttempts < 3 && !loginSuccess) {
+        try {
+          await dispatch(login({ identifier: cleanIdentifier, password: cleanPassword })).unwrap();
+          loginSuccess = true;
+        } catch (err) {
+          loginAttempts++;
+          lastErr = err;
+          if (loginAttempts < 3) {
+            console.warn(`Retry login (${loginAttempts}/3):`, err);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
+      if (!loginSuccess) {
+        throw lastErr;
+      }
+      
+      // Fetch shops after successful login with retry
+      let shopsAttempts = 0;
+      let shopsSuccess = false;
+      while (shopsAttempts < 3 && !shopsSuccess) {
+        try {
+          await dispatch(fetchShops()).unwrap();
+          shopsSuccess = true;
+        } catch (err) {
+          shopsAttempts++;
+          if (shopsAttempts < 3) {
+            console.warn(`Retry fetchShops in login (${shopsAttempts}/3):`, err);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Login error after retries:", err);
+      // Error is handled by Redux state - don't need additional toast as error effect will show it
     }
   };
 
