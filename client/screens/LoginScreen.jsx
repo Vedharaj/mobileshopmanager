@@ -77,6 +77,7 @@ export default function LoginScreen({ navigation }) {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
+          keyboardType="numeric"
           placeholder="Enter your password"
           editable={status !== "loading"}
         />

@@ -1109,7 +1109,7 @@ const ProductScreen = () => {
               Products
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={{
               flex: 1,
               borderBottomWidth: activeTab === 2 ? 3 : 0,
@@ -1127,7 +1127,7 @@ const ProductScreen = () => {
             >
               QR Generator
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {activeTab === 0 && <RequestsTab />}
@@ -1870,7 +1870,7 @@ const ProductScreen = () => {
           </>
         )}
 
-        {activeTab === 2 && <QrGeneratorTab />}
+        {/* {activeTab === 2 && <QrGeneratorTab />} */}
 
         {false && activeTab === 2 && (
           <View style={{ marginTop: 30, alignItems: "center" }}>

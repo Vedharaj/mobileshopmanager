@@ -106,6 +106,7 @@ export default function RegisterScreen({ navigation }) {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
+          keyboardType="numeric"
         />
         <TouchableOpacity
           style={{ position: "absolute", right: 12, top: 14 }}
