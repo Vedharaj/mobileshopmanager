@@ -670,19 +670,22 @@ export default function ProductsTab({
 
         {showDetails && (
           <View style={{ marginTop: 10, width: "100%" }}>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, color: "#333" }}>Product Name *</Text>
             <TextInput
               style={global.input}
-              placeholder="Product Name *"
+              placeholder="Product Name"
               value={productName}
               onChangeText={setProductName}
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Quantity *</Text>
             <TextInput
               style={global.input}
-              placeholder="Quantity *"
+              placeholder="Quantity"
               value={productQty}
               onChangeText={setProductQty}
               keyboardType="numeric"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Cost Price</Text>
             <TextInput
               style={global.input}
               placeholder="Cost Price"
@@ -690,13 +693,15 @@ export default function ProductsTab({
               onChangeText={setProductCostPrice}
               keyboardType="decimal-pad"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Selling Price *</Text>
             <TextInput
               style={global.input}
-              placeholder="Selling Price *"
+              placeholder="Selling Price"
               value={productSellingPrice}
               onChangeText={setProductSellingPrice}
               keyboardType="decimal-pad"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>CGST (%)</Text>
             <TextInput
               style={global.input}
               placeholder="CGST (%)"
@@ -704,6 +709,7 @@ export default function ProductsTab({
               onChangeText={setProductCgst}
               keyboardType="decimal-pad"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>SGST (%)</Text>
             <TextInput
               style={global.input}
               placeholder="SGST (%)"
@@ -711,6 +717,7 @@ export default function ProductsTab({
               onChangeText={setProductSgst}
               keyboardType="decimal-pad"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Minimum Stock</Text>
             <TextInput
               style={global.input}
               placeholder="Minimum Stock"
@@ -718,12 +725,14 @@ export default function ProductsTab({
               onChangeText={setProductMinimumStock}
               keyboardType="numeric"
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Date (YYYY-MM-DD) *</Text>
             <TextInput
               style={global.input}
-              placeholder="Date (YYYY-MM-DD) *"
+              placeholder="Date (YYYY-MM-DD)"
               value={productDateValue}
               onChangeText={setProductDateValue}
             />
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Note</Text>
             <TextInput
               style={global.input}
               placeholder="Note"
@@ -732,41 +741,47 @@ export default function ProductsTab({
               multiline
             />
             {productShopCategories.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
-                <Picker
-                  selectedValue={productCategoryId}
-                  onValueChange={(itemValue) => setProductCategoryId(itemValue)}
-                  style={{ fontSize: 12 }}
-                  itemStyle={{ fontSize: 12 }}
-                >
-                  <Picker.Item label="No Category" value="" />
-                  {productShopCategories.map((category) => (
-                    <Picker.Item
-                      key={category._id}
-                      label={category.name}
-                      value={category._id}
-                    />
-                  ))}
-                </Picker>
+              <View>
+                <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Category</Text>
+                <View style={{ ...global.input, padding: 0 }}>
+                  <Picker
+                    selectedValue={productCategoryId}
+                    onValueChange={(itemValue) => setProductCategoryId(itemValue)}
+                    style={{ fontSize: 12 }}
+                    itemStyle={{ fontSize: 12 }}
+                  >
+                    <Picker.Item label="No Category" value="" />
+                    {productShopCategories.map((category) => (
+                      <Picker.Item
+                        key={category._id}
+                        label={category.name}
+                        value={category._id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
               </View>
             )}
             {customers.length > 0 && (
-              <View style={{ ...global.input, padding: 0 }}>
-                <Picker
-                  selectedValue={productCustomerId}
-                  onValueChange={(itemValue) => setProductCustomerId(itemValue)}
-                  style={{ fontSize: 12 }}
-                  itemStyle={{ fontSize: 12 }}
-                >
-                  <Picker.Item label="No Customer" value="" />
-                  {customers.map((customer) => (
-                    <Picker.Item
-                      key={customer._id}
-                      label={customer.name}
-                      value={customer._id}
-                    />
-                  ))}
-                </Picker>
+              <View>
+                <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Customer</Text>
+                <View style={{ ...global.input, padding: 0 }}>
+                  <Picker
+                    selectedValue={productCustomerId}
+                    onValueChange={(itemValue) => setProductCustomerId(itemValue)}
+                    style={{ fontSize: 12 }}
+                    itemStyle={{ fontSize: 12 }}
+                  >
+                    <Picker.Item label="No Customer" value="" />
+                    {customers.map((customer) => (
+                      <Picker.Item
+                        key={customer._id}
+                        label={customer.name}
+                        value={customer._id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
               </View>
             )}
             <View>

@@ -150,6 +150,7 @@ export default function SalesForm({
         });
       dispatch(removeCartItem(currentItemId));
     } else {
+      const currentItem = items.find((i) => i.id === currentItemId);
       dispatch(
         updateCartItem({
           id: currentItemId,
@@ -159,6 +160,9 @@ export default function SalesForm({
             unit_price: String(productPrice || 0),
             cgst: productCgst,
             sgst: productSgst,
+            // Preserve category info that was already set
+            category_id: currentItem?.category_id,
+            category_name: currentItem?.category_name,
           },
         })
       );
@@ -180,34 +184,35 @@ export default function SalesForm({
     const current = items.find((item) => item.id === id);
     if (!current) return;
 
-    let nextUnitPrice = current.unit_price;
-    let nextCgst = current.cgst ?? 0;
-    let nextSgst = current.sgst ?? 0;
+    let changes = { [field]: value };
+
+    // Handle product selection - update price and tax info
     if (field === "product_id" && value) {
       const product = products.find(
         (p) => p._id === value || p.id === value || p.product_id === value
       );
       if (product) {
-        nextUnitPrice = String(
+        changes.unit_price = String(
           product.selling_price ?? product.price ?? product.unit_price ?? 0
         );
-        nextCgst = product.cgst ?? 0;
-        nextSgst = product.sgst ?? 0;
+        changes.cgst = product.cgst ?? 0;
+        changes.sgst = product.sgst ?? 0;
       }
     }
 
-    const merged = {
-      ...current,
-      [field]: value,
-      unit_price:
-        field === "product_id"
-          ? nextUnitPrice
-          : field === "unit_price"
-          ? value
-          : current.unit_price,
-      cgst: field === "product_id" ? nextCgst : current.cgst ?? 0,
-      sgst: field === "product_id" ? nextSgst : current.sgst ?? 0,
-    };
+    // Handle category selection - get both ID and name from categories array
+    if (field === "category_id" && value) {
+      const category = categories.find(
+        (c) => c._id === value || c.id === value
+      );
+      if (category) {
+        changes.category_id = value;
+        changes.category_name = category.name;
+      }
+    }
+
+    // Merge changes with current item
+    const merged = { ...current, ...changes };
     merged.subtotal = calculateSubtotal(merged.quantity, merged.unit_price);
 
     dispatch(
@@ -279,32 +284,15 @@ export default function SalesForm({
   };
 
   const handleSave = () => {
-    const filledItems = items.filter((item) => item.product_id);
-
-    // if (filledItems.length === 0) {
-    //   Alert.alert(
-    //     "Validation Error",
-    //     "Please add at least one item with a product"
-    //   );
-    //   return;
-    // }
-
-    const itemsWithoutCategory = items.filter((item) => !item.category_id);
-    if (itemsWithoutCategory.length > 0) {
-      Alert.alert(
-        "Validation Error",
-        "Please select a category for all items"
-      );
-      return;
-    }
+    const filledItems = items;
 
     const invalidItems = filledItems.filter(
-      (item) => !item.product_id || !item.quantity || !item.unit_price
+      (item) => !item.quantity || !item.unit_price
     );
     if (invalidItems.length > 0) {
       Alert.alert(
         "Validation Error",
-        "Please fill in all item details (Product, Qty, Price)"
+        "Please fill in quantity and price for all items"
       );
       return;
     }
@@ -351,7 +339,7 @@ export default function SalesForm({
       name: "Sales",
       type: "sales",
       shop_id: selectedShopForTx,
-      items: filledItems.map((item) => {
+      items: items.map((item) => {
         const qty = parseFloat(item.quantity) || 0;
         const price = parseFloat(item.unit_price) || 0;
         const product =
@@ -370,6 +358,9 @@ export default function SalesForm({
           cgst,
           sgst,
           total_price: qty * price,
+          category_id: item.category_id || null,
+          category_name: item.category_name || null,
+          discount: item.discount ?? 0,
         };
       }),
       customer_id: selectedCustomer || null,

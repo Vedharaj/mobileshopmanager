@@ -8,7 +8,7 @@ const SalesItemSchema = new mongoose.Schema(
     product_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
+      required: false,
     },
 
     quantity: { type: Number, required: true, default: 1, min: 0.01 },

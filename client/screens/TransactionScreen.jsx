@@ -384,11 +384,8 @@ export default function TransactionScreen() {
                 (p) => p && (p._id === item.product_id || p.id === item.product_id)
               ) : null;
               
-              const categoryId = product?.category_id 
-                ? (typeof product.category_id === 'object' 
-                    ? product.category_id._id 
-                    : product.category_id)
-                : "NO CATEGORY";
+              const categoryId = item.category_id || product?.category_id || null;
+              const categoryName = item.category_name || product?.category_name || null;
               
               return {
                 product_id: item.product_id,
@@ -398,6 +395,7 @@ export default function TransactionScreen() {
                 sgst: item.sgst || 0,
                 total_price: item.total_price || 0,
                 category_id: categoryId,
+                category_name: categoryName,
               };
             } catch (itemErr) {
               console.error("Error mapping item:", itemErr);
@@ -409,11 +407,13 @@ export default function TransactionScreen() {
                 sgst: item.sgst || 0,
                 total_price: item.total_price || 0,
                 category_id: null,
+                category_name: null,
               };
             }
           }),
         })
       ).unwrap();
+      
 
       // Refresh data
       await Promise.all([

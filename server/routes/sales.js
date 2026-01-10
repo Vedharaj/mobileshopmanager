@@ -4,6 +4,12 @@ const auth = require('../middleware/auth');
 const Sales = require('../models/Sales');
 const Shop = require('../models/Shop');
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
+
+const normalizeId = (value) => {
+  if (!value) return null;
+  return mongoose.Types.ObjectId.isValid(value) ? value : null;
+};
 
 // GET /api/sales - return authenticated user's sales (from their shops)
 router.get('/', auth, async (req, res) => {
@@ -157,12 +163,9 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Shop not found or you don\'t have access to it' });
     }
 
-    // Validate items if present
+    // Validate items if present (product_id optional)
     if (Array.isArray(items) && items.length > 0) {
       for (const item of items) {
-        if (!item.product_id) {
-          return res.status(400).json({ msg: 'Each item must have a product_id' });
-        }
         if (!item.quantity || item.quantity <= 0) {
           return res.status(400).json({ msg: 'Each item must have quantity > 0' });
         }
@@ -188,9 +191,12 @@ router.post('/', auth, async (req, res) => {
 
     let mappedItems = items || [];
     if (Array.isArray(items) && items.length > 0) {
-      const productIds = items.map(i => i.product_id).filter(Boolean);
+      const productIds = items
+        .map(i => normalizeId(i.product_id))
+        .filter(Boolean);
       const products = await Product.find({ _id: { $in: productIds } })
         .select('cgst sgst category_id')
+        
         .populate('category_id', 'name');
       const productMap = products.reduce((acc, p) => {
         acc[p._id.toString()] = p;
@@ -198,7 +204,8 @@ router.post('/', auth, async (req, res) => {
       }, {});
 
       mappedItems = items.map((it) => {
-        const prod = productMap[it.product_id?.toString()] || {};
+        const productId = normalizeId(it.product_id);
+        const prod = productMap[productId?.toString()] || {};
         const cgst = it.cgst ?? prod.cgst ?? 0;
         const sgst = it.sgst ?? prod.sgst ?? 0;
         const qty = Number(it.quantity || 0);
@@ -206,10 +213,15 @@ router.post('/', auth, async (req, res) => {
         const discount = Number(it.discount || 0);
         const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
         const total_price = it.total_price ?? qty * unit - discount + taxAmount;
+
+        const rawCategory = it.category_id;
         const category_id =
-          it.category_id || prod?.category_id?._id || prod?.category_id || null;
-        const category_name = it.category_name || prod?.category_id?.name || null;
-        return { ...it, cgst, sgst, total_price, category_id, category_name };
+          normalizeId(rawCategory) || normalizeId(prod?.category_id?._id) || normalizeId(prod?.category_id) || null;
+        const category_name =
+          it.category_name ||
+          (category_id ? (prod?.category_id?.name || null) : (typeof rawCategory === 'string' ? rawCategory : null));
+
+        return { ...it, product_id: productId, cgst, sgst, total_price, category_id, category_name };
       });
     }
 
@@ -289,7 +301,9 @@ router.put('/:id', auth, async (req, res) => {
 
     let mappedItems = items;
     if (Array.isArray(items) && items.length > 0) {
-      const productIds = items.map(i => i.product_id).filter(Boolean);
+      const productIds = items
+        .map(i => normalizeId(i.product_id))
+        .filter(Boolean);
       const products = await Product.find({ _id: { $in: productIds } })
         .select('cgst sgst category_id')
         .populate('category_id', 'name');
@@ -299,7 +313,8 @@ router.put('/:id', auth, async (req, res) => {
       }, {});
 
       mappedItems = items.map((it) => {
-        const prod = productMap[it.product_id?.toString()] || {};
+        const productId = normalizeId(it.product_id);
+        const prod = productMap[productId?.toString()] || {};
         const cgst = it.cgst ?? prod.cgst ?? 0;
         const sgst = it.sgst ?? prod.sgst ?? 0;
         const qty = Number(it.quantity || 0);
@@ -307,10 +322,15 @@ router.put('/:id', auth, async (req, res) => {
         const discount = Number(it.discount || 0);
         const taxAmount = ((cgst + sgst) / 100) * (qty * unit);
         const total_price = it.total_price ?? qty * unit - discount + taxAmount;
+
+        const rawCategory = it.category_id;
         const category_id =
-          it.category_id || prod?.category_id?._id || prod?.category_id || null;
-        const category_name = it.category_name || prod?.category_id?.name || null;
-        return { ...it, cgst, sgst, total_price, category_id, category_name };
+          normalizeId(rawCategory) || normalizeId(prod?.category_id?._id) || normalizeId(prod?.category_id) || null;
+        const category_name =
+          it.category_name ||
+          (category_id ? (prod?.category_id?.name || null) : (typeof rawCategory === 'string' ? rawCategory : null));
+
+        return { ...it, product_id: productId, cgst, sgst, total_price, category_id, category_name };
       });
     }
 

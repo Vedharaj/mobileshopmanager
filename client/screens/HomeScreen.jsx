@@ -54,9 +54,8 @@ export default function HomeScreen({ navigation }) {
   // Summary visibility
   const [showSummary, setShowSummary] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const RECENT_DAYS = 14; // Limit fetch to recent days for faster loads
+  const RECENT_DAYS = 7; // Limit fetch to recent days for faster loads
 
-  const staffShops = user?.shops || [];
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
   const handleRefresh = async () => {
@@ -178,11 +177,15 @@ export default function HomeScreen({ navigation }) {
       } else if (saleType === "sales") {
         title = "Sale";
         const firstSaleItem = sale.items?.[0];
+        const remainingItemsCount = (sale.items?.length || 1) - 1;
         if (firstSaleItem) {
           title = firstSaleItem?.category_name || "Sale";
           if (firstSaleItem.product_id && firstSaleItem.product_id.name) {
             title = firstSaleItem?.category_name + " - " + firstSaleItem?.product_id?.name;
-        }
+          }
+          if (remainingItemsCount > 0) {
+            title += ` (+${remainingItemsCount})`;
+          }
         }
       } else if (saleType === "add_money") {
         title = "Add Money";

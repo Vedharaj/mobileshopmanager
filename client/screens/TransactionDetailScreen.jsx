@@ -15,11 +15,16 @@ import * as Print from "expo-print";
 import { readAsStringAsync } from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Asset } from "expo-asset";
+import { useDispatch } from "react-redux";
+import { showToast } from "../store/slices/toastSlice";
+import { fetchSales, deleteSale } from "../store/slices/salesSlice";
 
 const TransactionDetailScreen = ({ navigation, route }) => {
   const { item } = route.params || {};
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { primaryColor } = useThemeColors();
+  const dispatch = useDispatch();
 
   if (!item) {
     return (
@@ -111,6 +116,46 @@ const TransactionDetailScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleDeleteTransaction = () => {
+    const sale = item?.sale || {};
+    const saleId = sale?._id || sale?.id || item?.sale_id || item?._id || item?.id;
+
+    if (!saleId) {
+      Alert.alert("Delete Transaction", "Unable to find transaction ID.");
+      return;
+    }
+
+    Alert.alert(
+      "Delete Transaction",
+      "Are you sure you want to delete this transaction? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await dispatch(deleteSale(saleId)).unwrap();
+              navigation.goBack();
+              // Refresh sales in background
+              dispatch(fetchSales());
+              dispatch(showToast({ message: "Transaction deleted", type: "success" }));
+            } catch (err) {
+              const msg =
+                typeof err === "string"
+                  ? err
+                  : err?.payload?.message || err?.message || "Failed to delete";
+              dispatch(showToast({ message: msg, type: "error" }));
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const DetailRow = ({ label, value }) => (
     <View
       style={{
@@ -150,9 +195,14 @@ const TransactionDetailScreen = ({ navigation, route }) => {
         <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>
           Transaction Details
         </Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="close" size={28} color="#666" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <TouchableOpacity onPress={handleDeleteTransaction} disabled={deleting}>
+            <MaterialIcons name="delete" size={26} color={deleting ? "#bbb" : "#e74c3c"} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialIcons name="close" size={28} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Content */}

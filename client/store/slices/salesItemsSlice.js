@@ -10,15 +10,19 @@ const createEmptyCartItem = () => ({
   id: nextCartId(),
   product_id: '',
   product_name: '',
+  category_id: '',
+  category_name: '',
   quantity: '1',
   unit_price: '',
   subtotal: 0,
 });
 
-const createCartItem = ({ product_id, product_name, unit_price }) => ({
+const createCartItem = ({ product_id, product_name, unit_price, category_id, category_name }) => ({
   id: nextCartId(),
   product_id,
   product_name: product_name || 'Item',
+  category_id: category_id || '',
+  category_name: category_name || '',
   quantity: '1',
   unit_price: String(unit_price || 0),
   subtotal: computeSubtotal('1', unit_price),

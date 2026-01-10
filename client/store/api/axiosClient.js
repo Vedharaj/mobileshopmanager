@@ -3,8 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL as ENV_API_BASE_URL } from '@env';
 
 const fallbackBase = 'http://10.19.117.238:5000/api';
-const API_BASE = (ENV_API_BASE_URL && ENV_API_BASE_URL.trim()) || fallbackBase;
-// const API_BASE = fallbackBase;
+// const API_BASE = (ENV_API_BASE_URL && ENV_API_BASE_URL.trim()) || fallbackBase;
+const API_BASE = fallbackBase;
 
 const api = axios.create({
   baseURL: API_BASE,

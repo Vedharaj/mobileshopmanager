@@ -612,14 +612,16 @@ const ServicesScreen = () => {
 
         {showDetails && (
           <View style={{ marginTop: 5, width: "100%" }}>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, color: "#333" }}>Service Name *</Text>
             <TextInput
               style={global.input}
-              placeholder="Service Name *"
+              placeholder="Service Name"
               value={serviceNameValue}
               onChangeText={setServiceNameValue}
               editable={!isUpdatingService}
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Description</Text>
             <TextInput
               style={global.input}
               placeholder="Description"
@@ -630,33 +632,38 @@ const ServicesScreen = () => {
             />
 
             {customers.length > 0 && (
-              <View style={{ ...global.input, padding: 0, opacity: isUpdatingService ? 0.6 : 1 }}>
-                <Picker
-                  selectedValue={serviceCustomerId}
-                  onValueChange={(itemValue) => setServiceCustomerId(itemValue)}
-                  enabled={!isUpdatingService}
-                >
-                  <Picker.Item label="No Customer" value="" />
-                  {customers.map((customer) => (
-                    <Picker.Item
-                      key={customer._id}
-                      label={customer.name}
-                      value={customer._id}
-                    />
-                  ))}
-                </Picker>
+              <View>
+                <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Customer</Text>
+                <View style={{ ...global.input, padding: 0, opacity: isUpdatingService ? 0.6 : 1 }}>
+                  <Picker
+                    selectedValue={serviceCustomerId}
+                    onValueChange={(itemValue) => setServiceCustomerId(itemValue)}
+                    enabled={!isUpdatingService}
+                  >
+                    <Picker.Item label="No Customer" value="" />
+                    {customers.map((customer) => (
+                      <Picker.Item
+                        key={customer._id}
+                        label={customer.name}
+                        value={customer._id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
               </View>
             )}
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Total Amount *</Text>
             <TextInput
               style={global.input}
-              placeholder="Total Amount *"
+              placeholder="Total Amount"
               value={serviceTotalAmount}
               onChangeText={setServiceTotalAmount}
               keyboardType="decimal-pad"
               editable={!isUpdatingService}
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Amount in Cash</Text>
             <TextInput
               style={global.input}
               placeholder="Amount in Cash"
@@ -666,6 +673,7 @@ const ServicesScreen = () => {
               editable={!isUpdatingService}
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Amount in E-Cash</Text>
             <TextInput
               style={global.input}
               placeholder="Amount in E-Cash"
@@ -676,27 +684,30 @@ const ServicesScreen = () => {
             />
 
             {serviceTotalAmount && (serviceAmountInCash || serviceAmountInEcash) && (
-              <Text style={{ marginTop: 5, marginBottom: 5, color: "#666" }}>
+              <Text style={{ marginTop: 8, marginBottom: 5, color: "#666", fontWeight: "500" }}>
                 Balance: ₹{balance.toFixed(2)}
               </Text>
             )}
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Received Date (YYYY-MM-DD) *</Text>
             <TextInput
               style={global.input}
-              placeholder="Received Date (YYYY-MM-DD) *"
+              placeholder="Received Date (YYYY-MM-DD)"
               value={serviceReceivedDate}
               onChangeText={setServiceReceivedDate}
               editable={!isUpdatingService}
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Return Date (YYYY-MM-DD) *</Text>
             <TextInput
               style={global.input}
-              placeholder="Return Date (YYYY-MM-DD) *"
+              placeholder="Return Date (YYYY-MM-DD)"
               value={serviceReturnDate}
               onChangeText={setServiceReturnDate}
               editable={!isUpdatingService}
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Note</Text>
             <TextInput
               style={global.input}
               placeholder="Note"
@@ -706,7 +717,8 @@ const ServicesScreen = () => {
               editable={!isUpdatingService}
             />
 
-            <View style={{ ...global.input, padding: 0, marginTop: 10, opacity: isUpdatingService ? 0.6 : 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 4, marginTop: 8, color: "#333" }}>Status</Text>
+            <View style={{ ...global.input, padding: 0, marginTop: 0, opacity: isUpdatingService ? 0.6 : 1 }}>
               <Picker
                 selectedValue={serviceStatus}
                 onValueChange={(itemValue) => setServiceStatus(itemValue)}
