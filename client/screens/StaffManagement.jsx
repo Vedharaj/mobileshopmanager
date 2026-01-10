@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Picker } from '@react-native-picker/picker'; // Corrected Picker import
 import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
@@ -226,8 +227,9 @@ const StaffManagement = () => {
   };
 
   const handleAddStaff = async () => {
-    console.log(username, password);
-    if (!username || !password || !selectedShopId) { // Added selectedShopId validation
+    const trimmedUsername = username.trim();
+    console.log(trimmedUsername, password);
+    if (!trimmedUsername || !password || !selectedShopId) { // Added selectedShopId validation
       dispatch(
         showToast({
           message: "Please enter username, password and select a shop", // Updated message
@@ -237,8 +239,20 @@ const StaffManagement = () => {
       return;
     }
 
+    // Check for duplicate username
+    const isDuplicate = staff.some(s => s.username.toLowerCase() === trimmedUsername.toLowerCase());
+    if (isDuplicate) {
+      dispatch(
+        showToast({
+          message: `Username "${trimmedUsername}" already exists`,
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
-      await dispatch(createStaff({ username, password, email, contactNo, shopId: selectedShopId })).unwrap(); // Pass email and contact_no
+      await dispatch(createStaff({ username: trimmedUsername, password, email, contactNo, shopId: selectedShopId })).unwrap(); // Pass email and contact_no
 
       dispatch(
         showToast({
@@ -265,7 +279,7 @@ const StaffManagement = () => {
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsUsernameFocused(false); }}>
-      <View style={global.mainContainer}>
+      <ScrollView style={global.mainContainer} contentContainerStyle={{ paddingBottom: 30 }}>
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Staff</Text>
           <TextInput
@@ -327,7 +341,7 @@ const StaffManagement = () => {
         {staff.map((staffItem) => (
           <StaffContainer key={staffItem._id} staff={staffItem} />
         ))}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };

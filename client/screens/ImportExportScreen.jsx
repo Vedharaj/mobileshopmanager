@@ -126,14 +126,21 @@ const ImportExportScreen = () => {
               // Validate mandatory fields
               const errors = [];
               const validRows = [];
+              const categoriesToCreate = new Map(); // Track categories to create in this batch
+              const existingCategoryMap = new Map(); // Map of category name to ID
+
+              // Build map of existing categories for quick lookup
+              categories.forEach(cat => {
+                existingCategoryMap.set(cat.name.toLowerCase(), cat._id);
+              });
 
               for (let i = 0; i < allRows.length; i++) {
                 const row = allRows[i];
                 const rowNum = i + 2; // +2 because of header and 0-index
 
                 // Validate mandatory fields
-                if (!row.shop || !row.name || !row.qty) {
-                  errors.push(`Row ${rowNum}: Missing mandatory fields (shop, name, qty)`);
+                if (!row.shop || !row.name || !row.qty || !row.category) {
+                  errors.push(`Row ${rowNum}: Missing mandatory fields (shop, name, category, qty)`);
                   continue;
                 }
 
@@ -148,18 +155,22 @@ const ImportExportScreen = () => {
 
                 // Find or prepare category (if provided)
                 let category_id = null;
-                let category_name = null;
                 
                 if (row.category && row.category.trim()) {
-                  const existingCategory = categories.find(
-                    (c) => c.name.toLowerCase() === row.category.toLowerCase()
-                  );
+                  const trimmedCategory = row.category.trim();
+                  const categoryLower = trimmedCategory.toLowerCase();
                   
-                  if (existingCategory) {
-                    category_id = existingCategory._id;
+                  // Check existing categories first
+                  if (existingCategoryMap.has(categoryLower)) {
+                    category_id = existingCategoryMap.get(categoryLower);
+                  } else if (categoriesToCreate.has(categoryLower)) {
+                    // Use the temp ID from the batch
+                    category_id = categoriesToCreate.get(categoryLower);
                   } else {
-                    // Will be created on server
-                    category_name = row.category.trim();
+                    // Will be created on server - use a temp ID for batch tracking
+                    const tempId = `temp_${categoriesToCreate.size}`;
+                    categoriesToCreate.set(categoryLower, tempId);
+                    category_id = tempId;
                   }
                 }
 
@@ -168,9 +179,8 @@ const ImportExportScreen = () => {
                   shop_id: shop._id,
                   user_id: row.user_id || null, // Optional
                   category_id: category_id,
-                  category_name: category_name, // For server to create if needed
                   customer_id: null, // Always null as per requirement
-                  name: row.name,
+                  name: row.name.trim(),
                   qty: parseInt(row.qty) || 0,
                   cost_price: parseInt(row.cost_price) || 0,
                   selling_price: parseInt(row.selling_price) || 0,
@@ -197,12 +207,12 @@ const ImportExportScreen = () => {
                     { text: "Cancel", style: "cancel" },
                     {
                       text: `Import ${validRows.length} Valid`,
-                      onPress: () => processImport(validRows),
+                      onPress: () => processImport(validRows, Array.from(categoriesToCreate.entries())),
                     },
                   ]
                 );
               } else {
-                await processImport(validRows);
+                await processImport(validRows, Array.from(categoriesToCreate.entries()));
               }
             } catch (err) {
               console.error("❌ Import preparation error:", err);
@@ -227,73 +237,120 @@ const ImportExportScreen = () => {
     );
   };
 
-  // Send products to API
-  const processImport = async (productsToImport) => {
+  // Send products to API with chunking for large batches
+  const processImport = async (productsToImport, categoriesToCreate = []) => {
     try {
       setIsImporting(true);
       setImportProgress(0);
       setImportMessage("Preparing upload...");
-      // Step 1: Validate and prepare (10%)
+      
+      // Step 1: Create new categories upfront (10%)
       setImportProgress(0.1);
-      setImportMessage("Validating products...");
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      setImportMessage("Creating new categories...");
+      
+      const newCategoryMap = new Map();
+      if (categoriesToCreate.length > 0) {
+        // Extract unique category names
+        for (const [categoryLower, tempId] of categoriesToCreate) {
+          const categoryName = Array.from(categoriesToCreate.entries()).find(
+            ([k, v]) => v === tempId
+          )?.[0];
+          if (categoryName) {
+            newCategoryMap.set(tempId, categoryName);
+          }
+        }
 
-      // Step 2: Upload to API (20-80%)
+        // Create categories via API if any need creation
+        const categoriesToCreateArray = Array.from(new Map(
+          categoriesToCreate.map(([name, tempId]) => [name, name])
+        ).entries()).map(([name]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1) }));
+        
+        if (categoriesToCreateArray.length > 0) {
+          try {
+            // Create categories one by one to avoid duplicates
+            for (const category of categoriesToCreateArray) {
+              await api.post("/categories", {
+                name: category.name,
+                shop_id: productsToImport[0]?.shop_id || null,
+              }).catch(err => {
+                console.warn(`Category "${category.name}" creation skipped:`, err.message);
+              });
+            }
+          } catch (catErr) {
+            console.warn("Category creation had issues, continuing with import...", catErr);
+          }
+        }
+      }
+
+      // Step 2: Validate and prepare (15%)
+      setImportProgress(0.15);
+      setImportMessage("Validating products...");
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Step 3: Upload to API with chunking (20-80%)
       setImportProgress(0.2);
       const totalProducts = productsToImport.length;
-      const estimatedTime = Math.ceil(totalProducts / 10) * 0.1; // 10 products per batch, 100ms per batch
-      setImportMessage(`Uploading ${totalProducts} products in batches...`);
+      const chunkSize = 50; // Process 50 products per request
+      const totalChunks = Math.ceil(totalProducts / chunkSize);
+      
+      let totalImported = 0;
+      let totalSkipped = 0;
+      let totalErrors = [];
 
-      // console.log("📤 Sending products to API:", totalProducts);
-      // console.log("📤 Payload size:", JSON.stringify(productsToImport).length, "bytes");
-      // console.log("📤 Estimated processing time:", estimatedTime.toFixed(1), "seconds");
+      setImportMessage(`Uploading ${totalProducts} products in ${totalChunks} batches...`);
 
-      // Simulate progress during API call (20% to 80%)
-      const progressInterval = setInterval(() => {
-        setImportProgress((prev) => {
-          if (prev >= 0.8) return prev;
-          return prev + 0.05;
-        });
-      }, 3000);
+      // Process products in chunks
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * chunkSize;
+        const end = Math.min(start + chunkSize, totalProducts);
+        const chunk = productsToImport.slice(start, end);
+        
+        const progressStart = 0.2 + (chunkIndex / totalChunks) * 0.6;
+        const progressEnd = 0.2 + ((chunkIndex + 1) / totalChunks) * 0.6;
+        
+        setImportProgress(progressStart);
+        setImportMessage(`Uploading batch ${chunkIndex + 1}/${totalChunks}...`);
 
-      const response = await api.post("/products/bulk-import", {
-        products: productsToImport,
-      });
+        try {
+          const response = await api.post("/products/bulk-import", {
+            products: chunk,
+          }, {
+            timeout: 60000, // 60 second timeout per chunk
+          });
 
-      clearInterval(progressInterval);
+          const result = response.data;
+          totalImported += result.imported || 0;
+          totalSkipped += result.skipped || 0;
+          if (result.errors && result.errors.length > 0) {
+            totalErrors = totalErrors.concat(result.errors);
+          }
 
-      // console.log("📬 API Response Status:", response.status);
-      const result = response.data;
+          setImportProgress(progressEnd);
+        } catch (chunkErr) {
+          console.error(`❌ Chunk ${chunkIndex + 1} failed:`, chunkErr);
+          throw new Error(`Batch ${chunkIndex + 1}/${totalChunks} failed: ${chunkErr.message}`);
+        }
+      }
 
-      // console.log("✅ API Success:", result);
-
-      // Show import summary
-      // if (result.errors && result.errors.length > 0) {
-      //   console.warn("⚠️ Import completed with errors:", result.errors);
-      // }
-      // if (result.skipped > 0) {
-      //   console.log("⏭️  Skipped products:", result.skippedDetails);
-      // }
-
-      // Step 3: Refresh data (85%)
+      // Step 4: Refresh data (85%)
       setImportProgress(0.85);
       setImportMessage("Refreshing product list...");
 
       await dispatch(fetchProducts()).unwrap();
 
-      // Step 4: Complete (100%)
+      // Step 5: Complete (100%)
       setImportProgress(1.0);
       setImportMessage("Import complete!");
 
       // Build success message with details
-      let successMessage = `✅ Imported ${result.imported} products`;
+      let successMessage = `✅ Imported ${totalImported} products`;
       const warnings = [];
       
-      if (result.skipped > 0) {
-        warnings.push(`${result.skipped} skipped (duplicates)`);
+      if (totalSkipped > 0) {
+        warnings.push(`${totalSkipped} skipped (duplicates)`);
       }
-      if (result.errors && result.errors.length > 0) {
-        warnings.push(`${result.errors.length} errors`);
+      if (totalErrors.length > 0) {
+        warnings.push(`${totalErrors.length} errors`);
       }
       
       if (warnings.length > 0) {
@@ -327,12 +384,20 @@ const ImportExportScreen = () => {
         errorMessage = "Access denied - Check shop permissions";
       } else if (err.response?.status === 400) {
         errorMessage = `Validation error: ${err.response.data?.msg || "Invalid data"}`;
+      } else if (err.response?.status === 413) {
+        errorMessage = "Payload too large - Try importing fewer products at once";
+      } else if (err.response?.status === 504) {
+        errorMessage = "Server timeout - Try importing fewer products at once";
       } else if (err.code === 'ECONNABORTED') {
-        errorMessage = "Request timeout - Server not responding";
+        errorMessage = "Request timeout (>60s) - Try importing fewer products or check server";
       } else if (err.code === 'ERR_NETWORK') {
         errorMessage = "Network error - Check server address and connection";
-      } else if (err.message === 'Network Error') {
-        errorMessage = "Cannot reach server - Is it running at 10.40.5.238:5000?";
+      } else if (err.code === 'ENOTFOUND') {
+        errorMessage = "Server not found - Check if mobileshopmanager.onrender.com is accessible";
+      } else if (err.message === 'Network Error' || err.message.includes('Network')) {
+        errorMessage = "Network error - Server may be offline or unreachable";
+      } else if (err.message.includes('Batch')) {
+        errorMessage = err.message; // Show specific batch error
       }
       
       setImportProgress(0);
@@ -373,7 +438,7 @@ const ImportExportScreen = () => {
       }
 
       // Create CSV header
-      const csvHeader = "shop,name,barcode,qty,category,cost_price,selling_price,cgst,sgst,minimum_stock,note,date\n";
+      const csvHeader = "shop,name,barcode,category,qty,cost_price,selling_price,cgst,sgst,minimum_stock,note,date\n";
       
       // Create CSV rows
       const csvRows = products.map((product) => {
@@ -385,8 +450,8 @@ const ImportExportScreen = () => {
           shop,
           product.name || "",
           product.barcode || "",
-          product.qty || 0,
           category,
+          product.qty || 0,
           product.cost_price || 0,
           product.selling_price || 0,
           product.cgst || 0,
@@ -538,9 +603,8 @@ const ImportExportScreen = () => {
             📋 Required CSV Columns
           </Text>
           <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
-            <Text style={{ fontWeight: "600" }}>Mandatory:</Text> shop, name, qty{"\n"}
-            <Text style={{ fontWeight: "600" }}>Optional:</Text> category, user_id,
-            cost_price, selling_price, cgst, sgst, minimum_stock, date, note
+            <Text style={{ fontWeight: "600" }}>Mandatory:</Text> shop, name, category, qty{"\n"}
+            <Text style={{ fontWeight: "600" }}>Optional:</Text> user_id, cost_price, selling_price, cgst, sgst, minimum_stock, date, note
           </Text>
         </View>
 
@@ -762,9 +826,9 @@ const ImportExportScreen = () => {
               lineHeight: 18,
             }}
           >
-            shop,name,qty,category,cost_price,selling_price{"\n"}
-            Main Shop,iPhone 13,2,Electronics,50000,55000{"\n"}
-            Branch,Samsung S21,5,Electronics,40000,45000
+            shop,name,category,qty,cost_price,selling_price{"\n"}
+            Main Shop,iPhone 13,Electronics,2,50000,55000{"\n"}
+            Branch,Samsung S21,Electronics,5,40000,45000
           </Text>
         </View>
           </>
@@ -866,8 +930,8 @@ const ImportExportScreen = () => {
               </Text>
               <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
                 CSV file includes:{"\n"}
-                • Shop name, Product name, Barcode{"\n"}
-                • Quantity, Category, Prices (cost/selling){"\n"}
+                • Shop name, Product name, Category{"\n"}
+                • Barcode, Quantity, Prices (cost/selling){"\n"}
                 • Tax details (CGST/SGST){"\n"}
                 • Minimum stock, Notes, Date
               </Text>

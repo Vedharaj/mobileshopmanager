@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { global, useThemeColors } from "../styles/global";
@@ -246,7 +247,8 @@ const CustomerManagement = () => {
   };
 
   const handleAddCustomer = async () => {
-    if (!name) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       dispatch(
         showToast({
           message: "Please enter customer name",
@@ -266,9 +268,25 @@ const CustomerManagement = () => {
       return;
     }
 
+    // Check for duplicate customer name and phone in the selected shop
+    const isDuplicate = customers.some(
+      cust => cust.name.toLowerCase() === trimmedName.toLowerCase() && 
+              (cust.shop_id?._id || cust.shop_id) === selectedShopId &&
+              (!phoneNo || cust.phone_no === phoneNo)
+    );
+    if (isDuplicate) {
+      dispatch(
+        showToast({
+          message: `Customer "${trimmedName}" already exists in this shop`,
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
       await dispatch(createCustomer({
-        name,
+        name: trimmedName,
         phone_no: phoneNo,
         address: address,
         shop_id: selectedShopId,
@@ -297,7 +315,7 @@ const CustomerManagement = () => {
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
-      <View style={global.mainContainer}>
+      <ScrollView style={global.mainContainer} contentContainerStyle={{ paddingBottom: 30 }}>
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Customer</Text>
             <TextInput
@@ -373,7 +391,7 @@ const CustomerManagement = () => {
         {customers.map((customer) => (
           <CustomerContainer key={customer._id} customer={customer} isStaff={isStaff} />
         ))}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };

@@ -1,7 +1,7 @@
-# Mobx 1.2
+# Mobx 1.2.1
 
 **Date:** January 10, 2026  
-**Version:** 1.2  
+**Version:** 1.2.1  
 **Type:** Feature Enhancement & Bug Fixes  
 **Status:** Complete
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Version 1.2 focuses on implementing user-specific shop data filtering across all screens and components to ensure that staff users only see data (categories, products, and requests) for their assigned shops, while admin users continue to see all shops and data. Additionally, this release includes comprehensive error handling improvements, environment configuration fixes, and UI/UX enhancements.
+Version 1.2.1 focuses on implementing user-specific shop data filtering across all screens and components to ensure that staff users only see data (categories, products, and requests) for their assigned shops, while admin users continue to see all shops and data. Additionally, this release includes comprehensive error handling improvements, environment configuration fixes, and UI/UX enhancements.
 
 ### Release Highlights
 - ✅ User-specific shop data filtering implementation
@@ -26,7 +26,7 @@ Version 1.2 focuses on implementing user-specific shop data filtering across all
 
 | Commit | Message | Changes |
 |--------|---------|---------|
-| `a69b90a` | Mobx 1.2 finished | Documentation finalization |
+| `a69b90a` | Mobx 1.2.1 finished | Documentation finalization |
 | `ed2725d` | feat: Refactor data loading and error handling across screens | Major refactoring of data loading patterns and error handling mechanisms |
 | `a729467` | feat: Add numeric keyboard type for password input in Login and Register screens | Improved UX with numeric keyboard for authentication forms |
 | `239def7` | fix: Update socket error handling to be non-fatal in request and service routes | Socket.IO error handling refinement to prevent crashes |
@@ -71,7 +71,7 @@ const userCategories = categories.filter(cat => {
 
 ---
 
-#### 1.2 **ProductScreen.jsx**
+#### 1.2.1 **ProductScreen.jsx**
 **File:** `client/screens/ProductScreen.jsx`
 
 **Changes:**
@@ -338,7 +338,7 @@ try {
 
 | Version | Date | Description | Commits |
 |---------|------|-------------|---------|
-| 1.2 | Jan 10, 2026 | User shop filtering, error handling, UX improvements | `a69b90a` to `446877d` |
+| 1.2.1 | Jan 10, 2026 | User shop filtering, error handling, UX improvements | `a69b90a` to `446877d` |
 | 1.1 | Previous | Basic shop management | Earlier |
 | 1.0 | Previous | Initial release | Earlier |
 
@@ -393,7 +393,7 @@ If critical issues occur:
 
 ## Contact & Support
 
-For issues or questions related to version 1.2:
+For issues or questions related to version 1.2.1:
 - Review error logs in `client/utils/errorLog.js`
 - Check socket status in browser DevTools
 - Verify Redux state in Redux DevTools extension

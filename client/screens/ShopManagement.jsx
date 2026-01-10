@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-TouchableOpacity,
+  TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { global, useThemeColors } from "../styles/global"; // Import useThemeColors
 import { useDispatch, useSelector } from "react-redux";
@@ -218,7 +219,8 @@ const ShopManagement = () => {
   }, [dispatch]);
 
   const handleCreateShop = async () => {
-    if (!name) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       dispatch(
         showToast({
           message: "Please enter your store name",
@@ -228,8 +230,20 @@ const ShopManagement = () => {
       return;
     }
 
+    // Check for duplicate shop name
+    const isDuplicate = shops.some(shop => shop.name.toLowerCase() === trimmedName.toLowerCase());
+    if (isDuplicate) {
+      dispatch(
+        showToast({
+          message: `Shop "${trimmedName}" already exists`,
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
-      await dispatch(createShop({ name, email, address, contact_no, gstin })).unwrap();
+      await dispatch(createShop({ name: trimmedName, email, address, contact_no, gstin })).unwrap();
 
       dispatch(
         showToast({
@@ -257,7 +271,7 @@ const ShopManagement = () => {
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
-      <View style={global.mainContainer}>
+      <ScrollView style={global.mainContainer} contentContainerStyle={{ paddingBottom: 30 }}>
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Shop</Text>
           <TextInput
@@ -316,7 +330,7 @@ const ShopManagement = () => {
         {shops.map((shopItem) => (
           <ShopContainer key={shopItem._id} shop={shopItem} />
         ))}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };

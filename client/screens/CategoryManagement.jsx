@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Picker } from '@react-native-picker/picker';
 import { global, useThemeColors } from "../styles/global";
@@ -190,7 +191,8 @@ const CategoryManagement = () => {
   };
 
   const handleAddCategory = async () => {
-    if (!name || !selectedShopId) {
+    const trimmedName = name.trim();
+    if (!trimmedName || !selectedShopId) {
       dispatch(
         showToast({
           message: "Please enter category name and select a shop",
@@ -200,9 +202,24 @@ const CategoryManagement = () => {
       return;
     }
 
+    // Check for duplicate category name in the selected shop
+    const isDuplicate = userCategories.some(
+      cat => cat.name.toLowerCase() === trimmedName.toLowerCase() && 
+             (cat.shop_id?._id || cat.shop_id) === selectedShopId
+    );
+    if (isDuplicate) {
+      dispatch(
+        showToast({
+          message: `Category "${trimmedName}" already exists in this shop`,
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
       await dispatch(createCategory({
-        name,
+        name: trimmedName,
         shop_id: selectedShopId,
       })).unwrap();
 
@@ -228,7 +245,7 @@ const CategoryManagement = () => {
 
   return (
     <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setIsNameFocused(false); }}>
-      <View style={global.mainContainer}>
+      <ScrollView style={global.mainContainer} contentContainerStyle={{ paddingBottom: 30 }}>
         <View style={{ marginTop: 10 }}>
           <Text style={{ marginBottom: 10 }}>Add Category</Text>
             <TextInput
@@ -280,7 +297,7 @@ const CategoryManagement = () => {
         {userCategories.map((category) => (
           <CategoryContainer key={category._id} category={category} isStaff={isStaff} />
         ))}
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };
