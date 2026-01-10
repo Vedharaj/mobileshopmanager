@@ -150,9 +150,6 @@ router.post('/', auth, async (req, res) => {
       items
     } = req.body;
 
-    console.log('=== SALES POST REQUEST ===');
-    console.log('Received body:', JSON.stringify(req.body, null, 2));
-
     if (!shop_id) {
       return res.status(400).json({ msg: 'shop_id is required' });
     }
@@ -244,8 +241,6 @@ router.post('/', auth, async (req, res) => {
       notes: notes || '',
       items: mappedItems
     });
-
-    console.log('Creating sale with data:', JSON.stringify(sale, null, 2));
 
     await sale.save();
 

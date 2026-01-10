@@ -55,7 +55,7 @@ router.post('/', auth, async (req, res) => {
       getIO().to(`shop:${item.shop_id}`).emit('request:new', { request: populated });
       await sendPushToShop(item.shop_id, 'New Request', `${populated.product_id?.name || 'Product'} x ${populated.qty || ''}`.trim());
     } catch (e) {
-      console.warn('Socket emit failed for request:new', e.message);
+      // Non-fatal if socket not initialized
     }
 
     const user = await req.user.populate('shops');

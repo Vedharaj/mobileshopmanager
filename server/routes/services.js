@@ -97,7 +97,6 @@ router.post('/', auth, async (req, res) => {
       await sendPushToShop(service.shop_id, 'New Service', populated.name || 'A new service was added');
     } catch (e) {
       // Non-fatal if socket not initialized
-      console.warn('Socket emit failed for service:new', e.message);
     }
 
     // Return all services for user's shops
