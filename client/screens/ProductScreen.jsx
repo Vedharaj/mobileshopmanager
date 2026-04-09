@@ -28,7 +28,7 @@ import {
 import { fetchCategories, createCategory } from "../store/slices/categorySlice";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { showToast } from "../store/slices/toastSlice";
-import { createRequestItem, fetchRequestItems } from "../store/slices/requestItemsSlice";
+import { createRequestItem } from "../store/slices/requestItemsSlice";
 import RequestsTab from "../components/tabs/RequestsTab";
 import ProductsTab from "../components/tabs/ProductsTab";
 import QrGeneratorTab from "../components/tabs/QrGeneratorTab";
@@ -41,13 +41,8 @@ const ProductScreen = () => {
   const { customers } = useSelector((state) => state.customers);
   const { shops } = useSelector((state) => state.shops);
   const { userid, role, user } = useSelector((state) => state.auth);
-  const { items: requestItems = [] } = useSelector((state) => state.requestItems);
   const { primaryColor, cardBg, textColor } = useThemeColors();
   const themedStyles = useThemedStyles();
-
-  const pendingRequestCount = Array.isArray(requestItems)
-    ? requestItems.filter((r) => r?.status !== "fulfilled").length
-    : 0;
 
   const staffShops = user?.shops || [];
 
@@ -97,8 +92,8 @@ const ProductScreen = () => {
   // when user picks an existing product from suggestions
   const [selectedExistingProduct, setSelectedExistingProduct] = useState(null);
 
-  // top navbar tabs: 0 = Requests, 1 = Product Manager, 2 = QR Generator
-  const [activeTab, setActiveTab] = useState(0);
+  // Product screen is now single-tab (Products only)
+  const [activeTab] = useState(1);
 
   // pagination
   const [displayLimit, setDisplayLimit] = useState(10);
@@ -108,7 +103,6 @@ const ProductScreen = () => {
     const loadData = async () => {
       dispatch(fetchProducts());
       dispatch(fetchCategories());
-      dispatch(fetchRequestItems());
     };
     loadData();
 
@@ -1000,7 +994,6 @@ const ProductScreen = () => {
 
   // Handle scroll to load more products
   const handleScroll = (event) => {
-    if (activeTab !== 1) return;
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
     if (isAtBottom && !isLoadingMore) {
@@ -1036,96 +1029,7 @@ const ProductScreen = () => {
         onScroll={handleScroll}
         scrollEventThrottle={400}
       >
-        {/* Top navbar tab view */}
-        <View
-          style={{
-            flexDirection: "row",
-            marginTop: 10,
-            marginBottom: 10,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              borderBottomWidth: activeTab === 0 ? 3 : 0,
-              borderBottomColor: activeTab === 0 ? primaryColor : "transparent",
-              alignItems: "center",
-              paddingBottom: 6,
-            }}
-            onPress={() => setActiveTab(0)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Text
-                style={{
-                  color: activeTab === 0 ? primaryColor : textColor,
-                  fontWeight: activeTab === 0 ? "600" : "400",
-                  opacity: activeTab === 0 ? 1 : 0.6,
-                }}
-              >
-                Requests
-              </Text>
-              {pendingRequestCount > 0 && (
-                <View
-                  style={{
-                    minWidth: 18,
-                    paddingHorizontal: 6,
-                    height: 18,
-                    borderRadius: 9,
-                    backgroundColor: "#e74c3c",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
-                    {pendingRequestCount}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              borderBottomWidth: activeTab === 1 ? 3 : 0,
-              borderBottomColor: activeTab === 1 ? primaryColor : "transparent",
-              alignItems: "center",
-              paddingBottom: 6,
-            }}
-            onPress={() => setActiveTab(1)}
-          >
-            <Text
-              style={{
-                color: activeTab === 1 ? primaryColor : textColor,
-                fontWeight: activeTab === 1 ? "600" : "400",
-                opacity: activeTab === 1 ? 1 : 0.6,
-              }}
-            >
-              Products
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              borderBottomWidth: activeTab === 2 ? 3 : 0,
-              borderBottomColor: activeTab === 2 ? primaryColor : "transparent",
-              alignItems: "center",
-              paddingBottom: 6,
-            }}
-            onPress={() => setActiveTab(2)}
-          >
-            <Text
-              style={{
-                color: activeTab === 2 ? primaryColor : textColor,
-                fontWeight: activeTab === 2 ? "600" : "400",
-                opacity: activeTab === 2 ? 1 : 0.6,
-              }}
-            >
-              QR Generator
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === 0 && <RequestsTab />}
+        {/* Product tab only */}
 
         {false && activeTab === 0 && (
           <>
@@ -1273,7 +1177,7 @@ const ProductScreen = () => {
           </>
         )}
 
-        {activeTab === 1 && <ProductsTab displayLimit={displayLimit} isLoadingMore={isLoadingMore} onLoadMore={handleLoadMore} />}
+        <ProductsTab displayLimit={displayLimit} isLoadingMore={isLoadingMore} onLoadMore={handleLoadMore} />
 
         {false && activeTab === 1 && (
           <>
@@ -1864,8 +1768,6 @@ const ProductScreen = () => {
             )}
           </>
         )}
-
-        {activeTab === 2 && <QrGeneratorTab />}
 
         {false && activeTab === 2 && (
           <View style={{ marginTop: 30, alignItems: "center" }}>
