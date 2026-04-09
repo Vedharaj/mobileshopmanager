@@ -2,6 +2,7 @@ const { Expo } = require('expo-server-sdk');
 const User = require('../models/user');
 
 const expo = new Expo();
+const PUSH_NOTIFICATIONS_ENABLED = false;
 
 async function removeInvalidTokens(tokens) {
   if (!tokens || tokens.length === 0) return;
@@ -16,6 +17,7 @@ async function removeInvalidTokens(tokens) {
 }
 
 async function sendPushToShop(shopId, title, body) {
+  if (!PUSH_NOTIFICATIONS_ENABLED) return;
   try {
     const users = await User.find({ shops: shopId, pushTokens: { $exists: true, $ne: [] } }).select('pushTokens');
     const tokens = users.flatMap((u) => u.pushTokens || []);
@@ -66,6 +68,7 @@ async function sendPushToShop(shopId, title, body) {
 }
 
 async function pruneInvalidFormatTokens() {
+  if (!PUSH_NOTIFICATIONS_ENABLED) return;
   try {
     const users = await User.find({ pushTokens: { $exists: true, $ne: [] } }).select('pushTokens');
     const toRemove = new Map();
